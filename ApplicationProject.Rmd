@@ -23,7 +23,7 @@ Mit Hilfe von verschiedenen Daten und Einflussfaktoren soll diese Umsätze je Wa
 -	Weitere Einflussfaktoren (Neueröffnung, Aktionen,…)
 
 ## 1.3 Datenbasis:
--	2010 bis Ende 2019
+-	2012 bis Ende 2019
 -	Umsätze je Warengruppe und Tag
 -	(Retourenquoten)
 -	(Zeitpunkt letzter Verkauf)
@@ -45,7 +45,7 @@ Wetter <- read_csv("data/Wetter.csv")
 ## 2.2 Datenexploration
 ### 2.2.1 Überprüfung der Datenstrukturen
 
-* Datensatz *Beispieldaten* 
+* Datensatz **Beispieldaten**
 ```{r}
 str(Beispieldaten)
 glimpse(Beispieldaten)
@@ -54,7 +54,7 @@ range(Beispieldaten$Warengruppe)
 range(Beispieldaten$Umsatz)
 ```
 
-Der Datensatz *Beispieldaten* ist ein Dataframe, enthält 11164 Zeilen und 3 Variablen:
+Der Datensatz **Beispieldaten** ist ein Dataframe, enthält 11164 Zeilen und 3 Variablen:
 
 * Datum (`fct`)
 * Warengruppe (`int`) mit den Warengruppen 1 - 6
@@ -69,7 +69,7 @@ any(KiWo$KielerWoche != 1)  # Prüfung: Ist die Ausprägung in irgendeiner Zelle
 all(KiWo$KielerWoche == 1)  # Prüfung: Sind alle Ausprägungen gleich 1? 
 ```
 
-Der Datensatz *KiWo* enthält 71 Zeilen und die beiden Variablen Datum (`fct`) und KielerWoche (`int`), wobei die einzige Ausprägung der Variablen KielerWoche die Ziffer 1 ist.
+Der Datensatz **KiWo** enthält 71 Zeilen und die beiden Variablen Datum (`fct`) und KielerWoche (`int`), wobei die einzige Ausprägung der Variablen KielerWoche die Ziffer 1 ist.
 
 ```{r}
 str(Wetter)
@@ -80,7 +80,7 @@ range(Wetter$Windgeschwindigkeit)
 range(Wetter$Wettercode, na.rm = TRUE)
 ```
 
-Der Datensatz *Wetter* enthält 2601 Zeilen und fünf Variablen:
+Der Datensatz **Wetter** enthält 2601 Zeilen und fünf Variablen:
 
 * Datum (`fct`)
 * Bewoelkung (`int`) mit Werte von 0 bis 8
@@ -98,9 +98,9 @@ range(KiWo$Datum)
 range(Wetter$Datum)
 ```
 
-* Die Daten des Datensatzes *Beispieldaten* reichen vom 01.07.2013 bis zum 30.07.2019.
-* Die Daten des Datensatzes *KiWo* reichen vom 16.06.2012 bis zum 30.06.2019.
-* Die Daten des Datensatzes *Wetter* reichen vom 01.01.2012 bis zum 01.08.2019.
+* Die Daten des Datensatzes **Beispieldaten** reichen vom 01.07.2013 bis zum 30.07.2019.
+* Die Daten des Datensatzes **KiWo** reichen vom 16.06.2012 bis zum 30.06.2019.
+* Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
 
 ### 2.2.3 Überprüfung der Datensätze auf fehlende Werte
 ```{r}
@@ -115,13 +115,13 @@ sum(is.na(Wetter$Windgeschwindigkeit))
 sum(is.na(Wetter$Wettercode))
 ```
 
-* Der Datensatz *Beispieldaten* enthält keine fehlenden Werte.
-* Der Datensatz *KiWo* enthält keine fehlenden Werte.
-* Der Datensatz *Wetter* enthält 679 fehlende Werte, davon 10 in der Spalte "Bewoelkung", 669 in der Spalte "Wettercode".
+* Der Datensatz **Beispieldaten** enthält keine fehlenden Werte.
+* Der Datensatz **KiWo** enthält keine fehlenden Werte.
+* Der Datensatz **Wetter** enthält 679 fehlende Werte, davon 10 in der Spalte "Bewoelkung", 669 in der Spalte "Wettercode".
 
 ### 2.2.4 Überprüfung der Datensätze auf Ausreißer
 
-* Datensatz *Beispieldaten* 
+* Datensatz **Beispieldaten** 
 
 ```{r}
 # Überprüfung der Variable Umsatz
@@ -139,7 +139,7 @@ Beispieldaten %>%
 
 Das Attribut "Umsatz" enthält zahlreiche Ausreißer. (Umgang?)
 
-* Datensatz *Wetter*
+* Datensatz **Wetter**
 ```{r}
 boxplot(Wetter$Bewoelkung)
 boxplot(Wetter$Temperatur)
@@ -165,9 +165,9 @@ tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 
 Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, dass diese über unterschiedliche Zeiträume reichen:
 
-* Die Daten des Datensatzes *Beispieldaten* reichen vom 01.07.2013 bis zum 30.07.2019.
-* Die Daten des Datensatzes *KiWo* reichen vom 16.06.2012 bis zum 30.06.2019.
-* Die Daten des Datensatzes *Wetter* reichen vom 01.01.2012 bis zum 01.08.2019.
+* Die Daten des Datensatzes **Beispieldaten** reichen vom 01.07.2013 bis zum 30.07.2019.
+* Die Daten des Datensatzes **KiWo** reichen vom 16.06.2012 bis zum 30.06.2019.
+* Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
 
 Maßgeblich ist für uns an dieser Stelle der Datensatz "Beispieldaten", da wir abschließend an der Prognose der Umsätze je Warengruppe interessiert sind. (?) Wenn für ein Datum keine Umsätze vorhanden sind, sind die Daten aus den anderen Daten unbrauchbar. Demzufolge wird ein `left_join` für die Vereinigung verwendet:
 
