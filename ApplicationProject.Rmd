@@ -78,5 +78,8 @@ tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 # MLH_test
 ```
 
+```{r}
+# CMM_Test
+```
 
 
