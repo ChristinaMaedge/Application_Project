@@ -92,4 +92,8 @@ tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 # CMM_Test
 ```
 
+```{r}
+# letzter Versuch
+```
+
 
