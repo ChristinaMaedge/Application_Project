@@ -52,9 +52,19 @@ Die Daten reichen vom 01.07.2013 bis 30.07.2019
 ## Überprüfung auf fehlende Werte
 ```{r}
 sum(is.na(Beispieldaten))
+sum(is.na(KiWo))
+sum(is.na(Wetter))
+which(is.na(Wetter))
+sum(is.na(Wetter$Datum))
+sum(is.na(Wetter$Bewoelkung))
+sum(is.na(Wetter$Temperatur))
+sum(is.na(Wetter$Windgeschwindigkeit))
+sum(is.na(Wetter$Wettercode))
 ```
 
-Der Datensatz enthält keine fehlenden Werte.
+* Der Datensatz "Beispieldaten" enthält keine fehlenden Werte.
+* Der Datensatz "KiWo" enthält keine fehlenden Werte.
+* Der Datensatz "Wetter" enthält 679 fehlende Werte, davon 10 in der Spalte "Bewoelkung", 669 in der Spalte "Wettercode".
 
 ## Überprüfung der Variable Umsatz auf Ausreißer
 ```{r}
