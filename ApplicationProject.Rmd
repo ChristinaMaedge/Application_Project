@@ -97,6 +97,10 @@ tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 ```
 
 ```{r}
+<<<<<<< HEAD
 # GitHub ist ein Astloch.
+=======
+a <- "Hallo"
+>>>>>>> 7a6f19e1286c5579b6a04243fcd17a00ab3f613f
 ```
 
