@@ -96,4 +96,7 @@ tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 # letzter Versuch
 ```
 
+```{r}
+# GitHub ist ein Astloch.
+```
 
