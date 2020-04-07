@@ -74,6 +74,9 @@ tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 ```
 
+```{r}
+# MLH_test
+```
 
 
 
