@@ -1,0 +1,79 @@
+---
+title: "Application Project Umsatzprognose Bäckerei"
+author: "Christina M. Mädge, Marco Landt-Hayen"
+date: "6.4.2020"
+output: rmdformats::readthedown
+---
+
+```{r message=FALSE, error=FALSE, warning=FALSE}
+library(tidyverse) # Datenaufbereitung und ggplot
+```
+
+# 1. Allgemeine Projektinformationen
+
+## 1.1 Ausgangslage
+Die Bestellung von Bäckereien ist häufig noch ein manueller und zeitaufwändiger Prozess, der auf adjustierten Vorwochenwerten basiert. Eine systematische Planung unter Einbeziehung von Mustern findet nur eingeschränkt statt.
+
+## 1.2 Zielsetzung 
+Es wird ein Prognosemodell entworfen, das Bäckereien ein bessere Planungsgrundlage auf Warengruppenebene bietet. 
+Lösungsansatz
+
+Mit Hilfe von verschiedenen Daten und Einflussfaktoren soll diese Umsätze je Warengruppe prognostiziert werden. 
+-	Umsatzdaten, Wetterdaten, Veranstaltungsdaten
+-	Weitere Einflussfaktoren (Neueröffnung, Aktionen,…)
+
+## 1.3 Datenbasis:
+-	2010 bis Ende 2019
+-	Umsätze je Warengruppe und Tag
+-	(Retourenquoten)
+-	(Zeitpunkt letzter Verkauf)
+-	(Öffnungszeiten)
+
+
+# 2 Datenexploration
+
+## 2.1 Einlesen der Daten
+
+Im ersten Schritt müssen die Daten zunächst eingelesen werden um sie bearbeiten zu können:
+```{r}
+Beispieldaten <- read.csv("data/Beispieldaten.csv")
+KiWo <- read.csv("data/KiWo.csv")
+Wetter <- read.csv("data/Wetter.csv")
+```
+
+## Überprüfung des Anfangs- und Endzeitpunkt der Zeitreihendaten
+```{r}
+min(Beispieldaten$Datum)
+max(Beispieldaten$Datum)
+```
+
+Die Daten reichen vom 01.07.2013 bis 30.07.2019
+
+## Überprüfung auf fehlende Werte
+```{r}
+sum(is.na(Beispieldaten))
+```
+
+Der Datensatz enthält keine fehlenden Werte.
+
+## Überprüfung der Variable Umsatz auf Ausreißer
+```{r}
+boxplot(Beispieldaten$Umsatz)
+hist(Beispieldaten$Umsatz)
+density(Beispieldaten$Umsatz)
+apropos("density")
+
+# Visualisierung
+Beispieldaten %>% 
+  select(Umsatz) %>% 
+  ggplot(aes(Umsatz)) +
+  geom_density()
+
+# tapply
+tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
+tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
+```
+
+
+
+
