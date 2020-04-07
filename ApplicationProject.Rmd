@@ -56,7 +56,7 @@ range(Beispieldaten$Umsatz)
 
 Der Datensatz **Beispieldaten** ist ein Dataframe, enthält 11164 Zeilen und 3 Variablen:
 
-* Datum (`fct`)
+* Datum (`date`)
 * Warengruppe (`int`) mit den Warengruppen 1 - 6
 * Umsatz (`dbl`) mit Werten zwischen 7.05 und 1879.46.
 
@@ -69,7 +69,7 @@ any(KiWo$KielerWoche != 1)  # Prüfung: Ist die Ausprägung in irgendeiner Zelle
 all(KiWo$KielerWoche == 1)  # Prüfung: Sind alle Ausprägungen gleich 1? 
 ```
 
-Der Datensatz **KiWo** enthält 71 Zeilen und die beiden Variablen Datum (`fct`) und KielerWoche (`int`), wobei die einzige Ausprägung der Variablen KielerWoche die Ziffer 1 ist.
+Der Datensatz **KiWo** enthält 71 Zeilen und die beiden Variablen Datum (`date`) und KielerWoche (`int`), wobei die einzige Ausprägung der Variablen KielerWoche die Ziffer 1 ist.
 
 ```{r}
 str(Wetter)
@@ -82,7 +82,7 @@ range(Wetter$Wettercode, na.rm = TRUE)
 
 Der Datensatz **Wetter** enthält 2601 Zeilen und fünf Variablen:
 
-* Datum (`fct`)
+* Datum (`date`)
 * Bewoelkung (`int`) mit Werte von 0 bis 8
 * Temperatur (`dbl`) mit Werten zwischen -10.25 und 32.67 Grad Celsius
 * Windgeschwindigkeit (`int`) mit Werten zwischen 3 und 35    ?????????? Einheit?
