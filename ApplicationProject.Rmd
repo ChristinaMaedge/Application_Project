@@ -42,8 +42,10 @@ KiWo <- read_csv("data/KiWo.csv")
 Wetter <- read_csv("data/Wetter.csv")
 ```
 
-## 2.2 Erster Überblick über die Datensätze
+## 2.2 Datenexploration
 ### 2.2.1 Überprüfung der Datenstrukturen
+
+* Datensatz *Beispieldaten* 
 ```{r}
 str(Beispieldaten)
 glimpse(Beispieldaten)
@@ -133,10 +135,6 @@ Beispieldaten %>%
   select(Umsatz) %>% 
   ggplot(aes(Umsatz)) +
   geom_density()
-
-# tapply
-tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
-tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
 ```
 
 Das Attribut "Umsatz" enthält zahlreiche Ausreißer. (Umgang?)
@@ -150,3 +148,35 @@ boxplot(Wetter$Wettercode)
 ```
 
 Die Variable Windgeschwindigkeit enthält 7 Ausreißer.
+
+....
+
+### Deskriptive Statistik (?)
+
+```{r}
+# tapply
+tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
+tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
+```
+
+# 3 Datenaufbereitung
+
+## 3.x Vereinigung der Datensätze
+
+Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, dass diese über unterschiedliche Zeiträume reichen:
+
+* Die Daten des Datensatzes *Beispieldaten* reichen vom 01.07.2013 bis zum 30.07.2019.
+* Die Daten des Datensatzes *KiWo* reichen vom 16.06.2012 bis zum 30.06.2019.
+* Die Daten des Datensatzes *Wetter* reichen vom 01.01.2012 bis zum 01.08.2019.
+
+Maßgeblich ist für uns an dieser Stelle der Datensatz "Beispieldaten", da wir abschließend an der Prognose der Umsätze je Warengruppe interessiert sind. (?) Wenn für ein Datum keine Umsätze vorhanden sind, sind die Daten aus den anderen Daten unbrauchbar. Demzufolge wird ein `left_join` für die Vereinigung verwendet:
+
+```{r}
+df <- left_join(Beispieldaten, KiWo, by = "Datum")
+df <- left_join(df, Wetter, by = "Datum")
+```
+
+
+### 3.x Umgang mit fehlenden Werten
+
+### 3.x Umgang mit Ausreißern
