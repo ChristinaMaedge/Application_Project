@@ -187,3 +187,8 @@ df <- left_join(df, Wetter, by = "Datum")
 ### 3.x Umgang mit fehlenden Werten
 
 ### 3.x Umgang mit Ausreißern
+
+```{r}
+#MLH
+```
+
