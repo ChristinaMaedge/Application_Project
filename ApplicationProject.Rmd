@@ -157,7 +157,14 @@ Die Variable Windgeschwindigkeit enthält 7 Ausreißer.
 # tapply
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
+
+Beispieldaten %>%
+  select(Warengruppe) %>%
+  group_by(Warengruppe) %>%
+  summarise(n = n())
 ```
+
+
 
 # 3 Datenaufbereitung
 
