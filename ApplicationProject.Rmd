@@ -162,9 +162,17 @@ Beispieldaten %>%
   select(Warengruppe) %>%
   group_by(Warengruppe) %>%
   summarise(n = n())
+
+Beispieldaten %>%
+  group_by(Warengruppe) %>%
+  summarise(min_dat=min(Datum), max_dat=max(Datum))
 ```
 
+Für die Warengruppen 1, 2, 3 und 5 gibt es jeweils 2.174 Datensätze, für die Warengruppe 4 sind es 2.120 Datensätze. Auffällig ist, dass es für die Warengruppe 6 nur 348 Datensätze gibt. 
 
+Die Datensätze für die ersten 5 Warengruppen erstrecken sich über denselben Zeitraum: 1.7.2013 bis 30.7.2019. Die erste Vermutung war, dass für die 6. Warengruppe nur ein eingeschränkter Zeitraum zur Verfügung steht. Dieser Verdacht wird widerlegt: Der Zeitraum der Daten für die 6. Warengruppe ist nur geringfügig kürzer und geht vom 24.10.2013 bis 28.12.2018.
+
+FRAGE: Was verbirgt sich also hinter Warengruppe 6?
 
 # 3 Datenaufbereitung
 
@@ -187,8 +195,4 @@ df <- left_join(df, Wetter, by = "Datum")
 ### 3.x Umgang mit fehlenden Werten
 
 ### 3.x Umgang mit Ausreißern
-
-```{r}
-#MLH
-```
 
