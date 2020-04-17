@@ -7,6 +7,7 @@ output: rmdformats::readthedown
 
 ```{r message=FALSE, error=FALSE, warning=FALSE}
 library(tidyverse) # Datenaufbereitung und ggplot
+library(lubridate) # Umgang mit Datum und Zeit
 ```
 
 # 1. Allgemeine Projektinformationen
@@ -240,6 +241,15 @@ df <- df %>%
 ```
 Nach dem Löschen der Datensätze enthält der Datensatz nunmehr 10816 Zeilen.
 
+## 3.x Wochentag und Jahr als neue Spalte ergänzt
+
+Ein wesentlicher Einflussfaktor für die Umsatzprognose wird der Wochentag sein, wir fügen diesen als eigene Spalte hinzu: Sonntag (1), Montag (2), ... , Samstag (7). Und für die spätere Aufteilung der Daten in Training- und Testset wird das Jahr als weitere Spalte ergänzt.
+
+```{r}
+df <- df %>% mutate(Wochentag = wday(Datum))
+df <- df %>% mutate(Jahr = year(Datum))
+```
+
 ## Aufteilung des Datensatzes in Trainings- und Testset
 
 Man kann stets ein Modell finden, welches die *vorhandenen* Daten (nahezu) exakt bechreibt. Das gleicht der Tatsache, dass man im Nachhinein (bei vorhandenen Daten) oftmals leicht eine Erklärung findet. Ob diese Erklärung sich auch bei unbekannten Daten bewahrheitet, muss jedoch geprüft werden. Daher werden die unterschiedlichen Modelle an einer Stichprobe *entwickelt* bzw. "trainiert" und an einer anderen Stichprobe *getested*. Die erste Stichprobe wird demzufolge als "trainingset" deklariert, die zweite als "testset". Die Güte der Modelle wird abschließend anhand des "testsets" überprüft.
@@ -247,14 +257,24 @@ Man kann stets ein Modell finden, welches die *vorhandenen* Daten (nahezu) exakt
 Gemäß der vorhandenen Datenlage wird das Trainingset die Datensätze für die Jahre 2014 - 2017 umfassen (2013 wird aufgrund der nicht ganzjährig vorliegenden Daten ignoriert), das Testset die Daten aus dem Jahr 2018.
 
 ```{r}
-library(lubridate)
 trainingset <- df %>%
-  slice(182:10253)
+  filter(Jahr >= 2014 & Jahr <= 2017)
+
 glimpse(trainingset)
 head(trainingset)
 
 testset <- df %>% 
-  slice(10254:10611)
+  filter(Jahr == 2018)
 ```
 
+Untersuche nun den Umsatz je Wochentag und/oder Warengruppe in den Trainingsdaten.
+
+```{r}
+df %>% group_by(Warengruppe) %>% summarise(Umsatz_sum = sum(Umsatz))
+df %>% group_by(Wochentag) %>% summarise(Umsatz_sum = sum(Umsatz))
+df %>% group_by(Warengruppe, Wochentag) %>% summarise(Umsatz_sum = sum(Umsatz))
+```
+
+Warengruppe 2 zeigt den höchsten Umsatz insgesamt, gefolgt von Warengruppe 5.
+Die Wochentage Samstag (7) und Sonntag (1) sind mit leichtem Abstand die umsatzstärksten Tage, aggregiert über alle Warengruppen.
 
