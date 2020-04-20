@@ -17,18 +17,25 @@ Die Bestellung von Bäckereien ist häufig noch ein manueller und zeitaufwändig
 
 ## 1.2 Zielsetzung 
 Es wird ein Prognosemodell entworfen, das Bäckereien ein bessere Planungsgrundlage auf Warengruppenebene bietet. 
-Lösungsansatz
+
+**Lösungsansatz**
 
 Mit Hilfe von verschiedenen Daten und Einflussfaktoren soll diese Umsätze je Warengruppe prognostiziert werden. 
 -	Umsatzdaten, Wetterdaten, Veranstaltungsdaten
 -	Weitere Einflussfaktoren (Neueröffnung, Aktionen,…)
 
 ## 1.3 Datenbasis:
--	2012 bis Ende 2019
--	Umsätze je Warengruppe und Tag
--	(Retourenquoten)
--	(Zeitpunkt letzter Verkauf)
--	(Öffnungszeiten)
+
+Untersucht werden Daten für die Jahre 2013 bis 2019. Es liegen für diesen Zeitraum als Rohdaten drei Datensätze vor:
+
+*	Umsätze je Warengruppe und Tag
+  + Es werden fünf Warengruppen in die Analysen einbezogen: Brot (WG 1), Brötchen (WG 2), Croissant (WG 3), Konditorei (WG 4) und Kuchen (WG 5)
+* Daten zur Kieler Woche
+* Wetterdaten 
+  + Informationen zu den Wetterdaten können der [privaten Webseite von Mario Lehwald](http://www.seewetter-kiel.de/seewetter/daten_symbole.htm) entnommen werden. Herr Lehwald hat seine Daten wiederum vom [Geomar - Helmholtz-Zentrum für Ozeanforschung Kiel](https://www.geomar.de/service/wetter/) sowie vom [Windfinder](https://www.windfinder.com/report/kiel_leuchtturm) bezogen (vgl. [Impressum](http://www.seewetter-kiel.de/allgemein/impressum.htm))
+*	(Retourenquoten)
+*	(Zeitpunkt letzter Verkauf)
+*	(Öffnungszeiten)
 
 
 # 2 Datenexploration
@@ -50,8 +57,12 @@ Wetter <- read_csv("data/Wetter.csv")
 str(Beispieldaten)
 glimpse(Beispieldaten)
 typeof(Beispieldaten$Datum)
+max(Beispieldaten$Datum)
 range(Beispieldaten$Warengruppe)
 range(Beispieldaten$Umsatz)
+head(Beispieldaten)
+tail(Beispieldaten)
+
 ```
 
 Der Datensatz **Beispieldaten** ist ein Dataframe, enthält 11164 Zeilen und 3 Variablen:
@@ -70,8 +81,10 @@ any(KiWo$KielerWoche != 1)  # Prüfung: Ist die Ausprägung in irgendeiner Zelle
 all(KiWo$KielerWoche == 1)  # Prüfung: Sind alle Ausprägungen gleich 1? 
 ```
 
-Der Datensatz **KiWo** enthält 71 Zeilen und die beiden Variablen Datum (`date`) und KielerWoche (`int`), wobei die einzige Ausprägung der Variablen KielerWoche die Ziffer 1 ist.
+Der Datensatz **KiWo** enthält 71 Zeilen und die beiden Variablen Datum (`date`) und KielerWoche (`int`), wobei die einzige Ausprägung der Variablen KielerWoche die Ziffer 1 ist. Anhand der Daten der einzelnen Daten erkennt man, dass der Datensatz nur solche Daten enthält, an denen tatsächlich die Kieler Woche in dem jeweiligen Jahr stattgefunden hat.
 
+
+* Datensatz **Wetter**
 ```{r}
 str(Wetter)
 glimpse(Wetter)
@@ -86,12 +99,14 @@ Der Datensatz **Wetter** enthält 2601 Zeilen und fünf Variablen:
 * Datum (`date`)
 * Bewoelkung (`int`) mit Werte von 0 bis 8
 * Temperatur (`dbl`) mit Werten zwischen -10.25 und 32.67 Grad Celsius
-* Windgeschwindigkeit (`int`) mit Werten zwischen 3 und 35    ?????????? Einheit?
-* Wettercode (`int`) mit Werten zwischen 0 und 95.
+* Windgeschwindigkeit (`int`) mit Werten zwischen 3 und 35 Knoten
+* Wettercode (`int`) mit Werten zwischen 0 und 95, wobei die einzelnen Wettercodes einer bestimmten Wettererscheinung oder einem bestimmten Wetterzustand entsprechen.
 
-Alle Datensätze enthalten die Variable `Datum` über die die Datensätze vereinigt werden können. 
+Weitere Informationen zu den einzelnen Variablen des Datensatzes **Wetter** und ihrer Interpretation können der privaten Webseite [**Seewetter Kiel**](http://www.seewetter-kiel.de/seewetter/daten_symbole.htm) entnommen werden. 
 
-### 2.3 Überprüfung des Anfangs- und Endzeitpunkt der Datumsattribute in den Datensätzen
+Alle Datensätze enthalten die Variable `Datum`. Folglich können die einzelnen Datensätze über diese Variable vereinigt werden. 
+
+## 2.3 Überprüfung des Anfangs- und Endzeitpunkt der Datumsattribute in den Datensätzen
 ```{r}
 min(Beispieldaten$Datum)
 max(Beispieldaten$Datum)
@@ -103,33 +118,34 @@ range(Wetter$Datum)
 * Die Daten des Datensatzes **KiWo** reichen vom 16.06.2012 bis zum 30.06.2019.
 * Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
 
-### 2.4 Überprüfung der Datensätze auf fehlende Werte
+## 2.4 Überprüfung der Datensätze auf fehlende Werte
 ```{r}
-sum(is.na(Beispieldaten))
-sum(is.na(KiWo))
-sum(is.na(Wetter))
+sum(is.na(Beispieldaten))   # 0
+sum(is.na(KiWo))            # 0
+sum(is.na(Wetter))          # 679
 which(is.na(Wetter))
 sum(is.na(Wetter$Datum))
-sum(is.na(Wetter$Bewoelkung))
-sum(is.na(Wetter$Temperatur))
+sum(is.na(Wetter$Bewoelkung))   # 10 fehlende Werte
+sum(is.na(Wetter$Temperatur))   
 sum(is.na(Wetter$Windgeschwindigkeit))
-sum(is.na(Wetter$Wettercode))
+sum(is.na(Wetter$Wettercode))   # 
 ```
 
 * Der Datensatz **Beispieldaten** enthält keine fehlenden Werte.
 * Der Datensatz **KiWo** enthält keine fehlenden Werte.
 * Der Datensatz **Wetter** enthält 679 fehlende Werte, davon 10 in der Spalte "Bewoelkung", 669 in der Spalte "Wettercode".
 
-### 2.5 Überprüfung der Datensätze auf Ausreißer
+## 2.5 Überprüfung der Datensätze auf Ausreißer
 
-* Datensatz **Beispieldaten** 
+Ein Ausreißer ist ein Wert, der außerhalb der üblichen Struktur einer Verteilung liegt. Zunächst wird in einem ersten Schritt mittels einer Visualisierung in Form von `boxplots` überprüft, ob die einzelnen Datensätze überhaupt Ausreißer enthalten.
+
+Die Überprüfung wird begonnen mit dem Datensatz **Beispieldaten**: 
 
 ```{r}
 # Überprüfung der Variable Umsatz
 boxplot(Beispieldaten$Umsatz)
 hist(Beispieldaten$Umsatz)
 density(Beispieldaten$Umsatz)
-apropos("density")
 
 # Visualisierung
 Beispieldaten %>% 
@@ -138,9 +154,175 @@ Beispieldaten %>%
   geom_density()
 ```
 
-Das Attribut "Umsatz" enthält zahlreiche Ausreißer. (Umgang?)
+Das Attribut `Umsatz` enthält zahlreiche Ausreißer. Mit bloßem Auge ist nicht zu erkennen, wie viele Ausreißer es genau sind. Die Ausreißer werden also in einem 2. Schritt genauer betrachtet, um die genaue Anzahl der Ausreißer zu ermitteln. Statistiker haben viele Verfahren entwickelt, um auseinanderzuhalten, was man als Ausreißer bezeichnen sollte, und was nicht. 
 
-* Datensatz **Wetter**
+Eine mögliche Definition und oft benutzte Regel, die von John W. Tukey stammt, besteht darin, dass ein Wert ein Ausreißer ist, falls er mehr als $$1,5 * IQR$$ oberhalb des oberen Quartils (`Q_3`) oder unterhalb des unteren Quartils (`Q_1`) liegt. Anders gesagt liegen untere Ausreißer unterhalb
+
+$$Q_1 - 1,5 * IQR$$
+und obere Ausreißer oberhalb 
+
+$$Q_3 + 1.5 * IQR$$.
+
+```{r}
+g_oben <- quantile(Beispieldaten$Umsatz, probs=0.75) + (1.5*IQR(Beispieldaten$Umsatz)) #Obere Grenze fuer Ausreißer
+g_oben
+
+Beispieldaten %>%
+  select(Umsatz) %>%
+  filter(Umsatz > g_oben) %>%
+  summarise(n = n())
+```
+Die obere Grenze für Ausreißer liegt demzufolge bei 559,80€ (gerundet). Es gibt insgesamt 348 Ausreißer in der Variable `Umsatz`. In einem 3. Schritt betrachten wir, an welchen Daten diese Ausreißer auftreten und ob Muster erkennbar sind (z. B. überproportional hohe Umsätze an Ostern oder anderen Feiertagen, in den Ferien, während der Kieler Woche o. Ä.):
+
+```{r}
+Beispieldaten %>%
+  select(Datum, Umsatz, Warengruppe) %>%
+  filter(Umsatz > g_oben) 
+
+Beispieldaten %>%
+  select(Datum, Umsatz, Warengruppe) %>%
+  filter(Umsatz > g_oben) %>%
+  arrange(desc(Umsatz))
+
+Beispieldaten %>%
+ select(Datum, Umsatz, Warengruppe) %>%
+ filter(Datum == "2018-12-31")
+```
+
+Erste Erkenntnisse (nach Jahren sortiert):
+
+[**2013**](https://www.kalender-365.eu/kalender-2013.html)
+
+* Eine erste *Ausreißerperiode* ist - mit zwei Ausnahmetagen (Mo, 08.07.; Di, 16.07.) - in dem Zeitraum vom 06.07.2013 (Samstag) bis zum 04.08.2013 (Sonntag) zu beaobachten. Vergleicht man diese Periode mit den [Ferienzeiten der verschiedenen Bundesländer im Jahr 2013](https://www.schulferien.org/deutschland/ferien/2013/), so fällt auf, dass insbesondere die für den Tourismus in Schleswig-Holstein relevanten Bundesländer Hessen, Niedersaschsen, Rheinland-Pfalz, sowie teilweise Nordrhein-Westfalen (ab. 22.07.) in diesem Zeitraum Ferien hatten. Weiterhin lagen auch die Ferien der Berliner und der Schleswig-Holsteiner selbst sowie die der Bayern teilweise in diesem Zeitraum.
+Die Vermutung liegt insofern nahe, dass die Sommerferien einen signifikanten Einfluss auf die Höhe des Umsatzes der betrachtenen Filiale haben.
+* Nach dieser wirklich sichtbaren, anhaltenden Periode von überproportional hohen Umsätzen folgt eine Phase - beginnend am Samstag, 10.08.2013 -, in der ausschließlich an den beiden Wochenendtagen Ausreißer-Umsätze zu beobachten sind. Diese Phase endet am 08.09.2013 (Ausnahme in dieser Phase ist So, 01.09.).
+* Nach dieser Wochenend-Ausreißerphase wird es erkennbar unregelmäßiger:
+  + vereinzelt gibt es weiterhin Ausreißer an Wochenendtagen (z. B. am So, 28.09.; So, 17.11.; So, 24.11.; 01.12.; 25.12.)
+  + auch an einzelnen Feiertagen / besonderen Ereignissen sind die Umsätze überproportional stark (03.10. (Tag der Deutschein Einheit); 31.12. (Silvester)).
+  + die Herbst- und Winterferien sowie Weihnachten bzw. die Weihnachtsfeiertage scheinen insofern keinen signifikanten Einfluss auf die Umsätze der Bäckerei zu haben.
+* Insgesamt gibt es im Jahr 2013 zwei Tage (So, 11.08. und Di, 31.12.), an denen zwei Warengruppen Ausreißer sind (jeweils Warengruppen 2 + 5).
+
+
+[**2014**](https://www.kalender-365.eu/kalender-2014.html)
+
+* Das Jahr 2014 beginnt strukturell so wie das Vorjahr geendet hat: unregelmäßig. Vereinzelt gibt es Ausreißer an Wochenendtagen (So, 12.01.; jeweils der Sonntag in der Zeit vom 09.02. - 09.03.; Sa, 29.03.; So, 06.04.).
+* Ab Sa, 12.04. bis Ende April am So, 27.04. sind jeweils beide Wochenendtage überproportional stark (Anmerkung: Ferienzeit in vielen relevanten Bundesländern); auch an Ostern (Karfreitag 18.04., Ostersonntag 20.04. sowie Ostermontag 21.04.) sind starke Umsatz-Effekte zu beobachten.
+* Ein ungewöhnlich hoher Umsatz ist am Montag, 05.05.2014 zu beobachten; es ist der siebthöchste Umsatz im gesamten Zeitraum; ansonsten gibt es an den Sonntagen 18.05 und 25.05. Ausreißer sowie an Christi Himmelfaht (29.05.).
+* Im Zeitraum vom 31.05. bis 29.06. erstrecken sich die Ausreißer wiederum über beide Wochentage; hinzu kommt in diesem Zeitraum ein (eingeschränkter) Effekt der Kieler Woche (Ausreißer am Do, 26.06. und Fr, 27.06.). 
+* Im Juli sind am Sa, 05.07. sowie von Fr, 11.07. - So, 13.07 die "üblichen" Wochenendeffekte zu beobachten.
+* Im Zeitraum vom 17.07. - 31.08 - also in einem Zeitraum von ca. 6 Wochen - jeden Tag Ausreißer zu verzeichnen; betrachtet man die [Sommerferienzeiträume der Bundesländer im Jahr 2014](https://www.schulferien.org/deutschland/ferien/2014/), so liegt die Vermutung nahe, dass wie schon im Vorjahr die Ferienzeit diese überporportional hohen Umsätze signifkant beeinflusst hat.
+* An den ersten drei Septemberwochenenden sowie an den Oktoberwochenenden sind ebenfalls Ausreißer zu verzeichnen; hinzu kommt im Oktober zudem der Tag der Deutschen Einheit.
+* Im November beschränken sich die Ausreißerumsätze auf die Sonntage; dies gilt mit Ausnahme des So, 21.12. auch für den Dezember; hinzu kommen im Dezember weiterhin der Di, 30. und der Mi, 31.12; auch im Jahr 2014 ist wieder kein "Weihnachts-Effekt" sichtbar.
+* Insgesamt gibt es im Jahr 2014 einen Tag (Mi, 31.12.), an denen zwei Warengruppen Ausreißer sind (jeweils WG 2 + 5). Am 05.05. gibt es sogar Ausreißer in drei Warengruppen (WG 2, 3, 5).
+* Mit mehr als 120 Ausreißern innerhalb eines Jahres ist das Jahr 2014 ein vglw. außergewöhnlich "ausreißerstarkes" Jahr (gewöhnlich liegt die Anzahl pro Jahr zwischen ~ 30 - 50 Ausreißern). Man könnte das Jahr 2014 selbst fast als Ausreißerjahr bezeichnen.
+
+> Anmerkung: Der 05.05.2014 gibt Rätsel auf. Ist es realistisch, dass die Umsätze an einem (gewöhnlichen) Montag derart hoch waren? Dies ist zu prüfen.
+
+
+[**2015**](https://www.kalender-365.eu/kalender-2015.html)
+
+* Im Zeitraum Januar bis März sind insgesamt nur vier Ausreißer zu beobachten; diese liegen jeweils auf einem Sonntag
+* Das Osterwochenende im April (So, 05.04 + Mo, 06.04.) ist gewohnt stark; im Unterschied zu 2014 ist jedoch an Karfreitag kein Ausreißer-Umsatz zu verzeichnen. Ansonsten ist der April nicht von Ausreißern betroffen.
+* Der Monat Mai + Anfang sind vergleichbar mit dem Vorjahr: überproportional hohe Umsätze am Sonntag nach Himmelfahrt (17.05.) sowie am Pfingstwochende (So, 24. + Mo, 25.05.).
+* Der Juni erscheint schwächer als im Vorjahr; es ist lediglich ein leichter Wochenendeffekt sichtbar (Sa, 13.06., Sa, 20.06; sowie am zweiten "KiWo-Wochenende" 27. + 28.06.), der Effekt der Kieler Woche ist schwächer im Vergleich zum Vorjahr.
+* Auch im Jahr 2015 scheinen die Sommerferien einen Einfluss zu haben, jedoch einen geringeren als im Vorjahr:
+  + im Juli sind in den ersten drei Wochen (01.07. - 19.07.) nur Wochenendeffekte zu beobachten 
+  + die Phase, in der jeder Tag ein Ausreißer ist, erstreckt sich 2015 nur über 3 Wochen (20.07. - 09.08.); in der Woche vom 10.08 - 16.08. sind zwar noch vier Ausreißer zu verzeichnen, ansonsten beschränken sich die Ausreißer im Rest des Augustes auf die Wochenenden.
+* Der nächste und einzige weitere Ausreißer im Jahr 2015 ist an Silvester zu beobachten.
+
+[**2016**](https://www.kalender-365.eu/kalender-2016.html)
+
+* Im Jahr 2016 taucht der erste Ausreißer am Sonntag des ersten Februarwochenendes auf (07.02.).
+* Das Osterwochenende Ende März (Sa, 04.04 + Mo, 06.04.) ist abermals stark, an jedem Tag sind Ausreißer zu finden.
+* Im April gibt es im Jahr 2016 keinen einzigen Ausreißer, wobei in diesem Jahr auch kein Feiertag in den April fällt.
+* Wie schon im Vorjahr ist an Christi Himmelfahrt (05.05.) selbst kein Ausreißer zu beobachten, wohl aber an dem darauf folgenden Sonntag (wie 2015). Ein weiterer Ausreißer im Mai liegt auf dem Pfingstmontag (16.05.). 
+* Die Kieler Woche-Umsätze sind abermals schwach mit Blick auf Ausreißer; lediglich am 2. KiWo-Wochenende sind Ausreißer zu verzeichnen.
+* Die Sommerferienzeit von Ende Juli bis Mitte August ist wie gewohnt mit vielen Ausreißern versehen, jedoch weniger als in den beiden Vorjahren. Ende August beschränken sich die Ausreißer auf die beiden Wochenendtage.
+* Der Rest des Jahres verläuft ausreißertechnisch typisch. Es gibt zwei vereinzelte Ausreißer an zwei Sonntagen (02.10. und 18.12); Silvester ist erwartbar stark, sowohl in Warengruppe 2 als auch in Warengruppe 5.
+
+
+[**2017**](https://www.kalender-365.eu/kalender-2017.html)
+
+* Was AUsreißer anbelangt, ist das Jahr 2017 ein auffällig schwaches Jahr. Es ist mit knapp 30 Ausreißern im ganzen Jahr das schwächste von allen (Vgl. 2014: > 120).
+* Die ersten beiden Ausreißer sind erst im April am Osterwochenende (15. + 16.04.) zu beobachten; ein weiterer Ausreißer kommt am letzten Aprilsonntag vor, im Mai gibt es nur einen Ausreißer am Sonntag nach Christi Himmelfahrt.
+* Im Juni gibt es einen bemerkenswerten Ausreißer am Mo, 05.06. (Montag generell ungewöhnlich für Ausreißer); weiterhin sind an den beiden KiWo-Wochenenden Ausreißer zu verzeichnen.
+* Ein gewisser Sommerferieneffekt ist sichtbar, dieser ist jedoch deutlich schwächer al sin den Vorjahren.
+* Bemerkenswert ist ein zweiter Ausreißer an Heiligabend. 2017 ist das einzige Jahr, in dem Weihnachten bzw. genauer Heiligabend einen Ausreißer in der Warengruppe 2 zu verzeichnen hat.
+* Zudem ist 2017 das einzige Jahr, in dem an Silvester kein Ausreißer in Warengruppe 2 zu beobachten ist.
+
+Fazit: Insgesamt ein eher untypisches Jahr was Ausreißer anbelangt, sowohl von der Anzahl her als auch teilweise von der Verteilung.
+
+[**2018**](https://www.kalender-365.eu/kalender-2018.html)
+
+* Im Jahr 2018 gibt es einen ersten Ausreißer am Ostersonntag Anfang April (01.04.); der Mai profitiert von der Lage von Christi Himmelfahrt und Pfingsten.
+* Im Juni sind an den beiden Wochenenden vor der KiWo einzelne Ausreißer zu verzeichnen; das erste KiWo-Wochenende ist stark. Insbesondere der Sa, 23.06. ist auffällig, das es der einzige Samstag ist, an dem für zwei Warengruppen (2 + 5) Ausreißer zu verzeichnen sind. 
+* Der gewohnte Sommerferien-Effekt ist von Mitte Juli bis Mitte August bemerkbar und wieder deutlich stärker als im Vorjahr. Ein letzter Ausreißer im August ist am Sa, 25.08. zu verzeichnen. Danach gibt es im gesamten Jahresverlauf nur noch den gewohnten Silvesterausreißer.
+
+
+[**2019**](https://www.kalender-365.eu/kalender-2019.html)
+
+* Im Jahr 2019 gibt es zwei vereinzelte Sonntags-Ausreißer Ende Februar und Ende März.
+* Ostern, Christi Himmelfahrt und Pfingsten sind gewohnt stark:
+  + Ostern: Ausreißer von Sa, 20.04. - Mo, 22.04.
+  + Christi Himmelfahrt: Sowohl an Christi Himmelfahrt selbst (30.05.) als auch am darauffolgenden Samstag (01.06.) sind Ausreißer beobachtbar.
+  + Am Pfingstwochenende (Sa, 08. - Mo, 10.06.) sind an allen Tagen Ausreißer zu verzeichnen.
+* Wiederum stark im Juni sind die beiden Kieler Woche-Wochenenden (22.-23. sowie 29.-30.06.).
+* Der Sommerferieneffekt beginnt Mitte Juli (Sa, 13.07.) und hält bis zum Ende des Monats an.  
+
+
+!!!!!!!!!!! an anderer Stelle einfügen oder ganz löschen !!!!!!!!!!!!!!!!!!!!!!!!
+
+Am Ende der Auswertung wird deutlich, dass für einzelne Daten, z. B. den 05.05.2014, mehrere Umsätze vorhanden sind. Eine Überprüfung auf doppelt belegte Daten ergibt:
+
+```{r}
+Beispieldaten %>%
+  select(Datum, Umsatz, Warengruppe) %>%
+  filter(Umsatz > g_oben) %>%
+  arrange(desc(Umsatz)) %>%
+  filter(duplicated(Datum))
+
+# Gegenprüfung
+Beispieldaten %>%
+  select(Datum, Umsatz) %>%
+  filter(Umsatz > g_oben) %>%
+  arrange(desc(Umsatz)) %>%
+  distinct(Datum) 
+```
+
+Für acht Daten ergibt sich, dass für diese mehrere Umsätze für einen Tag eingetragen wurden:
+
+* 2013-08-11: 666.91€ (WG 2), 583.49 € (WG 5)
+* 2013-12-31:	586.13€ (WG 2), 1625.69€ (WG 5) 	
+* 2014-05-05: 1203.43€ (WG 2), 565.94€ (WG 3), 749.22€ (WG 5) 
+* 2014-12-31:	643.37€ (WG 2), 1879.46€ (WG 5)		
+* 2015-12-31:	643.67€ (WG 2), 1869.94€ (WG 5)		
+* 2016-12-31:	569.61€ (WG 2), 1705.14€ (WG 5) 			
+* 2018-06-23:	706.42€ (WG 2), 662.37€ (WG 5)			
+* 2018-12-31:	618.31€ (WG 2), 1668.12€ (WG 5)
+
+Auch die Über- bzw. Gegenprüfung bestätigt dies: es gibt nur 339 nicht doppelte Fälle gibt.
+
+### Anzahl der der Ausreißer pro Jahr
+
+```{r}
+
+```
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ENDE potentielle Einfügung !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+**Zusammenfassung der Erkenntnisse:**
+
+* Warengruppe 2 (Brötchen) ist mit großem Abstand die Warengruppe mit den meisten Ausreißern, diese sind in jedem Jahr überwiegend in der Sommerfereinzeit zu verzeichnen. Weitere Ausreißer gibt es in Warengruppe 5 (Kuchen). Die Ausreißer der WG 5 sind insbesondere an Silvester zu beobachten. Einen einzelnen Ausreißer gibt es in der WG 3 (Croissant) am 05.05.2014.
+* Die Struktur der Verteilung der Ausreißer ist in allen Jahren ähnlich, hat jedoch gewisse Abweichungen in den einzelnen Jahren (vgl. bspw. die Verteilung der Ausreißer in den Jahren 2014 und 2017). Was die Anzahl Ausreißer insgesamt pro Jahr anbelangt, gibt es deutliche Schwankungen. Dies sollte ggf. bei den weitergehenden Analysen noch einmal gesondert berücksichtigt werden.
+* Die Sommerferien (der Tourismus) scheinen einen signifikanten Einfluss auf den Umsatz zu haben; dies gilt nicht für die übrigen Ferien des Jahres. Allerdings scheint es ebenfalls entscheidend zu sein, wie die Sommerferien in den einzelnen Bundesländern liegen (starten die Fereien vglw. früh oder eher spät, gibt es Überschneidungen bei großen BuLä, wie lange dauern diese Überschneidungen an)
+* Das Wochenende ist insgesamt ebenfalls ein bedeutender Einflussfaktor; dieser Effekt beschränkt sich jedoch zeitweise nur auf den Sonntag (je nach Jahreszeit). 
+* Die Kieler Woche beeinflusst die Umsätze der betrachteten Filiale in einzelnen Jahren des betrachteten Zeitraums maßgeblich, der Effekt ist jedoch nicht allzu groß.
+* Feiertage haben nur teilweise einen bedeutsamen Einfluss auf den Umsatz (Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit, Silvester, nicht jedoch Weihnachten); andere Feiertage wie der Tag der Deutschen EInheit oder der Reformationstag haben keinen Einfluss.
+* Die stärksten Ausreißer eines jeden der betrachteten Jahre sind jeweils an Silvester zu verzeichnen. # Prüfen!!!
+
+
+
+Als nächstes wird der Datensatz **Wetter** auf Ausreißer hin überprüft:
 ```{r}
 boxplot(Wetter$Bewoelkung)
 boxplot(Wetter$Temperatur)
@@ -152,7 +334,7 @@ Die Variable Windgeschwindigkeit enthält 7 Ausreißer.
 
 ....
 
-### Deskriptive Statistik (?)
+## Deskriptive Statistik (?)
 
 ```{r}
 # tapply
@@ -174,6 +356,24 @@ Für die Warengruppen 1, 2, 3 und 5 gibt es jeweils 2.174 Datensätze, für die 
 Die Datensätze für die ersten 5 Warengruppen erstrecken sich über denselben Zeitraum: 1.7.2013 bis 30.7.2019. Die erste Vermutung war, dass für die 6. Warengruppe nur ein eingeschränkter Zeitraum zur Verfügung steht. Dieser Verdacht wird widerlegt: Der Zeitraum der Daten für die 6. Warengruppe ist nur geringfügig kürzer und geht vom 24.10.2013 bis 28.12.2018.
 
 FRAGE: Was verbirgt sich also hinter Warengruppe 6?
+
+### Welches sind die 20 umsatzstärksten Tage des Jahres (Gesamtumsatz pro Tag)?
+
+```{r}
+Beispieldaten %>%
+  select(Datum, Umsatz) %>%
+  group_by(Datum) %>%
+  summarise(Gesamtumsatz = sum(Umsatz)) %>%
+  arrange(desc(Gesamtumsatz)) %>%
+  top_n(20)
+```
+
+### Welches sind die 10 umsatzstärksten Tage des Jahres je Warengruppe? ÄNDERN!
+
+```{r}
+
+```
+
 
 # 3 Datenaufbereitung
 
@@ -224,7 +424,14 @@ head(df)
 
 ## 3.x Umgang mit Ausreißern
 
-Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Es werden vorerst keine Korrekturen an den Ausreißerdaten vorgenommen. Ggf. wird bei der Erstellung und Anwendung der Modelle hier eine Korrektur vorgenommen.
+Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. In einem ersten Schritt werden diese Ausreißer genauer analysiert:
+
+```{r}
+
+```
+
+
+Es werden vorerst keine Korrekturen an den Ausreißerdaten vorgenommen. Ggf. wird bei der Erstellung und Anwendung der Modelle hier eine Korrektur vorgenommen.
 
 ## 3.x Umgang mit Warengruppe 6
 
