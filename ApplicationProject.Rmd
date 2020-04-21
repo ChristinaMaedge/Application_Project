@@ -119,6 +119,8 @@ range(Wetter$Datum)
 * Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
 
 ## 2.4 Überprüfung der Datensätze auf fehlende Werte
+
+Zunächst einmal wird geprüft, welche klassischen fehlenden Werte (NA) in den einzelnen Datensätzen vorhanden sind:
 ```{r}
 sum(is.na(Beispieldaten))   # 0
 sum(is.na(KiWo))            # 0
@@ -134,6 +136,189 @@ sum(is.na(Wetter$Wettercode))   #
 * Der Datensatz **Beispieldaten** enthält keine fehlenden Werte.
 * Der Datensatz **KiWo** enthält keine fehlenden Werte.
 * Der Datensatz **Wetter** enthält 679 fehlende Werte, davon 10 in der Spalte "Bewoelkung", 669 in der Spalte "Wettercode".
+
+In einem weiteren Schritt wird geprüft, ob die Anzahl der Zeilen pro Jahr stimmt. In den Jahren 2014, 2015, 2017 und 2018, die vollständig vorliegen, müssten es je Warengruppe 365 Zeilen sein, im Schaltjahr 2016 366. Für das Jahr 2013, für das Daten erst ab dem 01.07.2013 zur Verfügung stehen, entsprechend 183 und für das unvollständige Jahr 2019 müssten 210 datensätze vorliegen. 
+
+```{r}
+Beispieldaten <- Beispieldaten %>% mutate(Jahr = year(Datum))
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2013) %>%
+  summarise(n = n())
+# 181 -> ein Datum fehlt
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2013) %>%
+  summarise(n = n())
+# 181 -> ein Datum fehlt
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2013) %>%
+  summarise(n = n())
+# 181 -> ein Datum fehlt
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2013) %>%
+  summarise(n = n())
+# 165 -> 17 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2013) %>%
+  summarise(n = n())
+# 181 -> ein Datum fehlt
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2014) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2014) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2014) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2014) %>%
+  summarise(n = n())
+# 334 -> 31 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2014) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2015) %>%
+  summarise(n = n())
+# 360 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2015) %>%
+  summarise(n = n())
+# 360 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2015) %>%
+  summarise(n = n())
+# 360 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2015) %>%
+  summarise(n = n())
+# 350 -> 15 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2015) %>%
+  summarise(n = n())
+# 360 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2016) %>%
+  summarise(n = n())
+# 356 -> 10 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2016) %>%
+  summarise(n = n())
+# 356 -> 10 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2016) %>%
+  summarise(n = n())
+# 356 -> 10 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2016) %>%
+  summarise(n = n())
+# 352 -> 14 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2016) %>%
+  summarise(n = n())
+# 356 -> 10 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2017) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2017) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2017) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2017) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2017) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2018) %>%
+  summarise(n = n())
+# 358 -> 7 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2018) %>%
+  summarise(n = n())
+# 358 -> 7 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2018) %>%
+  summarise(n = n())
+# 358 -> 7 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2018) %>%
+  summarise(n = n())
+# 357 -> 8 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2018) %>%
+  summarise(n = n())
+# 358 -> 7 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 1 & Jahr == 2019) %>%
+  summarise(n = n())
+# 205 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2 & Jahr == 2019) %>%
+  summarise(n = n())
+# 205 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3 & Jahr == 2019) %>%
+  summarise(n = n())
+# 205 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4 & Jahr == 2019) %>%
+  summarise(n = n())
+# 205 -> 5 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5 & Jahr == 2019) %>%
+  summarise(n = n())
+# 205 -> 5 Daten fehlen
+```
+
+Je Warengruppe und Jahr fehlen unterschiedliche viele Datensätze.
 
 ## 2.5 Überprüfung der Datensätze auf Ausreißer
 
@@ -516,9 +701,20 @@ df <- df %>%
 
 ## 3.x Ergänzung um Feiertagsvariablen
 
+Die ersten Betrachtungen und Analysen lassen den Schluss zu, dass bestimmte Feiertage Einfluss auf die Höhe des Umsatzes haben. Ausgewählte Feiertage (Karfreitag, ) wurden daher zunächst in einer Excel-Datei gespeichert erstellt. Nach dem Einlesen der Datei werden die Daten zum Analysedatensatz hinzugefügt.
 
 
-## Aufteilung des Datensatzes in Trainings- und Testset
+```{r}
+Feiertage <- read_csv2("data/Feiertage.csv")
+df <- left_join(df, Feiertage, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Feiertage = replace_na(Feiertage, 0))
+```
+
+
+## 3.x Aufteilung des Datensatzes in Trainings- und Testset
 
 Man kann stets ein Modell finden, welches die *vorhandenen* Daten (nahezu) exakt bechreibt. Das gleicht der Tatsache, dass man im Nachhinein (bei vorhandenen Daten) oftmals leicht eine Erklärung findet. Ob diese Erklärung sich auch bei unbekannten Daten bewahrheitet, muss jedoch geprüft werden. Daher werden die unterschiedlichen Modelle an einer Stichprobe *entwickelt* bzw. "trainiert" und an einer anderen Stichprobe *getested*. Die erste Stichprobe wird demzufolge als "trainingset" deklariert, die zweite als "testset". Die Güte der Modelle wird abschließend anhand des "testsets" überprüft.
 
@@ -533,7 +729,19 @@ head(trainingset)
 
 testset <- df %>% 
   filter(Jahr == 2018)
+
+validationset <- df %>%
+  filter(Jahr == 2019)
 ```
+
+# 4. Deskriptive Analysen
+
+## 4.1 Univariate Auswertungen
+
+
+
+
+### Subgruppenanalysen
 
 Untersuche nun den Umsatz je Wochentag und/oder Warengruppe in den Trainingsdaten.
 
