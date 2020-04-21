@@ -120,6 +120,7 @@ range(Wetter$Datum)
 
 ## 2.4 Überprüfung der Datensätze auf fehlende Werte
 
+### Überprüfung auf "klassische" fehlende Werte (NA)
 Zunächst einmal wird geprüft, welche klassischen fehlenden Werte (NA) in den einzelnen Datensätzen vorhanden sind:
 ```{r}
 sum(is.na(Beispieldaten))   # 0
@@ -137,11 +138,45 @@ sum(is.na(Wetter$Wettercode))   #
 * Der Datensatz **KiWo** enthält keine fehlenden Werte.
 * Der Datensatz **Wetter** enthält 679 fehlende Werte, davon 10 in der Spalte "Bewoelkung", 669 in der Spalte "Wettercode".
 
-In einem weiteren Schritt wird geprüft, ob die Anzahl der Zeilen pro Jahr stimmt. In den Jahren 2014, 2015, 2017 und 2018, die vollständig vorliegen, müssten es je Warengruppe 365 Zeilen sein, im Schaltjahr 2016 366. Für das Jahr 2013, für das Daten erst ab dem 01.07.2013 zur Verfügung stehen, entsprechend 183 und für das unvollständige Jahr 2019 müssten 210 datensätze vorliegen. 
+
+## Überprüfung des Datensatzes auf Vollständigkeit
+
+In In einem weiteren Schritt wird geprüft, ob die Anzahl der Zeilen pro Jahr stimmt. 
+
+In den Jahren 2014, 2015, 2017 und 2018, die vollständig vorliegen, müssten es je Warengruppe 365 Zeilen sein, im Schaltjahr 2016 366. Für das Jahr 2013, für das Daten erst ab dem 01.07.2013 zur Verfügung stehen, entsprechend 183 und für das unvollständige Jahr 2019 müssten 210 Datensätze vorliegen. Insgesamt müssten für jede Warengruppe demnach 2219 Zeilen vorhanden sein.
 
 ```{r}
 Beispieldaten <- Beispieldaten %>% mutate(Jahr = year(Datum))
 
+Beispieldaten %>%
+  filter(Warengruppe == 1) %>%
+  summarise(n = n())
+# 2174 -> 45 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 2) %>%
+  summarise(n = n())
+# 2174 -> 45 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 3) %>%
+  summarise(n = n())
+# 2174 -> 45 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 4) %>%
+  summarise(n = n())
+# 2120 -> 99 Daten fehlen
+
+Beispieldaten %>%
+  filter(Warengruppe == 5) %>%
+  summarise(n = n())
+# 2174 -> 45 Daten fehlen
+```
+
+Es fehlen bei allen Warengruppen Datensätze. Untersucht man die einzelnen Jahre genauer, ergibt sich folgendes Bild.
+
+```{r}
 Beispieldaten %>%
   filter(Warengruppe == 1 & Jahr == 2013) %>%
   summarise(n = n())
@@ -709,8 +744,8 @@ Feiertage <- read_csv2("data/Feiertage.csv")
 df <- left_join(df, Feiertage, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
-  mutate(Feiertage = replace_na(Feiertage, 0))
+#df <- df %>%
+#  mutate(Feiertage = replace_na(Feiertage, 0))
 ```
 
 
@@ -737,9 +772,6 @@ validationset <- df %>%
 # 4. Deskriptive Analysen
 
 ## 4.1 Univariate Auswertungen
-
-
-
 
 ### Subgruppenanalysen
 
