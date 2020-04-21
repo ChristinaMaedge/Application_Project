@@ -736,7 +736,15 @@ df <- df %>%
 
 ## 3.x Ergänzung um Feiertagsvariablen
 
-Die ersten Betrachtungen und Analysen lassen den Schluss zu, dass bestimmte Feiertage Einfluss auf die Höhe des Umsatzes haben. Ausgewählte Feiertage (Karfreitag, ) wurden daher zunächst in einer Excel-Datei gespeichert erstellt. Nach dem Einlesen der Datei werden die Daten zum Analysedatensatz hinzugefügt.
+Die ersten Betrachtungen und Analysen lassen den Schluss zu, dass bestimmte Feiertage Einfluss auf die Höhe des Umsatzes haben. 
+
+Es existieren unterschiedliche Möglichkeiten, die Variable `Feiertag` für die Modellierung abzubilden / zu erfassen:
+
+1. Anlegen einer generellen Feiertagsvariable: Feiertag ja/nein bzw. 1/0
+2. Anlegen einer Variable für die einzelnen relevanten Feiertage.
+
+Zu 1.:
+Begonnen wird mit der generellen Feiertagsvariable. Ausgewählte Feiertage (Karfreitag, Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit) werden daher zunächst in einer Excel-Datei gespeichert. Nach dem Einlesen der Datei werden die Daten zum Analysedatensatz hinzugefügt.
 
 
 ```{r}
@@ -744,10 +752,64 @@ Feiertage <- read_csv2("data/Feiertage.csv")
 df <- left_join(df, Feiertage, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-#df <- df %>%
-#  mutate(Feiertage = replace_na(Feiertage, 0))
+df <- df %>%
+  mutate(Feiertag = replace_na(Feiertag, 0))
 ```
 
+Zu 2.:
+Hier gibt es wiederum unterschiedliche Möglichkeiten. Zum einen kann man sich bei der Erstellung spezifischer Feiertagsvariablen, wie z. B. Ostern, rein auf die eigentlichen Feiertage beschränken, zum anderen könnten auch die Tage davor oder danach (Stichwort Brückentage, verlängertes Wochenende) in eine solche Feiertagsvariable einbezogen werden.
+Für die Feiertage Karfreitag/Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit und Silvester werden beide Varianten umgesetzt.
+
+```{r}
+## Hinzufügen der Variable Ostern (nur Feiertage Karfreitag, Ostersonntag, Ostermontag)
+Ostern <- read_csv2("data/KarfreitagOstern.csv")
+df <- left_join(df, Ostern, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Ostern = replace_na(Ostern, 0))
+
+
+## Hinzufügen der Variable Christihimmmelfahrt (nur dieser Feiertag)
+ChristiHimmelfahrt <- read_csv2("data/ChristiHimmelfahrt.csv")
+df <- left_join(df, ChristiHimmelfahrt, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(ChristiHimmelfahrt = replace_na(ChristiHimmelfahrt, 0))
+
+
+## Hinzufügen der Variable Pfingsten (nur Pfingstsonntag, Pfingstmontag)
+Pfingsten <- read_csv2("data/Pfingsten.csv")
+df <- left_join(df, Pfingsten, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Pfingsten = replace_na(Pfingsten, 0))
+
+
+## Hinzufügen der Variable Tag der deutschen Einheit (nur der Feiertag)
+TDE <- read_csv2("data/TdDE.csv")
+df <- left_join(df, TDE, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(TDE = replace_na(TDE, 0))
+
+
+## Hinzufügen der Variable Silvester
+Silvester <- read_csv2("data/Silvester.csv")
+df <- left_join(df, Silvester, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Silvester = replace_na(Silvester, 0))
+
+```
+
+## 3.x Ergänzung um Variable Jahreszeit
+
+....
 
 ## 3.x Aufteilung des Datensatzes in Trainings- und Testset
 
