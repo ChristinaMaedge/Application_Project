@@ -448,14 +448,75 @@ df <- df %>%
 ```
 Nach dem Löschen der Datensätze enthält der Datensatz nunmehr 10816 Zeilen.
 
-## 3.x Wochentag und Jahr als neue Spalte ergänzt
+## 3.x Ergänzung um die Variablen Wochentag und Jahr
 
 Ein wesentlicher Einflussfaktor für die Umsatzprognose wird der Wochentag sein, wir fügen diesen als eigene Spalte hinzu: Sonntag (1), Montag (2), ... , Samstag (7). Und für die spätere Aufteilung der Daten in Training- und Testset wird das Jahr als weitere Spalte ergänzt.
+
+Damit die Wochentage adäquat in die späteren Modelle einfließen können, wird der Wochentag überdies als `character`-Variable abgespeichert.
+
+Bsp.:
+Soll der `Wochentag` ein lineare Regressionsmodell aufgenommen werden, würde eine numerische Variable zu falschen Ergebnissen führen (wird der Wochentag um eins erhöht, erhöht sich der Umsatz um xy%). Bei einer `character`-Variable würde diese "dummyfiziert". Ein Wochentag würde als Referenztag abgebildet werden und die anderen 6 Wochentage in Form von Dummyvariablen.
 
 ```{r}
 df <- df %>% mutate(Wochentag = wday(Datum))
 df <- df %>% mutate(Jahr = year(Datum))
+
+# Wochentag als charafter-Variable
+df <- df %>% mutate(Wochentag_c = recode(Wochentag, "1" = "Sonntag", "2" = "Montag", "3" = "Dienstag", "4" = "Mittwoch", "5" = "Donnerstag", "6" = "Freitag", "7" = "Samstag"))
 ```
+
+Es besteht die Möglichkeit, dass es unterhalb der Wochentag keine großen Unterschiede gibt, wohl aber zwischen Wochentagen und Wochenendtagen. Insofern wird eine weitere Variable `Wochenende` erstellt, die nur die beiden Ausprägungen 1 = "Wochenende" und 0 = "kein Wochenende" ("Wochentag") hat.
+
+```{r}
+df <- df %>% mutate(Wochenende = recode(Wochentag, "1" = "1", "2" = "0", "3" = "0", "4" = "0", "5" = "0", "6" = "0", "7" = "1"))
+
+df <- df %>% mutate(Wochenende = as.numeric(Wochenende))
+```
+
+## 3.x Ergänzung um Sommerferienvariablen
+
+Die Sommerferien scheinen einen starken Einfluss auf den Umsatz zu haben. Für die anderen Ferienzeiträume des Jahres gilt dies nicht. Für ausgewählte Bundesländer, namentlich Schleswig-Holstein, Nordrhein-Westfalen, Niedersachsen und Hessen wurden daher zunächst Datensätze in Excel erstellt (1 Datensatz je Bundesland). Diese Datensätze enthalten die Zeiträume der Sommerferien über die einzelnen Jahre. Diese Datensätze werden in R eingelesen und mit den anderen Daten zusammengeführt.
+
+Die Auswahl der genannten Bundesländer erfolgte dabei anhand der Besucherzahlen / Übernachtungsvolumina in den vergangenen Jahren. Die meisten Gäste in Schleswig-Holstein kommen aus NRW, gefolgt von Niedersachsen und Schleswig-Holstein. Die Besucherzahlen aus Hessen lagen in den vergangenen Jahren etwas unterhalb derer von Niedersachsen und Schleswig-Holstein. Für Bayern und Baden-Württemberg werden zwar für die nähere Zukunft große Wachstumspotentiale prognostiziert, die Volumina waren in den betrachteten Zeiträumen jedoch gering und können daher vernachlässigt werden. Ebenso vernachlässigbar sind die übrigen Bundesländer.
+
+```{r}
+## Ergänzung der Sommerferien Schleswig-Holstein
+SoFeSH <- read_csv2("data/SoFe_SH.csv")  # da der Separator ein ";" ist, muss read_csv2 verwendet werden
+df <- left_join(df, SoFeSH, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(SommerferienSH = replace_na(SommerferienSH, 0))
+
+
+## Ergänzung der Sommerferien Nordrhein-Westfalen
+SoFeNRW <- read_csv2("data/SoFe_NRW.csv") 
+df <- left_join(df, SoFeNRW, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(SommerferienNRW = replace_na(SommerferienNRW, 0))
+
+## Ergänzung der Sommerferien Niedersachsen
+SoFeNDS <- read_csv2("data/SoFe_NDS.csv")  
+df <- left_join(df, SoFeNDS, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(SommerferienNDS = replace_na(SommerferienNDS, 0))
+
+# Ergänzung der Sommerferien Hessen
+SoFeHE <- read_csv2("data/SoFe_HE.csv")  
+df <- left_join(df, SoFeHE, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(SommerferienHE = replace_na(SommerferienHE, 0))
+```
+
+## 3.x Ergänzung um Feiertagsvariablen
+
+
 
 ## Aufteilung des Datensatzes in Trainings- und Testset
 
