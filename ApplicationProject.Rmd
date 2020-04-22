@@ -174,7 +174,10 @@ Beispieldaten %>%
 # 2174 -> 45 Daten fehlen
 ```
 
-Es fehlen bei allen Warengruppen Datensätze. Untersucht man die einzelnen Jahre genauer, ergibt sich folgendes Bild.
+Es fehlen bei allen Warengruppen Datensätze. Bei den Warengruppen 1,2, 3 und 5 fallen ca. 70% der fehlenden Daten auf Feiertage (insb. Karfreitag, Tag der Arbeit und 1. und 2. Weihnachtsfeiertag).
+Bei Warengruppe 4 sind es ca. 30%. Weitere ~30% der fehlenden Daten der Warengruppe 4 liegen in den Sommermonaten Juni, Juli, August. Eine Möglichkeit wäre, dass die Kühlung ausgefallen ist / einen Defekt hatte und demzufolge keine Konditoreiwaren angeboten wurden. Eine andere Möglichkeit wäre, dass bei sehr trockenem, warmen Wetter der Verkauf von Konditoreiwaren in der Regel ein Minusgeschäft ist und daher das Sortiment temporär/tageweise verkleinert wird. Auffällig ist, dass die Anzahl der fehlenden Werte pro Jahr abnehmend ist und sich insbesondere in den Jahren 2012 und 2018 mehrheitlich auf Feiertage beschränkt.
+
+Untersucht man die einzelnen Jahre genauer, ergibt sich folgendes Bild: 
 
 ```{r}
 Beispieldaten %>%
@@ -758,8 +761,9 @@ df <- df %>%
 
 Zu 2.:
 Hier gibt es wiederum unterschiedliche Möglichkeiten. Zum einen kann man sich bei der Erstellung spezifischer Feiertagsvariablen, wie z. B. Ostern, rein auf die eigentlichen Feiertage beschränken, zum anderen könnten auch die Tage davor oder danach (Stichwort Brückentage, verlängertes Wochenende) in eine solche Feiertagsvariable einbezogen werden.
-Für die Feiertage Karfreitag/Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit und Silvester werden beide Varianten umgesetzt.
+Für die Feiertage Karfreitag/Ostern (ohne Karfreitag, da die Filiale an diesem tag geschlossen ist und dementsprechend keine Daten verfügbar sind), Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit und Silvester werden beide Varianten umgesetzt.
 
+Zunächst werden Variablen erstellt, die nur die Feiertage enthalten:
 ```{r message=FALSE}
 ## Hinzufügen der Variable Ostern (nur Feiertage Karfreitag, Ostersonntag, Ostermontag)
 Ostern <- read_csv2("data/KarfreitagOstern.csv")
@@ -807,9 +811,105 @@ df <- df %>%
 
 ```
 
+In einem nächsten Schritt werden Variablen erstellt, die neben den Feiertagen auch "Brückentage" / den vorherigen oder darauffolgenden Tag enthalten. Bezüglich der Frage, welche umgebenden Tage im Speziellen berücksichtigt werden, wird auf die Umsätze der umgebenden Tage in der Vergangenheit referenziert. Sind diese signifikant / bedeutend höher als vergleichbare Wochentage, so werden diese mit einbezogen.
+Ausgenommen wird an dieser Stelle der Tag der Deutschen Eiheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt. (NOCHMAL ABSCHLIEßEND PRÜFEN)
+
+```{r}
+## Hinzufügen der Variable Ostern_ext (= Ostern extendet) (Gründonnerstag, "Ostersamstag", Ostersonntag, Ostermontag, ohne Karfreitag, da geschlossen)
+Ostern_ext <- read_csv2("data/Ostern_extended.csv")
+df <- left_join(df, Ostern_ext, by = "Datum")
+
+
+
+
+################################################
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+#df <- df %>%
+#  mutate(Ostern_ext = replace_na(Ostern_ext, 0))
+
+############### NOCH FEHLERMELDUNG - PRÜFEN
+
+
+
+
+## Hinzufügen der Variable Christihimmmelfahrt (Mittwoch vor Himmelfahrt bis Sonntag nach Himmelfahrt) 
+ChristiHimmelfahrt_ext <- read_csv2("data/ChristiHimmelfahrt_ext.csv")
+df <- left_join(df, ChristiHimmelfahrt_ext, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(ChristiHimmelfahrt = replace_na(ChristiHimmelfahrt, 0))
+
+
+## Hinzufügen der Variable Pfingsten_ext (Samstag vor Pfingsten/Pfingstssamstag, Pfingstsonntag, Pfingstmontag; Dienstag nch Pfingsten)
+Pfingsten_ext <- read_csv2("data/Pfingsten_ext.csv")
+df <- left_join(df, Pfingsten_ext, by = "Datum")
+
+
+
+###################################################
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+#df <- df %>%
+#  mutate(Pfingsten_ext = replace_na(Pfingsten_ext, 0))
+
+############### NOCH FEHLERMELDUNG - PRÜFEN
+
+
+
+## Hinzufügen der Variable Silvester_ext (inkl. Vortag 30.12.)
+Silvester_ext <- read_csv2("data/Silvester_ext.csv")
+df <- left_join(df, Silvester_ext, by = "Datum")
+
+
+
+###################################################
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+#df <- df %>%
+#  mutate(Silvester_ext = replace_na(Silvester_ext, 0))
+############### NOCH FEHLERMELDUNG - PRÜFEN
+```
+
+
 ## 3.x Ergänzung um Variable Jahreszeit
 
-....
+Die ersten Betrachtungen und Analysen lassen darauf schließen, dass die Jahreszeiten einen Einfluss auf die Höhe des Umsatzes haben. 
+
+Die Variable Jahreszeiten kann bzw. muss dabei differenziert betrachtet werden. Zum einen besteht die Möglichkeit, Jahreszeiten als vorgegebene bzw. eigens definierte Variablen abzubilden. Dabei kann man bspw. den astronomische Eigenschaften zugrunde legen. Andererseits gibt es Modelle, die von sich heraus aus fiktive bzw. synthetische Jahreszeiten im Hintergrund ableiten.
+
+Bsp.: Jahreszeiten können im Rahmen eines Entscheidungsbaums derart generiert werden, dass März, April, Mai zusammengefasst werden und zusätzlich aufgrund struktureller Ähnlichkeiten der September und der Oktober zu dieser (synthetischen) Jahreszeit hinzugefügt werden.
+
+Die erste Möglichkeit soll an dieser Stelle umgesetzt werden. Die zweite Möglichkeit wird im weiteren Verlauf bei der Anwendung der unterschiedlichen Modelle relevant sein.
+
+### Anlegen einer eigens definierten Jahreszeit-Variable 
+
+Grundsätzlich unterteilen die Jahreszeiten das Jahr in verschiedene Perioden, welche sich durch charakteristische astronomische oder klimatische Eigenschaften auszeichnen. Im alltäglichen Sprachgebrauch sind damit hauptsächlich meteorologisch deutlich voneinander unterscheidbare Jahresabschnitte gemeint; in gemäßigten Breiten sind dies Frühling, Sommer, Herbst und Winter. (http://www.hrhen.de/wk/html/jahreszeiten.html, https://vschweiz.ch/jahreszeitenbeginn/)
+
+Legt man astronomische Jahreszeitenanfänge für die Erstellung einer ersten Jahreszeit-Variable zugrunde, sind folgende Daten zu berücksichtigen:
+
+Jahr  | Frühling  | Sommer    | Herbst         | Winter
+------|-----------|-----------|----------------|--------------
+2013  | 20. März  | 21. Juni  | 22. September  | 21. Dezember
+2014  | 20. März  | 21. Juni  | 23. September  | 22. Dezember
+2015  | 20. März  | 21. Juni  | 23. September  | 22. Dezember
+2016  | 20. März  | 21. Juni  | 22. September  | 21. Dezember  
+2017  | 20. März  | 21. Juni  | 22. September  | 21. Dezember
+2018  | 20. März  | 21. Juni  | 23. September  | 21. Dezember
+2019  | 20. März  | 21. Juni  | 23. September  | 22. Dezember
+
+Es gibt wiederum zwei Möglichkeiten, die Variable anzulegen:
+
+1. Anlegen einer Variable mit allen Jahreszeiten
+2. Je eine Variable pro Jahreszeit
+
+
+Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelesen:
+```{r}
+## Hinzufügen der Variable Jahreszeiten
+Jahreszeiten <- read_csv2("data/Jahreszeiten.csv")
+df <- left_join(df, Jahreszeiten, by = "Datum")
+```
+
+
 
 ## 3.x Aufteilung des Datensatzes in Trainings- und Testset
 
