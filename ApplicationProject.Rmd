@@ -43,7 +43,7 @@ Untersucht werden Daten für die Jahre 2013 bis 2019. Es liegen für diesen Zeit
 ## 2.1 Einlesen der Daten
 
 Im ersten Schritt müssen die Daten zunächst eingelesen werden um sie bearbeiten zu können:
-```{r}
+```{r message=FALSE}
 # mit read_csv einlesen um eine Veränderung der Datentypen (bzw. eine Faktorisierung) zu verhindern!
 Beispieldaten <- read_csv("data/Beispieldaten.csv")
 KiWo <- read_csv("data/KiWo.csv")
@@ -71,7 +71,7 @@ Der Datensatz **Beispieldaten** ist ein Dataframe, enthält 11164 Zeilen und 3 V
 * Warengruppe (`int`) mit den Warengruppen 1 - 6
 * Umsatz (`dbl`) mit Werten zwischen 7.05 und 1879.46.
 
-Umsätze werden jeweils 5 mit Nachkommastellen angezeigt. Hier sollte eine Änderung vorgenommen und die Variable auf zwei Nachkommastellen gerundet werden (?).
+Umsätze werden jeweils 5 mit Nachkommastellen angezeigt. Hier wird später eine Änderung vorgenommen und die Variable auf zwei Nachkommastellen gerundet.
 
 * Datensatz **KiWo**
 ```{r}
@@ -125,13 +125,13 @@ Zunächst einmal wird geprüft, welche klassischen fehlenden Werte (NA) in den e
 ```{r}
 sum(is.na(Beispieldaten))   # 0
 sum(is.na(KiWo))            # 0
-sum(is.na(Wetter))          # 679
-which(is.na(Wetter))
+sum(is.na(Wetter))          # 679 fehlende Werte
+# which(is.na(Wetter))
 sum(is.na(Wetter$Datum))
 sum(is.na(Wetter$Bewoelkung))   # 10 fehlende Werte
-sum(is.na(Wetter$Temperatur))   
-sum(is.na(Wetter$Windgeschwindigkeit))
-sum(is.na(Wetter$Wettercode))   # 
+sum(is.na(Wetter$Temperatur))   # 0
+sum(is.na(Wetter$Windgeschwindigkeit)) # 0
+sum(is.na(Wetter$Wettercode))   # 669 fehlende Werte
 ```
 
 * Der Datensatz **Beispieldaten** enthält keine fehlenden Werte.
@@ -376,12 +376,12 @@ Beispieldaten %>%
 
 Das Attribut `Umsatz` enthält zahlreiche Ausreißer. Mit bloßem Auge ist nicht zu erkennen, wie viele Ausreißer es genau sind. Die Ausreißer werden also in einem 2. Schritt genauer betrachtet, um die genaue Anzahl der Ausreißer zu ermitteln. Statistiker haben viele Verfahren entwickelt, um auseinanderzuhalten, was man als Ausreißer bezeichnen sollte, und was nicht. 
 
-Eine mögliche Definition und oft benutzte Regel, die von John W. Tukey stammt, besteht darin, dass ein Wert ein Ausreißer ist, falls er mehr als $$1,5 * IQR$$ oberhalb des oberen Quartils (`Q_3`) oder unterhalb des unteren Quartils (`Q_1`) liegt. Anders gesagt liegen untere Ausreißer unterhalb
+Eine mögliche Definition und oft benutzte Regel, die von John W. Tukey stammt, besteht darin, dass ein Wert ein Ausreißer ist, falls er deutlich oberhalt des oberen Quartils (`Q_3`) oder unterhalb des unteren Quartils (`Q_1`) liegt. Dabei bezieht er den Abstand des oberen zum unteren Quartil mit ein, genannt "interquartile range" (IQR) und definiert einen Ausreißer als einen Punkt, der mehr als $$1,5 * IQR$$ vom oberen Quartils bzw. unteren Quartil abweicht. Anders gesagt liegen untere Ausreißer unterhalb
 
 $$Q_1 - 1,5 * IQR$$
 und obere Ausreißer oberhalb 
 
-$$Q_3 + 1.5 * IQR$$.
+$$Q_3 + 1.5 * IQR$$. Vereinfachend untersuchen wir nun die Umsatzvariable auf Ausreißer, wobei wir zunächst nicht nach Warengruppen trennen:
 
 ```{r}
 g_oben <- quantile(Beispieldaten$Umsatz, probs=0.75) + (1.5*IQR(Beispieldaten$Umsatz)) #Obere Grenze fuer Ausreißer
@@ -537,7 +537,7 @@ Auch die Über- bzw. Gegenprüfung bestätigt dies: es gibt nur 339 nicht doppel
 * Die Sommerferien (der Tourismus) scheinen einen signifikanten Einfluss auf den Umsatz zu haben; dies gilt nicht für die übrigen Ferien des Jahres. Allerdings scheint es ebenfalls entscheidend zu sein, wie die Sommerferien in den einzelnen Bundesländern liegen (starten die Fereien vglw. früh oder eher spät, gibt es Überschneidungen bei großen BuLä, wie lange dauern diese Überschneidungen an)
 * Das Wochenende ist insgesamt ebenfalls ein bedeutender Einflussfaktor; dieser Effekt beschränkt sich jedoch zeitweise nur auf den Sonntag (je nach Jahreszeit). 
 * Die Kieler Woche beeinflusst die Umsätze der betrachteten Filiale in einzelnen Jahren des betrachteten Zeitraums maßgeblich, der Effekt ist jedoch nicht allzu groß.
-* Feiertage haben nur teilweise einen bedeutsamen Einfluss auf den Umsatz (Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit, Silvester, nicht jedoch Weihnachten); andere Feiertage wie der Tag der Deutschen EInheit oder der Reformationstag haben keinen Einfluss.
+* Feiertage haben nur teilweise einen bedeutsamen Einfluss auf den Umsatz (Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit, Silvester, nicht jedoch Weihnachten); andere Feiertage wie der Tag der Deutschen EInheit oder der Reformationstag haben keinen Einfluss. # ANMERKUNG MLH: Tag der Deutschen Einheit doppelt genannt, ggf. streichen oder ersetzen durch Tag der Arbeit?!?
 * Die stärksten Ausreißer eines jeden der betrachteten Jahre sind jeweils an Silvester zu verzeichnen. # Prüfen!!!
 
 
@@ -638,7 +638,7 @@ head(df)
 Da die Variable `Wettercode` vglw. viele fehlende Werte hat (669) und unklar ist, wie diese fehlenden Werte sinnvoll ersetzt werden können, wird diese Variable (vorläufig) ignoriert und eliminiert:
 
 ```{r}
-df <- df[,1:7]
+df <- df[,1:8]
 head(df)  
 ```
 
@@ -699,7 +699,7 @@ Die Sommerferien scheinen einen starken Einfluss auf den Umsatz zu haben. Für d
 
 Die Auswahl der genannten Bundesländer erfolgte dabei anhand der Besucherzahlen / Übernachtungsvolumina in den vergangenen Jahren. Die meisten Gäste in Schleswig-Holstein kommen aus NRW, gefolgt von Niedersachsen und Schleswig-Holstein. Die Besucherzahlen aus Hessen lagen in den vergangenen Jahren etwas unterhalb derer von Niedersachsen und Schleswig-Holstein. Für Bayern und Baden-Württemberg werden zwar für die nähere Zukunft große Wachstumspotentiale prognostiziert, die Volumina waren in den betrachteten Zeiträumen jedoch gering und können daher vernachlässigt werden. Ebenso vernachlässigbar sind die übrigen Bundesländer.
 
-```{r}
+```{r message=FALSE}
 ## Ergänzung der Sommerferien Schleswig-Holstein
 SoFeSH <- read_csv2("data/SoFe_SH.csv")  # da der Separator ein ";" ist, muss read_csv2 verwendet werden
 df <- left_join(df, SoFeSH, by = "Datum")
@@ -747,7 +747,7 @@ Zu 1.:
 Begonnen wird mit der generellen Feiertagsvariable. Ausgewählte Feiertage (Karfreitag, Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit) werden daher zunächst in einer Excel-Datei gespeichert. Nach dem Einlesen der Datei werden die Daten zum Analysedatensatz hinzugefügt.
 
 
-```{r}
+```{r message=FALSE}
 Feiertage <- read_csv2("data/Feiertage.csv")
 df <- left_join(df, Feiertage, by = "Datum")
 
@@ -760,7 +760,7 @@ Zu 2.:
 Hier gibt es wiederum unterschiedliche Möglichkeiten. Zum einen kann man sich bei der Erstellung spezifischer Feiertagsvariablen, wie z. B. Ostern, rein auf die eigentlichen Feiertage beschränken, zum anderen könnten auch die Tage davor oder danach (Stichwort Brückentage, verlängertes Wochenende) in eine solche Feiertagsvariable einbezogen werden.
 Für die Feiertage Karfreitag/Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit und Silvester werden beide Varianten umgesetzt.
 
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Ostern (nur Feiertage Karfreitag, Ostersonntag, Ostermontag)
 Ostern <- read_csv2("data/KarfreitagOstern.csv")
 df <- left_join(df, Ostern, by = "Datum")
