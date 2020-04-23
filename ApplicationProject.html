@@ -2819,18 +2819,27 @@ $(document).ready(function () {
 <li>Je eine Variable pro Jahreszeit</li>
 </ol>
 <p>Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelesen:</p>
+<div class="sourceCode" id="cb206"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb206-1" title="1"><span class="co">## Hinzufügen der Variable Jahreszeiten</span></a>
+<a class="sourceLine" id="cb206-2" title="2">Jahreszeiten &lt;-<span class="st"> </span><span class="kw">read_csv2</span>(<span class="st">&quot;data/Jahreszeiten.csv&quot;</span>)</a></code></pre></div>
+<pre><code>## Using &#39;,&#39; as decimal and &#39;.&#39; as grouping mark. Use read_delim() for more control.</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Datum = col_date(format = &quot;&quot;),
+##   Jahreszeit = col_character()
+## )</code></pre>
+<div class="sourceCode" id="cb209"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb209-1" title="1">df &lt;-<span class="st"> </span><span class="kw">left_join</span>(df, Jahreszeiten, <span class="dt">by =</span> <span class="st">&quot;Datum&quot;</span>)</a></code></pre></div>
 </div>
 </div>
 <div id="x-aufteilung-des-datensatzes-in-trainings--und-testset" class="section level2">
 <h2>3.x Aufteilung des Datensatzes in Trainings- und Testset</h2>
 <p>Man kann stets ein Modell finden, welches die <em>vorhandenen</em> Daten (nahezu) exakt bechreibt. Das gleicht der Tatsache, dass man im Nachhinein (bei vorhandenen Daten) oftmals leicht eine Erklärung findet. Ob diese Erklärung sich auch bei unbekannten Daten bewahrheitet, muss jedoch geprüft werden. Daher werden die unterschiedlichen Modelle an einer Stichprobe <em>entwickelt</em> bzw. “trainiert” und an einer anderen Stichprobe <em>getested</em>. Die erste Stichprobe wird demzufolge als “trainingset” deklariert, die zweite als “testset”. Die Güte der Modelle wird abschließend anhand des “testsets” überprüft.</p>
 <p>Gemäß der vorhandenen Datenlage wird das Trainingset die Datensätze für die Jahre 2014 - 2017 umfassen (2013 wird aufgrund der nicht ganzjährig vorliegenden Daten ignoriert), das Testset die Daten aus dem Jahr 2018.</p>
-<div class="sourceCode" id="cb206"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb206-1" title="1">trainingset &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb206-2" title="2"><span class="st">  </span><span class="kw">filter</span>(Jahr <span class="op">&gt;=</span><span class="st"> </span><span class="dv">2014</span> <span class="op">&amp;</span><span class="st"> </span>Jahr <span class="op">&lt;=</span><span class="st"> </span><span class="dv">2017</span>)</a>
-<a class="sourceLine" id="cb206-3" title="3"></a>
-<a class="sourceLine" id="cb206-4" title="4"><span class="kw">glimpse</span>(trainingset)</a></code></pre></div>
+<div class="sourceCode" id="cb210"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb210-1" title="1">trainingset &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb210-2" title="2"><span class="st">  </span><span class="kw">filter</span>(Jahr <span class="op">&gt;=</span><span class="st"> </span><span class="dv">2014</span> <span class="op">&amp;</span><span class="st"> </span>Jahr <span class="op">&lt;=</span><span class="st"> </span><span class="dv">2017</span>)</a>
+<a class="sourceLine" id="cb210-3" title="3"></a>
+<a class="sourceLine" id="cb210-4" title="4"><span class="kw">glimpse</span>(trainingset)</a></code></pre></div>
 <pre><code>## Observations: 7,113
-## Variables: 25
+## Variables: 26
 ## $ Datum                  &lt;date&gt; 2014-01-02, 2014-01-03, 2014-01-04, 20...
 ## $ Warengruppe            &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
 ## $ Umsatz                 &lt;dbl&gt; 153.17, 109.48, 116.25, 67.79, 146.91, ...
@@ -2855,9 +2864,10 @@ $(document).ready(function () {
 ## $ Ostern_ext             &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,...
 ## $ ChristiHimmelfahrt_ext &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,...
 ## $ Pfingsten.y            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,...
-## $ Silvester.y            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,...</code></pre>
-<div class="sourceCode" id="cb208"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb208-1" title="1"><span class="kw">head</span>(trainingset)</a></code></pre></div>
-<pre><code>## # A tibble: 6 x 25
+## $ Silvester.y            &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,...
+## $ Jahreszeit             &lt;chr&gt; &quot;Winter&quot;, &quot;Winter&quot;, &quot;Winter&quot;, &quot;Winter&quot;,...</code></pre>
+<div class="sourceCode" id="cb212"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb212-1" title="1"><span class="kw">head</span>(trainingset)</a></code></pre></div>
+<pre><code>## # A tibble: 6 x 26
 ##   Datum      Warengruppe Umsatz  Jahr KielerWoche Bewoelkung Temperatur
 ##   &lt;date&gt;           &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
 ## 1 2014-01-02           1  153.   2014           0          7        6.2
@@ -2866,17 +2876,18 @@ $(document).ready(function () {
 ## 4 2014-01-05           1   67.8  2014           0          7        6.2
 ## 5 2014-01-06           1  147.   2014           0          7        7.9
 ## 6 2014-01-07           1  148.   2014           0          7       10.4
-## # ... with 18 more variables: Windgeschwindigkeit &lt;dbl&gt;, Wochentag &lt;dbl&gt;,
+## # ... with 19 more variables: Windgeschwindigkeit &lt;dbl&gt;, Wochentag &lt;dbl&gt;,
 ## #   Wochentag_c &lt;chr&gt;, Wochenende &lt;dbl&gt;, SommerferienSH &lt;dbl&gt;,
 ## #   SommerferienNRW &lt;dbl&gt;, SommerferienNDS &lt;dbl&gt;, SommerferienHE &lt;dbl&gt;,
 ## #   Feiertag &lt;dbl&gt;, Ostern &lt;dbl&gt;, ChristiHimmelfahrt &lt;dbl&gt;,
 ## #   Pfingsten.x &lt;dbl&gt;, TDE &lt;dbl&gt;, Silvester.x &lt;dbl&gt;, Ostern_ext &lt;dbl&gt;,
-## #   ChristiHimmelfahrt_ext &lt;dbl&gt;, Pfingsten.y &lt;dbl&gt;, Silvester.y &lt;dbl&gt;</code></pre>
-<div class="sourceCode" id="cb210"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb210-1" title="1">testset &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb210-2" title="2"><span class="st">  </span><span class="kw">filter</span>(Jahr <span class="op">==</span><span class="st"> </span><span class="dv">2018</span>)</a>
-<a class="sourceLine" id="cb210-3" title="3"></a>
-<a class="sourceLine" id="cb210-4" title="4">validationset &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb210-5" title="5"><span class="st">  </span><span class="kw">filter</span>(Jahr <span class="op">==</span><span class="st"> </span><span class="dv">2019</span>)</a></code></pre></div>
+## #   ChristiHimmelfahrt_ext &lt;dbl&gt;, Pfingsten.y &lt;dbl&gt;, Silvester.y &lt;dbl&gt;,
+## #   Jahreszeit &lt;chr&gt;</code></pre>
+<div class="sourceCode" id="cb214"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb214-1" title="1">testset &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb214-2" title="2"><span class="st">  </span><span class="kw">filter</span>(Jahr <span class="op">==</span><span class="st"> </span><span class="dv">2018</span>)</a>
+<a class="sourceLine" id="cb214-3" title="3"></a>
+<a class="sourceLine" id="cb214-4" title="4">validationset &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb214-5" title="5"><span class="st">  </span><span class="kw">filter</span>(Jahr <span class="op">==</span><span class="st"> </span><span class="dv">2019</span>)</a></code></pre></div>
 </div>
 </div>
 <div id="deskriptive-analysen" class="section level1">
@@ -2886,7 +2897,7 @@ $(document).ready(function () {
 <div id="subgruppenanalysen" class="section level3">
 <h3>Subgruppenanalysen</h3>
 <p>Untersuche nun den Umsatz je Wochentag und/oder Warengruppe in den Trainingsdaten.</p>
-<div class="sourceCode" id="cb211"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb211-1" title="1">df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(Warengruppe) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">Umsatz_sum =</span> <span class="kw">sum</span>(Umsatz))</a></code></pre></div>
+<div class="sourceCode" id="cb215"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb215-1" title="1">df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(Warengruppe) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">Umsatz_sum =</span> <span class="kw">sum</span>(Umsatz))</a></code></pre></div>
 <pre><code>## # A tibble: 5 x 2
 ##   Warengruppe Umsatz_sum
 ##         &lt;dbl&gt;      &lt;dbl&gt;
@@ -2895,7 +2906,7 @@ $(document).ready(function () {
 ## 3           3    364835.
 ## 4           4    184680.
 ## 5           5    605742.</code></pre>
-<div class="sourceCode" id="cb213"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb213-1" title="1">df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(Wochentag) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">Umsatz_sum =</span> <span class="kw">sum</span>(Umsatz))</a></code></pre></div>
+<div class="sourceCode" id="cb217"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb217-1" title="1">df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(Wochentag) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">Umsatz_sum =</span> <span class="kw">sum</span>(Umsatz))</a></code></pre></div>
 <pre><code>## # A tibble: 7 x 2
 ##   Wochentag Umsatz_sum
 ##       &lt;dbl&gt;      &lt;dbl&gt;
@@ -2906,7 +2917,7 @@ $(document).ready(function () {
 ## 5         5    309510.
 ## 6         6    308952.
 ## 7         7    386353</code></pre>
-<div class="sourceCode" id="cb215"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb215-1" title="1">df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(Warengruppe, Wochentag) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">Umsatz_sum =</span> <span class="kw">sum</span>(Umsatz))</a></code></pre></div>
+<div class="sourceCode" id="cb219"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb219-1" title="1">df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">group_by</span>(Warengruppe, Wochentag) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">Umsatz_sum =</span> <span class="kw">sum</span>(Umsatz))</a></code></pre></div>
 <pre><code>## # A tibble: 35 x 3
 ## # Groups:   Warengruppe [5]
 ##    Warengruppe Wochentag Umsatz_sum
