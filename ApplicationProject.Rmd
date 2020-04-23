@@ -598,17 +598,17 @@ Beispieldaten %>%
 ```
 
 
-# 3 Datenaufbereitung
+# 3 Datenaufbereitung und Erstellung von Rohdatensatz sowie Analysedatensätzen
 
 ## 3.x Vereinigung der Datensätze
 
 Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, dass diese über unterschiedliche Zeiträume reichen:
 
-* Die Daten des Datensatzes **Beispieldaten** reichen vom 01.07.2013 bis zum 30.07.2019.
+* Die Daten des Datensatzes **Beispieldaten** reichen vom 01.07.2013 bis zum 30.07.2019, sind aber teilweise unvollständig. Es fehlen bspw. für alle Warengruppen Daten für den Tag der Arbeit, Weihnachten, Neuhjahr etc. Weiterhin fehlen insbesondere bei der Warengruppe 4 immer wieder einzelne Daten in den Sommermonaten, vereinzelt auch an einzelnen Tagen im Herbst. 
 * Die Daten des Datensatzes **KiWo** reichen vom 16.06.2012 bis zum 30.06.2019.
 * Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
 
-Maßgeblich ist für uns an dieser Stelle der Datensatz "Beispieldaten", da wir abschließend an der Prognose der Umsätze je Warengruppe interessiert sind. Wenn für ein Datum keine Umsätze vorhanden sind, sind die Daten aus den anderen Daten unbrauchbar. Demzufolge wird ein `left_join` für die Vereinigung verwendet:
+Maßgeblich ist für uns in erster Linie der Datensatz "Beispieldaten", da wir abschließend an der Prognose der Umsätze je Warengruppe interessiert sind. Wenn für ein Datum keine Umsätze vorhanden sind, sind die Daten aus den anderen Datensätzen grundsätzlich erst einmal auch unbrauchbar. Andererseits erfordern gewisse Modelle eine vollständige, ununterbrochenen Zeitreihe. Demzufolge wird zunächst ein neuer Datensatz ein `left_join` für die Vereinigung verwendet:
 
 ```{r}
 df <- left_join(Beispieldaten, KiWo, by = "Datum")
@@ -638,23 +638,30 @@ df <- df %>%
 head(df)
 ```
 
-Da die Variable `Wettercode` vglw. viele fehlende Werte hat (669) und unklar ist, wie diese fehlenden Werte sinnvoll ersetzt werden können, wird diese Variable (vorläufig) ignoriert und eliminiert:
+Da die Variable `Wettercode` vglw. viele fehlende Werte hat (669) und unklar ist, wie diese fehlenden Werte sinnvoll ersetzt werden können, wird diese Variable ignoriert und eliminiert:
 
 ```{r}
 df <- df[,1:8]
 head(df)  
 ```
 
+
+
 ## 3.x Umgang mit Ausreißern
 
-Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. In einem ersten Schritt werden diese Ausreißer genauer analysiert:
+Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt (Bsp. Mo, 05.05.2014) oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z. B. Silvester). 
+Nicht prognostizierbare und nicht erklärbare Ausreißer werden eliminiert. Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d. h. es werden Variablen für diese planbaren Ausreißer angelegt.
+
+Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z. B. an Silvester). Da es sich hierbei um einen "gewöhnlichen" Montag handelt, erscheinen die Umsatzzahlen nicht plausibel und das Datum wird für alle Warengruppen eliminert. Im weiteren Verlauf werden bei der Erstellung der Analysdatensätze ggf. geeignete Imputationen für dieses Datum vorgenommen (z. B. Werte der Vorwoche, Mittelwert der vergangenen vier Montag o. Ä.).
+
 
 ```{r}
-
+df <- df %>% 
+  filter(Datum != "2014-05-05")
 ```
 
 
-Es werden vorerst keine Korrekturen an den Ausreißerdaten vorgenommen. Ggf. wird bei der Erstellung und Anwendung der Modelle hier eine Korrektur vorgenommen.
+Da die anderen Ausreißer durch jeweilige Sondereffekte zu erklären sind (Wochenende, Feiertag, Brückentag etc.) werden diese Ausreißer im Datensatz belassen und im Fortgang hierfür gesonderte Variablen angelegt.
 
 ## 3.x Umgang mit Warengruppe 6
 
@@ -819,17 +826,9 @@ Ausgenommen wird an dieser Stelle der Tag der Deutschen Eiheit, da der Einfluss 
 Ostern_ext <- read_csv2("data/Ostern_extended.csv")
 df <- left_join(df, Ostern_ext, by = "Datum")
 
-
-
-
-################################################
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-#df <- df %>%
-#  mutate(Ostern_ext = replace_na(Ostern_ext, 0))
-
-############### NOCH FEHLERMELDUNG - PRÜFEN
-
-
+df <- df %>%
+  mutate(Ostern_ext = replace_na(Ostern_ext, 0))
 
 
 ## Hinzufügen der Variable Christihimmmelfahrt (Mittwoch vor Himmelfahrt bis Sonntag nach Himmelfahrt) 
@@ -838,21 +837,16 @@ df <- left_join(df, ChristiHimmelfahrt_ext, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
 df <- df %>%
-  mutate(ChristiHimmelfahrt = replace_na(ChristiHimmelfahrt, 0))
+  mutate(ChristiHimmelfahrt_ext = replace_na(ChristiHimmelfahrt_ext, 0))
 
 
 ## Hinzufügen der Variable Pfingsten_ext (Samstag vor Pfingsten/Pfingstssamstag, Pfingstsonntag, Pfingstmontag; Dienstag nch Pfingsten)
 Pfingsten_ext <- read_csv2("data/Pfingsten_ext.csv")
 df <- left_join(df, Pfingsten_ext, by = "Datum")
 
-
-
-###################################################
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-#df <- df %>%
-#  mutate(Pfingsten_ext = replace_na(Pfingsten_ext, 0))
-
-############### NOCH FEHLERMELDUNG - PRÜFEN
+df <- df %>%
+  mutate(Pfingsten_ext = replace_na(Pfingsten_ext, 0))
 
 
 
@@ -860,13 +854,9 @@ df <- left_join(df, Pfingsten_ext, by = "Datum")
 Silvester_ext <- read_csv2("data/Silvester_ext.csv")
 df <- left_join(df, Silvester_ext, by = "Datum")
 
-
-
-###################################################
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-#df <- df %>%
-#  mutate(Silvester_ext = replace_na(Silvester_ext, 0))
-############### NOCH FEHLERMELDUNG - PRÜFEN
+df <- df %>%
+  mutate(Silvester_ext = replace_na(Silvester_ext, 0))
 ```
 
 
@@ -902,34 +892,75 @@ Es gibt wiederum zwei Möglichkeiten, die Variable anzulegen:
 2. Je eine Variable pro Jahreszeit
 
 
-Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelesen:
+Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelese und an den bestehenden Rohdatensatz hinzugefügt:
 ```{r}
 ## Hinzufügen der Variable Jahreszeiten
 Jahreszeiten <- read_csv2("data/Jahreszeiten.csv")
 df <- left_join(df, Jahreszeiten, by = "Datum")
 ```
 
-
-
-## 3.x Aufteilung des Datensatzes in Trainings- und Testset
-
-Man kann stets ein Modell finden, welches die *vorhandenen* Daten (nahezu) exakt bechreibt. Das gleicht der Tatsache, dass man im Nachhinein (bei vorhandenen Daten) oftmals leicht eine Erklärung findet. Ob diese Erklärung sich auch bei unbekannten Daten bewahrheitet, muss jedoch geprüft werden. Daher werden die unterschiedlichen Modelle an einer Stichprobe *entwickelt* bzw. "trainiert" und an einer anderen Stichprobe *getested*. Die erste Stichprobe wird demzufolge als "trainingset" deklariert, die zweite als "testset". Die Güte der Modelle wird abschließend anhand des "testsets" überprüft.
-
-Gemäß der vorhandenen Datenlage wird das Trainingset die Datensätze für die Jahre 2014 - 2017 umfassen (2013 wird aufgrund der nicht ganzjährig vorliegenden Daten ignoriert), das Testset die Daten aus dem Jahr 2018.
+In einem weiteren Schritt werden für die einzelnen Jahreszeiten eigene Variablen angelegt und mit dem bestehenden Rohdatensatz verknüpft:
 
 ```{r}
-trainingset <- df %>%
-  filter(Jahr >= 2014 & Jahr <= 2017)
+## Hinzufügen der Variable Fruehling
+Fruehling <- read_csv2("data/Fruehling.csv")
+df <- left_join(df, Fruehling, by = "Datum")
 
-glimpse(trainingset)
-head(trainingset)
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Fruehling = replace_na(Fruehling, 0))
 
-testset <- df %>% 
-  filter(Jahr == 2018)
 
-validationset <- df %>%
-  filter(Jahr == 2019)
+## Hinzufügen der Variable Sommer
+Sommer <- read_csv2("data/Sommer.csv")
+df <- left_join(df, Sommer, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Sommer = replace_na(Sommer, 0))
+
+
+## Hinzufügen der Variable Herbst
+Herbst <- read_csv2("data/Herbst.csv")
+df <- left_join(df, Herbst, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Herbst = replace_na(Herbst, 0))
+
+
+## Hinzufügen der Variable Winter
+Winter <- read_csv2("data/Winter.csv")
+df <- left_join(df, Winter, by = "Datum")
+
+# Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
+df <- df %>%
+  mutate(Winter = replace_na(Winter, 0))
 ```
+
+Ergebnis der vorangegegangenen Operationen ist der Rohdatensatz `df`. 
+
+Dieser Rohdatensetz kann für einzelne Analysen ohne Weiteres verwendet werden, z. B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z. B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
+
+Bsp.: Der Umsatz für den 02.01.2012 soll auf Basis der Vorwochenwerte prognostiziert werden. Der Vorwochenwert würde streng genommen der 26.12. sein, der 2. Weihnachtsfeiertag. Dieser Wert ist jedoch grundsätzlich, da die Filiale am 26.12. immer geschlossen hat. 
+
+Führt man in R auf Basis der bestehenden Daten einen Prognose auf Basis der Vorwochenwerte durch, wird die Prognose für den 03.01. auf Basis des 23.12. vollzogen, für den 04.01. auf Basis von Heiligabend, ohne dass eine Fehelermeldung erzeugt wird.
+
+Sinn und Zweck kann es allerdings nicht sein, dass die Prognosen eines Umsatzes am 03.01. sich an den Umstätzen des 24.12. orientieren. Folglich bedarf es eines weiteren Analysedatensatzes, der eine vollständige Zeitreihe enthält. Wie die aufgrund der vorliegenden Datenbasis entstehenden unvollständigen Zeilen mit sinnvollen Werten aufzufüllen sind, ist noch zu klären.
+
+Folgend wird zunächst ein Analysedatensatz `AS1` erstellt, der eine komplette Zeitreihe enthält. Dabei wird in Kauf genommen, dass dieser zunächst viele fehlende Werte enthalten wird, die im weiteren Verlauf für die einzelnen Modelle sinnvoll zu ergänzen sind:
+
+```{r}
+## Hinzufügen der vollständigen Zeitreihe
+Zeitreihe_voll <- read_csv2("data/Zeitreihe_voll.csv")
+AS1 <- left_join(Zeitreihe_voll, df, by = "Datum")
+
+AS1 <- AS1 %>%
+  arrange(Warengruppe) # alle fehlenden Zeilen werden ans Ende des Datensatzes verschoben
+```
+
+
+
 
 # 4. Deskriptive Analysen
 
@@ -948,3 +979,13 @@ df %>% group_by(Warengruppe, Wochentag) %>% summarise(Umsatz_sum = sum(Umsatz))
 Warengruppe 2 zeigt den höchsten Umsatz insgesamt, gefolgt von Warengruppe 5.
 Die Wochentage Samstag (7) und Sonntag (1) sind mit leichtem Abstand die umsatzstärksten Tage, aggregiert über alle Warengruppen.
 
+
+# 5 Anwendung naiver Modelle
+
+```{r}
+#df <- df %>% mutate(Umsatz_lag = lag(Umsatz, n=7), order_by = Warengruppe)
+
+df <- df %>% group_by(Warengruppe) %>% mutate(Umsatz_lagged = lag(Umsatz, n=7, order_by = Datum))
+
+df <- df %>% group_by(Warengruppe) %>% mutate(Datum_lagged= lag(Datum, n=7, order_by = Datum))
+```
