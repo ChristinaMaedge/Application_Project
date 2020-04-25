@@ -689,8 +689,11 @@ df <- df %>% mutate(Wochentag = wday(Datum))
 df <- df %>% mutate(Jahr = year(Datum))
 df <- df %>% mutate(Monat = month(Datum))
 
-# Wochentag als charafter-Variable
+# Wochentag als character-Variable
 df <- df %>% mutate(Wochentag_c = recode(Wochentag, "1" = "Sonntag", "2" = "Montag", "3" = "Dienstag", "4" = "Mittwoch", "5" = "Donnerstag", "6" = "Freitag", "7" = "Samstag"))
+
+# Monat als character-Variable
+df <- df %>% mutate(Monat_c = recode(Monat, "1" = "Januar", "2" = "Februar", "3" = "März", "4" = "April", "5" = "Mai", "6" = "Juni", "7" = "Juli", "8" = "August", "9" = "September", "10" = "Oktober", "11" = "November", "12" = "Dezember"))
 ```
 
 Es besteht die Möglichkeit, dass es unterhalb der Wochentag keine großen Unterschiede gibt, wohl aber zwischen Wochentagen und Wochenendtagen. Insofern wird eine weitere Variable `Wochenende` erstellt, die nur die beiden Ausprägungen 1 = "Wochenende" und 0 = "kein Wochenende" ("Wochentag") hat.
@@ -817,7 +820,7 @@ df <- df %>%
 ```
 
 In einem nächsten Schritt werden Variablen erstellt, die neben den Feiertagen auch "Brückentage" / den vorherigen oder darauffolgenden Tag enthalten. Bezüglich der Frage, welche umgebenden Tage im Speziellen berücksichtigt werden, wird auf die Umsätze der umgebenden Tage in der Vergangenheit referenziert. Sind diese signifikant / bedeutend höher als vergleichbare Wochentage, so werden diese mit einbezogen.
-Ausgenommen wird an dieser Stelle der Tag der Deutschen Eiheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt. (NOCHMAL ABSCHLIEßEND PRÜFEN)
+Ausgenommen wird an dieser Stelle der Tag der Deutschen Einheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt. (NOCHMAL ABSCHLIEßEND PRÜFEN)
 
 ```{r}
 ## Hinzufügen der Variable Ostern_ext (= Ostern extendet) (Gründonnerstag, "Ostersamstag", Ostersonntag, Ostermontag, ohne Karfreitag, da geschlossen)
@@ -944,11 +947,11 @@ Ergebnis der vorangegegangenen Operationen ist der Rohdatensatz `df`.
 
 Dieser Rohdatensetz kann für einzelne Analysen ohne Weiteres verwendet werden, z. B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z. B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
 
-Bsp.: Der Umsatz für den 02.01.2012 soll auf Basis der Vorwochenwerte prognostiziert werden. Der Vorwochenwert würde streng genommen der 26.12. sein, der 2. Weihnachtsfeiertag. Dieser Wert ist jedoch grundsätzlich, da die Filiale am 26.12. immer geschlossen hat. 
+Bsp.: Der Umsatz für den 02.01.2012 soll auf Basis der Vorwochenwerte prognostiziert werden. Der Vorwochenwert würde streng genommen der 26.12. sein, der 2. Weihnachtsfeiertag. Dieser Wert ist jedoch grundsätzlich fehlend, da die Filiale am 26.12. immer geschlossen hat. 
 
 Führt man in R auf Basis der bestehenden Daten einen Prognose auf Basis der Vorwochenwerte durch, wird die Prognose für den 03.01. auf Basis des 23.12. vollzogen, für den 04.01. auf Basis von Heiligabend, ohne dass eine Fehelermeldung erzeugt wird.
 
-Sinn und Zweck kann es allerdings nicht sein, dass die Prognosen eines Umsatzes am 03.01. sich an den Umstätzen des 24.12. orientieren. Folglich bedarf es eines weiteren Datensatzes, der eine vollständige Zeitreihe enthält. Wie die aufgrund der vorliegenden Datenbasis entstehenden unvollständigen Zeilen mit sinnvollen Werten aufzufüllen sind, ist noch zu klären.
+Sinn und Zweck kann es allerdings nicht sein, dass die Prognosen eines Umsatzes am 03.01. sich an den Umstätzen des 24.12. orientieren. Folglich bedarf es eines weiteren Datensatzes, der eine vollständige Zeitreihe enthält. Wie die aufgrund der vorliegenden Datenbasis entstehenden unvollständigen Zeilen mit sinnvollen Werten aufzufüllen sind, ist noch / mit Blick auf die Anwendung verschiedener Modelle zu klären.
 
 ### Rohdaten mit vollständiger Zeitreihe
 
@@ -990,13 +993,38 @@ Untersuche den Umsatz je Wochentag und/oder Warengruppe in den Daten. Als Basis 
 df %>% group_by(Warengruppe) %>% summarise(Umsatz_sum = sum(Umsatz))
 df %>% group_by(Wochentag_c) %>% summarise(Umsatz_sum = sum(Umsatz))
 df %>% group_by(Warengruppe, Wochentag_c) %>% summarise(Umsatz_sum = sum(Umsatz))
+df %>% group_by(Warengruppe, Wochentag) %>% summarise(Umsatz_sum = sum(Umsatz))
+df %>% group_by(Warengruppe, Wochenende) %>% summarise(Umsatz_sum = sum(Umsatz))
 ```
 
 * Warengruppe 2 zeigt den höchsten Umsatz insgesamt, gefolgt von Warengruppe 5.
 * Die Wochentage Samstag und Sonntag sind mit leichtem Abstand die umsatzstärksten Tage, aggregiert über alle Warengruppen.
-* Für die einzelnen Warengruppen zeigt sich ein differenzierteres Bild: Für Brot (Warengruppe 1) sind bspw. Donnerstag und Samstag die umsatzstärksten Wochentage.
+* Für die einzelnen Warengruppen zeigt sich ein differenzierteres Bild: Für Brot (Warengruppe 1) sind bspw. Donnerstag und Samstag die umsatzstärksten Wochentage. Auch der Montag ist in dieser Woche überdurchschnittlich stark im Vergleich zu den anderen Warengruppen.
+* Vergleicht man die Wochenendumsätze mit den Umsätzen der Wochentag, so ergibt sich folgendes Bild:
+  + 26% der Umsätze der Warengruppe 1 (Brot) werden am Wochenende erzielt, 74% an den Wochentagen
+  + 36% der Umsätze der Warengruppe 2 (Brötchen) werden am Wochenende erzielt, 64% unter der Woche.
+  + 37% der Umsätze der Warengruppe 3 (Croissants) werden am Wochenende erzielt, 63% an den Wochentagen.
+  + 36% der Umsätze der Warengruppe 4 (Konditorei) werden am Wochenende erzielt, 64% unter der Woche.
+  + 32% der Umsätze der Warengruppe 5 (Kuchen) werden am Wochenende erzielt, 68% unter der Woche.
+  ==> demnach scheint es für die einzelnen Warengruppen abweichende Wochenend-Effekte geben. Kuchen und Brot werden im Verhältnis zu den anderen Warengruppen am Wochenende weniger verkauft.
+  
+## 4.2 Umsatz je Monat / Warengruppe
 
-## 4.2 Umsatz im Zeitverlauf
+In einem weiteren Schritt werden die Umsätze je Warengruppe und Monat untersucht, um eine differenziertere Veretilung der Umsätze im Jahresverlauf zu erhalten:
+
+
+```{r}
+df %>% group_by(Warengruppe, Monat) %>% summarise(Umsatz_sum = sum(Umsatz))
+
+df %>% group_by(Warengruppe, Monat_c) %>% summarise(Umsatz_sum = sum(Umsatz)) %>% arrange(Warengruppe, desc(Umsatz_sum))
+```
+
+* Es gibt erkennbare Unterschiede zwischen den Warengruppen, was den Umsatz pro Monat anbelangt:
+  + In den Warengruppen 1 - 3 (und mit Einschränkung Warengruppe 5) sind die MOnate Juli, August und Juni die Top 3-Monate sind, 
+  + Bei Warengruppe 4 liegen diese Monate auf den Plätzen 3 (August), 6 (Juli) und 11 (Juni). In dieser Waregngruppe ist der Februar der umsatzstärkste Monat, gefolgt von Oktober, der bei den anderen WG eher im Mittelfeld liegt (Platz 4 - 6). Die Warengruppe 4 verhält sich bei der Verteilung der Umsätze im Monatsverlauf also deutlich anders als die anderen Warengruppen.      
++ Tendenziell sind die Umsätze in den Wintermonaten (Dezember, Januar, Februar) sowie im November am schwächsten (auch ier mit leichten Abweichungen bei Warengruppe 4 und 5). Die Warengruppen Konditorei und Kuchen unterscheiden sich hier, mal mehr mal weniger, von den ersten drei Warengruppen.
+
+## 4.3 Umsatz im Zeitverlauf
 
 Von Interesse ist nun die Entwicklung der Umsätze im Zeitverlauf. Wir wollen prüfen, ob eine Trendentwicklung zu beobachten ist und ob es strukturelle Brüche in den Zeitreihen gibt. Wir betrachten dafür zunächst die Entwicklung des Gesamtumsatzes pro Jahr. Als Datenbasis verwenden wir die Trainingsdaten `df_train`, die den Zeitraum 2014 bis 2017 umfassen und damit 4 Jahresscheiben abbilden.
 
@@ -1016,6 +1044,7 @@ p_umsatz_jahr_monat <- ggplot(data = umsatz_jahr_monat, aes(x = Monat, y = Umsat
   scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12")) +
   xlab("Monat") + ylab("Umsatz") + 
   labs(color = "Jahr") +
+  theme_classic() +
   ggtitle("Gesamtumsatz je Monat")
 
 p_umsatz_jahr_monat
@@ -1033,6 +1062,7 @@ Um dies weiter zu analysieren, betrachten wir schließlich noch den Umsatz auf M
 umsatz_jahr_monat_WG <- df_train %>% mutate(Jahr=as.character(Jahr)) %>% group_by(Jahr, Monat, Warengruppe) %>% summarise(Umsatz=sum(Umsatz)) # Variable Jahr in character umgewandelt, damit im folgenden Plot eine diskrete Farbskala in der Legende gezeigt werden kann
 ```
 
+**Erstellung der Variablen Umsatz auf Monatsebene Warengruppe 1**
 ```{r}
 p_umsatz_jahr_monat_WG1 <- 
   umsatz_jahr_monat_WG %>% 
@@ -1043,10 +1073,13 @@ p_umsatz_jahr_monat_WG1 <-
   scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12")) +
   xlab("Monat") + ylab("Umsatz") + 
   labs(color = "Jahr") +
+  theme_classic() +
   ggtitle("Warengruppe 1: Umsatz je Monat")
 
 ```
 
+
+**Erstellung des Plots zur Variablen Umsatz auf Monatsebene Warengruppe 2**
 ```{r}
 p_umsatz_jahr_monat_WG2 <- 
   umsatz_jahr_monat_WG %>% 
@@ -1057,10 +1090,12 @@ p_umsatz_jahr_monat_WG2 <-
   scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12")) +
   xlab("Monat") + ylab("Umsatz") + 
   labs(color = "Jahr") +
+  theme_classic() +
   ggtitle("Warengruppe 2: Umsatz je Monat")
 
 ```
 
+**Erstellung des Plots zur Variablen Umsatz auf Monatsebene Warengruppe 3**
 ```{r}
 p_umsatz_jahr_monat_WG3 <- 
   umsatz_jahr_monat_WG %>% 
@@ -1071,10 +1106,12 @@ p_umsatz_jahr_monat_WG3 <-
   scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12")) +
   xlab("Monat") + ylab("Umsatz") + 
   labs(color = "Jahr") +
+  theme_classic() +
   ggtitle("Warengruppe 3: Umsatz je Monat")
 
 ```
 
+**Erstellung des Plots zur Variablen Umsatz auf Monatsebene Warengruppe 4**
 ```{r}
 p_umsatz_jahr_monat_WG4 <- 
   umsatz_jahr_monat_WG %>% 
@@ -1085,9 +1122,11 @@ p_umsatz_jahr_monat_WG4 <-
   scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12")) +
   xlab("Monat") + ylab("Umsatz") + 
   labs(color = "Jahr") +
+  theme_classic() +
   ggtitle("Warengruppe 4: Umsatz je Monat")
 ```
 
+**Erstellung des Plots zur Variablen Umsatz auf Monatsebene Warengruppe 5**
 ```{r}
 p_umsatz_jahr_monat_WG5 <- 
   umsatz_jahr_monat_WG %>% 
@@ -1098,6 +1137,7 @@ p_umsatz_jahr_monat_WG5 <-
   scale_x_discrete(limits=c("1","2","3","4","5","6","7","8","9","10","11","12")) +
   xlab("Monat") + ylab("Umsatz") + 
   labs(color = "Jahr") +
+  theme_classic() +
   ggtitle("Warengruppe 5: Umsatz je Monat")
 ```
 
@@ -1116,8 +1156,95 @@ Beobachtungen:
 
 Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze im Februar aufweist.
 
+## Zusammenhangsanalysen
+
+Im weiteren Verlauf werden u. a. statistische Modelle, bspw. eine Regressionsanalyse, für die Prognose der Umsätze herangezogen werden. Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regressionsmodell in Betracht kommen, wird zunächst ein sog. Correlogram erstellt, dass einen schnellen Überblick über den Zusammenhang zwischen dem Umsatz und den potientiellen Einflussfaktoren ermöglicht:
+
+**Correlogram**
+```{r warning=FALSE}
+library(GGally) # Wird benötigt für die Erstellung des correlograms
+ggcorr(df)
+```
+
+* Auf den ersten Blick scheint keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz über alle Warengruppen zu haben.
+* Gewisse Effekte sind zu beobachten bei den Variablen:
+  + Bewölkung
+  + Wochenende
+  + sämtliche betrachteten Sommerferien-Variablen
+  + Silverster
+  + Sommer.
+
+
+Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengruppen erkennbar waren, wird in einem zweiten Schritt überprüft, ob die Korrelogramme für die einzelnen Variablen unterschiedlich sind.
+
+**Untersuchung der Warengruppe 1**
+```{r}
+df %>%
+  filter(Warengruppe == "1") %>%
+  ggcorr()
+```
+
+* Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
+* Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder haben die Variablen
+  + Bewölkung
+  + sämtliche betrachteten Sommerferien-Variablen
+  + Silverster
+  + Sommer
+  einen Einfluss zu haben. Hinzu kommen der Wochentag und die erweiterte Osternvariable.
+
+
+**Untersuchung der Warengruppe 2**
+```{r}
+df %>%
+  filter(Warengruppe == "2") %>%
+  ggcorr()
+```
+
+* Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
+* Vom Muster her ergibt sich ein ähnliches Bild. Die Variablen
+  + Bewölkung, 
+  + Monat
+  + Wochenende,
+  + sämtliche Ferien-Variablen,
+  + der Sommer 
+  einen Einfluss zu haben.
+  * Weniger stark als bei Warengruppe 1 wirken die erweiterte Ostervariable und Silvester.
+
+**Untersuchung der Warengruppe 3**
+```{r}
+df %>%
+  filter(Warengruppe == "3") %>%
+  ggcorr()
+```
+
+* Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung.
+
+**Untersuchung der Warengruppe 4**
+```{r}
+df %>%
+  filter(Warengruppe == "4") %>%
+  ggcorr()
+```
+
+* Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur sehr schwache Effekte spürbar. 
++ Allenfalls die Variabeln Monat, Feiertag und Winter könnten einen spürbaren, wenn auch marginalen Einfluss haben.
+
+```{r}
+df %>%
+  filter(Warengruppe == "5") %>%
+  ggcorr()
+```
+
+* Bei der Warengruppe 5 scheint der Sivester (+ Silvester_ext) der einflussstärkste Tag zu sein. Ein mögliche Erklärung wäre, dass der Verkauf von Berlinern an diesem Tag exoritant hoch ist. Bei der Modellierung muss die Interkorrelation dieser Variablen beachtet werden.
+* Weiterhin Einfluss zu haben scheinen erneut zu haben:
+  + Sommer,
+  + Sommerferien und 
+  + das Wochenende.
+  
+
 # 5 Anwendung naiver Modelle
 
+# Prognose der Umsätze aufhand des Vorwochenwertes
 ```{r}
 #df <- df %>% mutate(Umsatz_lag = lag(Umsatz, n=7), order_by = Warengruppe)
 
@@ -1125,3 +1252,10 @@ df <- df %>% group_by(Warengruppe) %>% mutate(Umsatz_lagged = lag(Umsatz, n=7, o
 
 df <- df %>% group_by(Warengruppe) %>% mutate(Datum_lagged= lag(Datum, n=7, order_by = Datum))
 ```
+
+
+# 6 Anwendung statistischer Modelle
+
+## Lineare Regression
+
+Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden
