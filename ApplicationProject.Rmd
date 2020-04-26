@@ -1258,4 +1258,4 @@ df <- df %>% group_by(Warengruppe) %>% mutate(Datum_lagged= lag(Datum, n=7, orde
 
 ## Lineare Regression
 
-Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden
+Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden, ein Zusammenahng besteht. 
