@@ -9,6 +9,7 @@ output: rmdformats::readthedown
 rm(list=ls()) # Lösche alle Variablen
 library(tidyverse) # Datenaufbereitung und ggplot
 library(lubridate) # Umgang mit Datum und Zeit
+library(GGally) # Wird benötigt für die Erstellung des correlograms
 ```
 
 # 1. Allgemeine Projektinformationen
@@ -1020,9 +1021,9 @@ df %>% group_by(Warengruppe, Monat_c) %>% summarise(Umsatz_sum = sum(Umsatz)) %>
 ```
 
 * Es gibt erkennbare Unterschiede zwischen den Warengruppen, was den Umsatz pro Monat anbelangt:
-  + In den Warengruppen 1 - 3 (und mit Einschränkung Warengruppe 5) sind die MOnate Juli, August und Juni die Top 3-Monate sind, 
+  + In den Warengruppen 1 - 3 (und mit Einschränkung Warengruppe 5) sind die Monate Juli, August und Juni die Top 3-Monate sind, 
   + Bei Warengruppe 4 liegen diese Monate auf den Plätzen 3 (August), 6 (Juli) und 11 (Juni). In dieser Waregngruppe ist der Februar der umsatzstärkste Monat, gefolgt von Oktober, der bei den anderen WG eher im Mittelfeld liegt (Platz 4 - 6). Die Warengruppe 4 verhält sich bei der Verteilung der Umsätze im Monatsverlauf also deutlich anders als die anderen Warengruppen.      
-+ Tendenziell sind die Umsätze in den Wintermonaten (Dezember, Januar, Februar) sowie im November am schwächsten (auch ier mit leichten Abweichungen bei Warengruppe 4 und 5). Die Warengruppen Konditorei und Kuchen unterscheiden sich hier, mal mehr mal weniger, von den ersten drei Warengruppen.
++ Tendenziell sind die Umsätze in den Wintermonaten (Dezember, Januar, Februar) sowie im November am schwächsten (auch hier mit leichten Abweichungen bei Warengruppe 4 und 5). Die Warengruppen Konditorei und Kuchen unterscheiden sich hier, mal mehr mal weniger, von den ersten drei Warengruppen.
 
 ## 4.3 Umsatz im Zeitverlauf
 
@@ -1156,13 +1157,12 @@ Beobachtungen:
 
 Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze im Februar aufweist.
 
-## Zusammenhangsanalysen
+## 4.4 Zusammenhangsanalysen
 
 Im weiteren Verlauf werden u. a. statistische Modelle, bspw. eine Regressionsanalyse, für die Prognose der Umsätze herangezogen werden. Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regressionsmodell in Betracht kommen, wird zunächst ein sog. Correlogram erstellt, dass einen schnellen Überblick über den Zusammenhang zwischen dem Umsatz und den potientiellen Einflussfaktoren ermöglicht:
 
 **Correlogram**
 ```{r warning=FALSE}
-library(GGally) # Wird benötigt für die Erstellung des correlograms
 ggcorr(df)
 ```
 
@@ -1174,7 +1174,6 @@ ggcorr(df)
   + Silverster
   + Sommer.
 
-
 Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengruppen erkennbar waren, wird in einem zweiten Schritt überprüft, ob die Korrelogramme für die einzelnen Variablen unterschiedlich sind.
 
 **Untersuchung der Warengruppe 1**
@@ -1185,12 +1184,12 @@ df %>%
 ```
 
 * Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
-* Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder haben die Variablen
+* Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder scheinen die folgenden Variablen einen Einfluss zu haben:
   + Bewölkung
   + sämtliche betrachteten Sommerferien-Variablen
   + Silverster
   + Sommer
-  einen Einfluss zu haben. Hinzu kommen der Wochentag und die erweiterte Osternvariable.
+* Hinzu kommen Temparatur, der Wochentag und die erweiterte Osternvariable.
 
 
 **Untersuchung der Warengruppe 2**
@@ -1201,14 +1200,13 @@ df %>%
 ```
 
 * Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
-* Vom Muster her ergibt sich ein ähnliches Bild. Die Variablen
-  + Bewölkung, 
+* Vom Muster her ergibt sich ein ähnliches Bild. Folgende Variablen haben einen Einfluss:
+  + Bewölkung,
   + Monat
-  + Wochenende,
-  + sämtliche Ferien-Variablen,
-  + der Sommer 
-  einen Einfluss zu haben.
-  * Weniger stark als bei Warengruppe 1 wirken die erweiterte Ostervariable und Silvester.
+  + Wochenende
+  + sämtliche Ferien-Variablen
+  + der Sommer
+* Hinzu kommt die Temperatur. Weniger stark als bei Warengruppe 1 wirken die erweiterte Ostervariable und Silvester.
 
 **Untersuchung der Warengruppe 3**
 ```{r}
@@ -1226,8 +1224,13 @@ df %>%
   ggcorr()
 ```
 
-* Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur sehr schwache Effekte spürbar. 
-+ Allenfalls die Variabeln Monat, Feiertag und Winter könnten einen spürbaren, wenn auch marginalen Einfluss haben.
+* Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
+* Allenfalls die folgenden Variabeln könnten einen spürbaren Einfluss haben:
+  + Temperatur, 
+  + Wochenende, 
+  + Monat, 
+  + Feiertag,
+  + Winter 
 
 ```{r}
 df %>%
@@ -1245,6 +1248,12 @@ df %>%
 # 5 Anwendung naiver Modelle
 
 # Prognose der Umsätze aufhand des Vorwochenwertes
+```{r}
+# Ausgabe des Datensatzes `df_train_voll` als csv, um damit in EXCEL rum zu spielen.
+write_csv(df_train_voll, "data/df_train_voll.csv")
+```
+
+
 ```{r}
 #df <- df %>% mutate(Umsatz_lag = lag(Umsatz, n=7), order_by = Warengruppe)
 
