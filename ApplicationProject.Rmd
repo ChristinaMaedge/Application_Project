@@ -429,7 +429,7 @@ Die Vermutung liegt insofern nahe, dass die Sommerferien einen signifikanten Ein
 
 * Das Jahr 2014 beginnt strukturell so wie das Vorjahr geendet hat: unregelmäßig. Vereinzelt gibt es Ausreißer an Wochenendtagen (So, 12.01.; jeweils der Sonntag in der Zeit vom 09.02. - 09.03.; Sa, 29.03.; So, 06.04.).
 * Ab Sa, 12.04. bis Ende April am So, 27.04. sind jeweils beide Wochenendtage überproportional stark (Anmerkung: Ferienzeit in vielen relevanten Bundesländern); auch an Ostern (Karfreitag 18.04., Ostersonntag 20.04. sowie Ostermontag 21.04.) sind starke Umsatz-Effekte zu beobachten.
-* Ein ungewöhnlich hoher Umsatz ist am Montag, 05.05.2014 zu beobachten; es ist der siebthöchste Umsatz im gesamten Zeitraum; ansonsten gibt es an den Sonntagen 18.05 und 25.05. Ausreißer sowie an Christi Himmelfaht (29.05.).
+* Ein ungewöhnlich hoher Umsatz ist am Montag, 05.05.2014 zu beobachten; es ist der höchste Umsatz im gesamten Zeitraum; ansonsten gibt es an den Sonntagen 18.05 und 25.05. Ausreißer sowie an Christi Himmelfaht (29.05.).
 * Im Zeitraum vom 31.05. bis 29.06. erstrecken sich die Ausreißer wiederum über beide Wochentage; hinzu kommt in diesem Zeitraum ein (eingeschränkter) Effekt der Kieler Woche (Ausreißer am Do, 26.06. und Fr, 27.06.). 
 * Im Juli sind am Sa, 05.07. sowie von Fr, 11.07. - So, 13.07 die "üblichen" Wochenendeffekte zu beobachten.
 * Im Zeitraum vom 17.07. - 31.08 - also in einem Zeitraum von ca. 6 Wochen - jeden Tag Ausreißer zu verzeichnen; betrachtet man die [Sommerferienzeiträume der Bundesländer im Jahr 2014](https://www.schulferien.org/deutschland/ferien/2014/), so liegt die Vermutung nahe, dass wie schon im Vorjahr die Ferienzeit diese überporportional hohen Umsätze signifkant beeinflusst hat.
@@ -437,9 +437,6 @@ Die Vermutung liegt insofern nahe, dass die Sommerferien einen signifikanten Ein
 * Im November beschränken sich die Ausreißerumsätze auf die Sonntage; dies gilt mit Ausnahme des So, 21.12. auch für den Dezember; hinzu kommen im Dezember weiterhin der Di, 30. und der Mi, 31.12; auch im Jahr 2014 ist wieder kein "Weihnachts-Effekt" sichtbar.
 * Insgesamt gibt es im Jahr 2014 einen Tag (Mi, 31.12.), an denen zwei Warengruppen Ausreißer sind (jeweils WG 2 + 5). Am 05.05. gibt es sogar Ausreißer in drei Warengruppen (WG 2, 3, 5).
 * Mit mehr als 120 Ausreißern innerhalb eines Jahres ist das Jahr 2014 ein vglw. außergewöhnlich "ausreißerstarkes" Jahr (gewöhnlich liegt die Anzahl pro Jahr zwischen ~ 30 - 50 Ausreißern). Man könnte das Jahr 2014 selbst fast als Ausreißerjahr bezeichnen.
-
-> Anmerkung: Der 05.05.2014 gibt Rätsel auf. Ist es realistisch, dass die Umsätze an einem (gewöhnlichen) Montag derart hoch waren? Da wir keine Erklärung dafür haben, gehen wir davon aus, dass es sich um einen Datenfehler handelt oder ein singuläres Ereignis.
-
 
 [**2015**](https://www.kalender-365.eu/kalender-2015.html)
 
@@ -599,7 +596,46 @@ Beispieldaten %>%
 
 # 3 Datenaufbereitung, Erstellung von Rohdatensatz und Analysedatensätzen
 
-## 3.1 Vereinigung der Datensätze
+## 3.1 Umgang mit Ausreißern
+
+Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z. B. Silvester).Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d. h. es werden Variablen für diese planbaren Ausreißer angelegt.
+
+Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 auf den ersten Blick nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z. B. an Silvester). 
+
+Bei genauerem Hinsehen haben wir festgestellt, dass für die beiden Vortage 03.05.2014 und 04.05.2014 keine Umsatzdaten vorliegen und zwar für alle Warengruppen. Der Verdacht liegt nahe, dass die Umsätze für den Zeitraum 03.-05.05.2014 summiert für den 05.05.2014 angesetzt wurden. Wir finden nämlich für den 05.05.2014 insgesamt einen Umsatz in Höhe von 3.156. Für den Vergleichszeitraum eine Woche später (10.-12.05.2014) finden wir einen Gesamtumsatz in vergleichbarer Höhe: 3.267. Es handelt sich bei keinem der Tage um einen Feiertag. 
+
+Wir korrigierten die Werte für den Zeitraum 03.-05.05.2014 und setzen dafür vereinfachend die Werte der Folgewoche ein. Wir erstellen einen Datensatz `df` als Kopie der Beispieldaten. Dann löschen wir zunächst den 05.05.2014, laden die korrigierten Werte für den 03.-05.05.2014 aus dem Datensatz Beispieldaten_Korrektur.csv und verknüpfen ihn mit `df`.
+
+```{r}
+Beispieldaten %>% 
+  group_by(Datum) %>% 
+  filter(Datum=="2014-05-05") %>% 
+  summarise(Summe_Umsatz=sum(Umsatz))
+
+Beispieldaten %>% 
+  filter(Datum >= "2014-05-10" & Datum <= "2014-05-12") %>%
+  group_by(Datum) %>%
+  summarise(Summe_Umsatz=sum(Umsatz))
+
+# erzeuge df vor Korrektur der Beispieldaten
+df <- Beispieldaten
+
+# entferne alte Werte für den 05.05.2014
+df <- df %>% filter(Datum != "2014-05-05")
+
+# lese korrigierte Datensätze ein und füge Attribut Jahr hinzu
+Beispieldaten_korr <- read_csv("data/Beispieldaten_Korrektur.csv")
+Beispieldaten_korr <- Beispieldaten_korr %>% mutate(Jahr = year(Datum))
+
+# verknüpfe df mit den korrigierten Datensätzen
+df <- rbind(df, Beispieldaten_korr)
+df %>% filter(Datum == "2014-05-12")
+```
+
+
+Da die anderen Ausreißer durch jeweilige Sondereffekte zu erklären sind (Wochenende, Feiertag, Brückentag etc.) werden diese Ausreißer im Datensatz belassen und im Fortgang hierfür gesonderte Variablen angelegt.
+
+## 3.2 Vereinigung der Datensätze
 
 Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, dass diese über unterschiedliche Zeiträume reichen:
 
@@ -610,12 +646,12 @@ Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, d
 Maßgeblich ist für uns in erster Linie der Datensatz "Beispieldaten", da wir abschließend an der Prognose der Umsätze je Warengruppe interessiert sind. Wenn für ein Datum keine Umsätze vorhanden sind, sind die Daten aus den anderen Datensätzen grundsätzlich erst einmal auch unbrauchbar. Andererseits erfordern gewisse Modelle eine vollständige, ununterbrochenen Zeitreihe. Demzufolge wird zunächst ein neuer Datensatz ein `left_join` für die Vereinigung verwendet:
 
 ```{r}
-df <- left_join(Beispieldaten, KiWo, by = "Datum")
+df <- left_join(df, KiWo, by = "Datum")
 df <- left_join(df, Wetter, by = "Datum")
 head(df)
 ```
 
-## 3.2 Korrektur der Anzahl Nachkommastellen für einzelne Variablen
+## 3.3 Korrektur der Anzahl Nachkommastellen für einzelne Variablen
 
 Die Variablen `Umsatz` und `Temperatur` enthalten jeweils vier Nachkommastellen, die als überflüssig und unsinnig erachtet werden. Die Anzahl der Nachkommstellen wird entsprechend korrigiert, wobei die Anzahl Nachkommastellen bei der Variable `Umsatz` auf 2 Nachkommastellen, die Variable `Temperatur` auf 1 Nachkommastelle gerundet wird:
 
@@ -627,7 +663,7 @@ head(df)
 ```
 
 
-## 3.3 Umgang mit fehlenden Werten
+## 3.4 Umgang mit fehlenden Werten
 
 Der Datensatz **KiWo** enthält nur 72 Datensätze: für jedes Jahr wurde den Tagen, an denen die KiWo stattfindet, eine 1 zugeordnet. Diese Werte wurden Bei der Vereinigung der Datensätze entsprechend korrekt gemerged. Für alle anderen Daten, an denen keine KiWo ist, wurde bei der Vereinigung ein fehlender Wert (NA) automatisch erzeugt. Diese fehlenden Werte sind für die weitergehenden Analysen durch "0" zu ersetzen:
 
@@ -643,23 +679,6 @@ Da die Variable `Wettercode` vglw. viele fehlende Werte hat (669) und unklar ist
 df <- df[,1:8]
 head(df)  
 ```
-
-
-## 3.4 Umgang mit Ausreißern
-
-Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt (Bsp. Mo, 05.05.2014) oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z. B. Silvester). 
-Nicht prognostizierbare und nicht erklärbare Ausreißer werden eliminiert. Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d. h. es werden Variablen für diese planbaren Ausreißer angelegt.
-
-Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z. B. an Silvester). Da es sich hierbei um einen "gewöhnlichen" Montag handelt, erscheinen die Umsatzzahlen nicht plausibel und das Datum wird für alle Warengruppen eliminert. Im weiteren Verlauf werden bei der Erstellung der Analysdatensätze ggf. geeignete Imputationen für dieses Datum vorgenommen (z. B. Werte der Vorwoche, Mittelwert der vergangenen vier Montag o. Ä.).
-
-
-```{r}
-df <- df %>% 
-  filter(Datum != "2014-05-05")
-```
-
-
-Da die anderen Ausreißer durch jeweilige Sondereffekte zu erklären sind (Wochenende, Feiertag, Brückentag etc.) werden diese Ausreißer im Datensatz belassen und im Fortgang hierfür gesonderte Variablen angelegt.
 
 ## 3.5 Umgang mit Warengruppe 6
 
@@ -978,6 +997,7 @@ df_voll <- df_voll %>%
 Wir verwenden den Zeitraum 2014 bis 2017 als Trainingsdaten. Die Daten des Jahres 2018 dienen als Testdaten. Dafür werden weitere Datensätze erstellt. Die Datensätze `df_train` und `df_test` basieren auf den Rohdaten `df`. Wohingegen die Datensätze `df_train_voll` und `df_test_voll` auf den Rohdaten mit vollständiger Zeitreihe basieren (`df_voll`).
 
 ```{r}
+df <- df %>% arrange(Datum, Warengruppe)
 df_train <- df %>% filter(Jahr >= 2014 & Jahr <= 2017)
 df_test <- df %>% filter(Jahr == 2018)
 df_train_voll <- df_voll %>% filter(Jahr >= 2014 & Jahr <= 2017)
@@ -1054,7 +1074,7 @@ p_umsatz_jahr_monat
 Beobachtungen:
 
 * Die Jahre 2016 und 2017 sind weitestgehend ähnlich im Jahresverlauf. 
-* Die Umsätze im Jahr 2014 sind insgesamt offenbar parallel verschoben und systematisch höher jeden Monat. Der einzige Monat, für den das nicht zutrifft, ist der Mai: Hier hatten wir den 5.5.2014 als umsatzstärksten Tag des gesamten Zeitraums als potentiellen Datenfehler entfernt. 
+* Die Umsätze im Jahr 2014 sind insgesamt offenbar parallel verschoben und systematisch höher jeden Monat.
 * Und der Verlauf für 2015 ist ähnlich zu 2016 und 2017, nur in den ersten 3 Monaten des Jahres scheint der Umsatz 2015 systematisch höher zu liegen.
 
 Um dies weiter zu analysieren, betrachten wir schließlich noch den Umsatz auf Monatsebene je Warengruppe, um eventuelle Unterschiede im Verhalten der einzelnen Warengruppen aufzudecken.
@@ -1247,10 +1267,37 @@ df %>%
 
 # 5 Anwendung naiver Modelle
 
-# Prognose der Umsätze aufhand des Vorwochenwertes
+!!! Einschub: Nur temporär, später entfernen !!!
 ```{r}
 # Ausgabe des Datensatzes `df_train_voll` als csv, um damit in EXCEL rum zu spielen.
 write_csv(df_train_voll, "data/df_train_voll.csv")
+```
+!!! Ende Einschub !!!
+
+
+Wir wollen nun einige naive Modelle einsetzen, um die Umsätze je Warengruppe zu prognostizieren. Wir arbeiten dafür mit dem vollständigen Datensatz `df_voll`, der für jeden Tag und jede Warengruppe eine Zeile enthält, fehlenden Daten sind mit `NA` gefüllt.
+
+## 5.1 Prognose der Umsätze aufhand des Vorwochenwertes
+
+!!! WEITERES VORGEHEN:
+- df_voll aufblähen zu Analysedatensatz:
+* enthält alle Datümer und Warengruppen, fehlende Daten mit NA
+* fülle systematisch die Lücken, damit wir bspw. Prognose auf Basis des Vorwochenwertes machen können, nehme dafür ggf. die Vorjahreswerte, falls vorhanden
+* Vorsicht: Bspw. der 25./26.12. und 1.1. fehlen immer und dafür macht es Sinn, die fehlenden Werte aus Novemberwerten zu ersetzen und nicht mit Vorwochenwert. Sonst bekommt man bspw. für den 8.1. einen zu hohen Schätzer
+
+ich kümmere mich um Kap 5, Christina um Kap 6, Kap 1-4 möglichst in Ruhe lassen
+
+AUSTAUSCH mit Christina am Freitag späten Vormittag
+
+
+
+
+Wir ergänzen den Vorwochenwert (Umsatz_lag7):
+
+```{r}
+# lag7 ergänzen
+df_voll <- df_voll %>% mutate(Umsatz_lag7 = lag(Umsatz, n=7))
+
 ```
 
 
