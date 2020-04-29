@@ -635,52 +635,7 @@ df %>% filter(Datum == "2014-05-12")
 
 Da die anderen Ausreißer durch jeweilige Sondereffekte zu erklären sind (Wochenende, Feiertag, Brückentag etc.) werden diese Ausreißer im Datensatz belassen und im Fortgang hierfür gesonderte Variablen angelegt.
 
-## 3.2 Vereinigung der Datensätze
-
-Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, dass diese über unterschiedliche Zeiträume reichen:
-
-* Die Daten des Datensatzes **Beispieldaten** reichen vom 01.07.2013 bis zum 30.07.2019, sind aber teilweise unvollständig. Es fehlen bspw. für alle Warengruppen Daten für den Tag der Arbeit, Weihnachten, Neuhjahr etc. Weiterhin fehlen insbesondere bei der Warengruppe 4 immer wieder einzelne Daten in den Sommermonaten, vereinzelt auch an einzelnen Tagen im Herbst. 
-* Die Daten des Datensatzes **KiWo** reichen vom 16.06.2012 bis zum 30.06.2019.
-* Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
-
-Maßgeblich ist für uns in erster Linie der Datensatz "Beispieldaten", da wir abschließend an der Prognose der Umsätze je Warengruppe interessiert sind. Wenn für ein Datum keine Umsätze vorhanden sind, sind die Daten aus den anderen Datensätzen grundsätzlich erst einmal auch unbrauchbar. Andererseits erfordern gewisse Modelle eine vollständige, ununterbrochenen Zeitreihe. Demzufolge wird zunächst ein neuer Datensatz ein `left_join` für die Vereinigung verwendet:
-
-```{r}
-df <- left_join(df, KiWo, by = "Datum")
-df <- left_join(df, Wetter, by = "Datum")
-head(df)
-```
-
-## 3.3 Korrektur der Anzahl Nachkommastellen für einzelne Variablen
-
-Die Variablen `Umsatz` und `Temperatur` enthalten jeweils vier Nachkommastellen, die als überflüssig und unsinnig erachtet werden. Die Anzahl der Nachkommstellen wird entsprechend korrigiert, wobei die Anzahl Nachkommastellen bei der Variable `Umsatz` auf 2 Nachkommastellen, die Variable `Temperatur` auf 1 Nachkommastelle gerundet wird:
-
-```{r}
-df <- df %>%
-  mutate(Umsatz = round(Umsatz, 2)) %>% 
-  mutate(Temperatur = round(Temperatur, 1))
-head(df)
-```
-
-
-## 3.4 Umgang mit fehlenden Werten
-
-Der Datensatz **KiWo** enthält nur 72 Datensätze: für jedes Jahr wurde den Tagen, an denen die KiWo stattfindet, eine 1 zugeordnet. Diese Werte wurden Bei der Vereinigung der Datensätze entsprechend korrekt gemerged. Für alle anderen Daten, an denen keine KiWo ist, wurde bei der Vereinigung ein fehlender Wert (NA) automatisch erzeugt. Diese fehlenden Werte sind für die weitergehenden Analysen durch "0" zu ersetzen:
-
-```{r}
-df <- df %>%
-  mutate(KielerWoche = replace_na(KielerWoche, 0))
-head(df)
-```
-
-Da die Variable `Wettercode` vglw. viele fehlende Werte hat (669) und unklar ist, wie diese fehlenden Werte sinnvoll ersetzt werden können, wird diese Variable ignoriert und eliminiert:
-
-```{r}
-df <- df[,1:8]
-head(df)  
-```
-
-## 3.5 Umgang mit Warengruppe 6
+## 3.2 Umgang mit Warengruppe 6
 
 Die Anzahl der Datensätze je Warengruppe differiert teilweise stark, insbesondere Warengruppe 6 ist auffällig:
 
@@ -693,9 +648,64 @@ Die Datensätze der Warengruppe 6 werden infolgedessen gelöscht:
 df <- df %>%
   filter(Warengruppe != 6)
 ```
-Nach dem Löschen der Datensätze enthält der Datensatz nunmehr 10816 Zeilen.
+Nach dem Löschen der Datensätze enthält der Datensatz nunmehr 10826 Zeilen.
 
-## 3.6 Ergänzung um die Variablen Wochentag, Monat und Jahr
+## 3.3 Rohdaten mit vollständiger Zeitreihe
+
+Zunächst wird ein weiterer Datensatz `df_voll` erstellt, der eine komplette Zeitreihe enthält vom 1.7.2013 bis 31.7.2019 für alle Warengruppen 1 bis 5. Dabei wird in Kauf genommen, dass dieser zunächst viele fehlende Werte enthalten wird, die im weiteren Verlauf für die einzelnen Modelle sinnvoll zu ergänzen sind:
+
+```{r message=FALSE}
+## Hinzufügen der vollständigen Zeitreihe
+Zeitreihe_voll_WG <- read_csv2("data/Zeitreihe_voll_WG.csv")
+df_voll <- left_join(Zeitreihe_voll_WG, df, by = c("Datum", "Warengruppe"))
+```
+
+## 3.4 Vereinigung der Datensätze
+
+Bei der Untersuchung der Datumsvariablen der einzelnen Datensätze ergab sich, dass diese über unterschiedliche Zeiträume reichen:
+
+* Die Daten des Datensatzes **Beispieldaten** reichen vom 01.07.2013 bis zum 30.07.2019, sind aber teilweise unvollständig. Es fehlen bspw. für alle Warengruppen Daten für den Tag der Arbeit, Weihnachten, Neuhjahr etc. Weiterhin fehlen insbesondere bei der Warengruppe 4 immer wieder einzelne Daten in den Sommermonaten, vereinzelt auch an einzelnen Tagen im Herbst. 
+* Die Daten des Datensatzes **KiWo** reichen vom 16.06.2012 bis zum 30.06.2019.
+* Die Daten des Datensatzes **Wetter** reichen vom 01.01.2012 bis zum 01.08.2019.
+
+Maßgeblich ist für uns der Zeitraum der vollstängien Zeitreihe `df_voll` vom 01.07.2013 bis zum 31.07.2019. Wir fügen über ein `left_join` die Daten zur Kieler Woche und die Wetterdaten an.
+
+```{r}
+df_voll <- left_join(df_voll, KiWo, by = "Datum")
+df_voll <- left_join(df_voll, Wetter, by = "Datum")
+head(df_voll)
+```
+
+## 3.5 Korrektur der Anzahl Nachkommastellen für einzelne Variablen
+
+Die Variablen `Umsatz` und `Temperatur` enthalten jeweils vier Nachkommastellen, die als überflüssig und unsinnig erachtet werden. Die Anzahl der Nachkommstellen wird entsprechend korrigiert, wobei die Anzahl Nachkommastellen bei der Variable `Umsatz` auf 2 Nachkommastellen, die Variable `Temperatur` auf 1 Nachkommastelle gerundet wird:
+
+```{r}
+df_voll <- df_voll %>%
+  mutate(Umsatz = round(Umsatz, 2)) %>% 
+  mutate(Temperatur = round(Temperatur, 1))
+head(df_voll)
+```
+
+
+## 3.6 Umgang mit fehlenden Werten
+
+Der Datensatz **KiWo** enthält nur 72 Datensätze: für jedes Jahr wurde den Tagen, an denen die KiWo stattfindet, eine 1 zugeordnet. Diese Werte wurden Bei der Vereinigung der Datensätze entsprechend korrekt gemerged. Für alle anderen Daten, an denen keine KiWo ist, wurde bei der Vereinigung ein fehlender Wert (NA) automatisch erzeugt. Diese fehlenden Werte sind für die weitergehenden Analysen durch "0" zu ersetzen:
+
+```{r}
+df_voll <- df_voll %>%
+  mutate(KielerWoche = replace_na(KielerWoche, 0))
+head(df_voll)
+```
+
+Da die Variable `Wettercode` vglw. viele fehlende Werte hat (669) und unklar ist, wie diese fehlenden Werte sinnvoll ersetzt werden können, wird diese Variable ignoriert und eliminiert:
+
+```{r}
+df_voll <- df_voll[,1:8]
+head(df_voll)  
+```
+
+## 3.7 Ergänzung um die Variablen Wochentag, Monat und Jahr
 
 Ein wesentlicher Einflussfaktor für die Umsatzprognose wird der Wochentag sein, wir fügen diesen als eigene Spalte hinzu: Sonntag (1), Montag (2), ... , Samstag (7). Und für die spätere Aufteilung der Daten in Training- und Testset wird das Jahr als weitere Spalte ergänzt und der Monat.
 
@@ -705,26 +715,26 @@ Bsp.:
 Soll der `Wochentag` ein lineare Regressionsmodell aufgenommen werden, würde eine numerische Variable zu falschen Ergebnissen führen (wird der Wochentag um eins erhöht, erhöht sich der Umsatz um xy%). Bei einer `character`-Variable würde diese "dummyfiziert". Ein Wochentag würde als Referenztag abgebildet werden und die anderen 6 Wochentage in Form von Dummyvariablen.
 
 ```{r}
-df <- df %>% mutate(Wochentag = wday(Datum))
-df <- df %>% mutate(Jahr = year(Datum))
-df <- df %>% mutate(Monat = month(Datum))
+df_voll <- df_voll %>% mutate(Wochentag = wday(Datum))
+df_voll <- df_voll %>% mutate(Jahr = year(Datum))
+df_voll <- df_voll %>% mutate(Monat = month(Datum))
 
 # Wochentag als character-Variable
-df <- df %>% mutate(Wochentag_c = recode(Wochentag, "1" = "Sonntag", "2" = "Montag", "3" = "Dienstag", "4" = "Mittwoch", "5" = "Donnerstag", "6" = "Freitag", "7" = "Samstag"))
+df_voll <- df_voll %>% mutate(Wochentag_c = recode(Wochentag, "1" = "Sonntag", "2" = "Montag", "3" = "Dienstag", "4" = "Mittwoch", "5" = "Donnerstag", "6" = "Freitag", "7" = "Samstag"))
 
 # Monat als character-Variable
-df <- df %>% mutate(Monat_c = recode(Monat, "1" = "Januar", "2" = "Februar", "3" = "März", "4" = "April", "5" = "Mai", "6" = "Juni", "7" = "Juli", "8" = "August", "9" = "September", "10" = "Oktober", "11" = "November", "12" = "Dezember"))
+df_voll <- df_voll %>% mutate(Monat_c = recode(Monat, "1" = "Januar", "2" = "Februar", "3" = "März", "4" = "April", "5" = "Mai", "6" = "Juni", "7" = "Juli", "8" = "August", "9" = "September", "10" = "Oktober", "11" = "November", "12" = "Dezember"))
 ```
 
 Es besteht die Möglichkeit, dass es unterhalb der Wochentag keine großen Unterschiede gibt, wohl aber zwischen Wochentagen und Wochenendtagen. Insofern wird eine weitere Variable `Wochenende` erstellt, die nur die beiden Ausprägungen 1 = "Wochenende" und 0 = "kein Wochenende" ("Wochentag") hat.
 
 ```{r}
-df <- df %>% mutate(Wochenende = recode(Wochentag, "1" = "1", "2" = "0", "3" = "0", "4" = "0", "5" = "0", "6" = "0", "7" = "1"))
+df_voll <- df_voll %>% mutate(Wochenende = recode(Wochentag, "1" = "1", "2" = "0", "3" = "0", "4" = "0", "5" = "0", "6" = "0", "7" = "1"))
 
-df <- df %>% mutate(Wochenende = as.numeric(Wochenende))
+df_voll <- df_voll %>% mutate(Wochenende = as.numeric(Wochenende))
 ```
 
-## 3.7 Ergänzung um Sommerferienvariablen
+## 3.8 Ergänzung um Sommerferienvariablen
 
 Die Sommerferien scheinen einen starken Einfluss auf den Umsatz zu haben. Für die anderen Ferienzeiträume des Jahres gilt dies nicht. Für ausgewählte Bundesländer, namentlich Schleswig-Holstein, Nordrhein-Westfalen, Niedersachsen und Hessen wurden daher zunächst Datensätze in Excel erstellt (1 Datensatz je Bundesland). Diese Datensätze enthalten die Zeiträume der Sommerferien über die einzelnen Jahre. Diese Datensätze werden in R eingelesen und mit den anderen Daten zusammengeführt.
 
@@ -733,39 +743,39 @@ Die Auswahl der genannten Bundesländer erfolgte dabei anhand der Besucherzahlen
 ```{r message=FALSE}
 ## Ergänzung der Sommerferien Schleswig-Holstein
 SoFeSH <- read_csv2("data/SoFe_SH.csv")  # da der Separator ein ";" ist, muss read_csv2 verwendet werden
-df <- left_join(df, SoFeSH, by = "Datum")
+df_voll <- left_join(df_voll, SoFeSH, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(SommerferienSH = replace_na(SommerferienSH, 0))
 
 
 ## Ergänzung der Sommerferien Nordrhein-Westfalen
 SoFeNRW <- read_csv2("data/SoFe_NRW.csv") 
-df <- left_join(df, SoFeNRW, by = "Datum")
+df_voll <- left_join(df_voll, SoFeNRW, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(SommerferienNRW = replace_na(SommerferienNRW, 0))
 
 ## Ergänzung der Sommerferien Niedersachsen
 SoFeNDS <- read_csv2("data/SoFe_NDS.csv")  
-df <- left_join(df, SoFeNDS, by = "Datum")
+df_voll <- left_join(df_voll, SoFeNDS, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(SommerferienNDS = replace_na(SommerferienNDS, 0))
 
 # Ergänzung der Sommerferien Hessen
 SoFeHE <- read_csv2("data/SoFe_HE.csv")  
-df <- left_join(df, SoFeHE, by = "Datum")
+df_voll <- left_join(df_voll, SoFeHE, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(SommerferienHE = replace_na(SommerferienHE, 0))
 ```
 
-## 3.8 Ergänzung um Feiertagsvariablen
+## 3.9 Ergänzung um Feiertagsvariablen
 
 Die ersten Betrachtungen und Analysen lassen den Schluss zu, dass bestimmte Feiertage Einfluss auf die Höhe des Umsatzes haben. 
 
@@ -780,10 +790,10 @@ Begonnen wird mit der generellen Feiertagsvariable. Ausgewählte Feiertage (Karf
 
 ```{r message=FALSE}
 Feiertage <- read_csv2("data/Feiertage.csv")
-df <- left_join(df, Feiertage, by = "Datum")
+df_voll <- left_join(df_voll, Feiertage, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Feiertag = replace_na(Feiertag, 0))
 ```
 
@@ -795,46 +805,46 @@ Zunächst werden Variablen erstellt, die nur die Feiertage enthalten:
 ```{r message=FALSE}
 ## Hinzufügen der Variable Ostern (nur Feiertage Karfreitag, Ostersonntag, Ostermontag)
 Ostern <- read_csv2("data/KarfreitagOstern.csv")
-df <- left_join(df, Ostern, by = "Datum")
+df_voll <- left_join(df_voll, Ostern, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Ostern = replace_na(Ostern, 0))
 
 
 ## Hinzufügen der Variable Christihimmmelfahrt (nur dieser Feiertag)
 ChristiHimmelfahrt <- read_csv2("data/ChristiHimmelfahrt.csv")
-df <- left_join(df, ChristiHimmelfahrt, by = "Datum")
+df_voll <- left_join(df_voll, ChristiHimmelfahrt, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(ChristiHimmelfahrt = replace_na(ChristiHimmelfahrt, 0))
 
 
 ## Hinzufügen der Variable Pfingsten (nur Pfingstsonntag, Pfingstmontag)
 Pfingsten <- read_csv2("data/Pfingsten.csv")
-df <- left_join(df, Pfingsten, by = "Datum")
+df_voll <- left_join(df_voll, Pfingsten, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Pfingsten = replace_na(Pfingsten, 0))
 
 
 ## Hinzufügen der Variable Tag der deutschen Einheit (nur der Feiertag)
 TDE <- read_csv2("data/TdDE.csv")
-df <- left_join(df, TDE, by = "Datum")
+df_voll <- left_join(df_voll, TDE, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(TDE = replace_na(TDE, 0))
 
 
 ## Hinzufügen der Variable Silvester
 Silvester <- read_csv2("data/Silvester.csv")
-df <- left_join(df, Silvester, by = "Datum")
+df_voll <- left_join(df_voll, Silvester, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Silvester = replace_na(Silvester, 0))
 
 ```
@@ -845,43 +855,43 @@ Ausgenommen wird an dieser Stelle der Tag der Deutschen Einheit, da der Einfluss
 ```{r}
 ## Hinzufügen der Variable Ostern_ext (= Ostern extendet) (Gründonnerstag, "Ostersamstag", Ostersonntag, Ostermontag, ohne Karfreitag, da geschlossen)
 Ostern_ext <- read_csv2("data/Ostern_extended.csv")
-df <- left_join(df, Ostern_ext, by = "Datum")
+df_voll <- left_join(df_voll, Ostern_ext, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Ostern_ext = replace_na(Ostern_ext, 0))
 
 
 ## Hinzufügen der Variable Christihimmmelfahrt (Mittwoch vor Himmelfahrt bis Sonntag nach Himmelfahrt) 
 ChristiHimmelfahrt_ext <- read_csv2("data/ChristiHimmelfahrt_ext.csv")
-df <- left_join(df, ChristiHimmelfahrt_ext, by = "Datum")
+df_voll <- left_join(df_voll, ChristiHimmelfahrt_ext, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(ChristiHimmelfahrt_ext = replace_na(ChristiHimmelfahrt_ext, 0))
 
 
 ## Hinzufügen der Variable Pfingsten_ext (Samstag vor Pfingsten/Pfingstssamstag, Pfingstsonntag, Pfingstmontag; Dienstag nch Pfingsten)
 Pfingsten_ext <- read_csv2("data/Pfingsten_ext.csv")
-df <- left_join(df, Pfingsten_ext, by = "Datum")
+df_voll <- left_join(df_voll, Pfingsten_ext, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Pfingsten_ext = replace_na(Pfingsten_ext, 0))
 
 
 
-## Hinzufügen der Variable Silvester_ext (inkl. Vortag 30.12.)
+## Hinzufügen der Variable Silvester_ext (inkl. Vortag 30.12. und 01.01.)
 Silvester_ext <- read_csv2("data/Silvester_ext.csv")
-df <- left_join(df, Silvester_ext, by = "Datum")
+df_voll <- left_join(df_voll, Silvester_ext, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Silvester_ext = replace_na(Silvester_ext, 0))
 ```
 
 
-## 3.9 Ergänzung um Variable Jahreszeit
+## 3.10 Ergänzung um Variable Jahreszeit
 
 Die ersten Betrachtungen und Analysen lassen darauf schließen, dass die Jahreszeiten einen Einfluss auf die Höhe des Umsatzes haben. 
 
@@ -917,7 +927,7 @@ Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelesen und
 ```{r}
 ## Hinzufügen der Variable Jahreszeiten
 Jahreszeiten <- read_csv2("data/Jahreszeiten.csv")
-df <- left_join(df, Jahreszeiten, by = "Datum")
+df_voll <- left_join(df_voll, Jahreszeiten, by = "Datum")
 ```
 
 In einem weiteren Schritt werden für die einzelnen Jahreszeiten eigene Variablen angelegt und mit dem bestehenden Rohdatensatz verknüpft:
@@ -925,97 +935,151 @@ In einem weiteren Schritt werden für die einzelnen Jahreszeiten eigene Variable
 ```{r}
 ## Hinzufügen der Variable Fruehling
 Fruehling <- read_csv2("data/Fruehling.csv")
-df <- left_join(df, Fruehling, by = "Datum")
+df_voll <- left_join(df_voll, Fruehling, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Fruehling = replace_na(Fruehling, 0))
 
 
 ## Hinzufügen der Variable Sommer
 Sommer <- read_csv2("data/Sommer.csv")
-df <- left_join(df, Sommer, by = "Datum")
+df_voll <- left_join(df_voll, Sommer, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Sommer = replace_na(Sommer, 0))
 
 
 ## Hinzufügen der Variable Herbst
 Herbst <- read_csv2("data/Herbst.csv")
-df <- left_join(df, Herbst, by = "Datum")
+df_voll <- left_join(df_voll, Herbst, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Herbst = replace_na(Herbst, 0))
 
 
 ## Hinzufügen der Variable Winter
 Winter <- read_csv2("data/Winter.csv")
-df <- left_join(df, Winter, by = "Datum")
+df_voll <- left_join(df_voll, Winter, by = "Datum")
 
 # Beim mergen erzeugte fehlende Werte (NA) durch 0 ersetzen:
-df <- df %>%
+df_voll <- df_voll %>%
   mutate(Winter = replace_na(Winter, 0))
 ```
 
-## 3.10 Rohdaten, Trainingsdaten, Testdaten
+## 3.11 vollständige Datenreihe, Imputationen, Trainingsdaten, Testdaten
 
-### Rohdatensatz
+### vollständige Datenreihe
 
-Ergebnis der vorangegegangenen Operationen ist der Rohdatensatz `df`. 
+Ergebnis der vorangegegangenen Operationen ist der Datensatz `df_voll`, der eine vollständige Zeitreihe vom 01.07.2013 bis 31.07.2019 für die Warengruppen 1 bis 5 enthält, angereichert um zahlreiche Variablen wir Kieler Woche, Wetterdaten, Sommerferien, Feiertage.
 
-Dieser Rohdatensetz kann für einzelne Analysen ohne Weiteres verwendet werden, z. B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z. B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
+In diesem Datensatz fehlen teilweise die Umsätze für einzelne Tage und/oder Warengruppen, weil die Rohdaten fehlende Werte aufweisen.
 
-Bsp.: Der Umsatz für den 02.01.2012 soll auf Basis der Vorwochenwerte prognostiziert werden. Der Vorwochenwert würde streng genommen der 26.12. sein, der 2. Weihnachtsfeiertag. Dieser Wert ist jedoch grundsätzlich fehlend, da die Filiale am 26.12. immer geschlossen hat. 
+Der Datensatz `df_voll` kann für einzelne Analysen ohne Weiteres verwendet werden, z. B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z. B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
 
-Führt man in R auf Basis der bestehenden Daten einen Prognose auf Basis der Vorwochenwerte durch, wird die Prognose für den 03.01. auf Basis des 23.12. vollzogen, für den 04.01. auf Basis von Heiligabend, ohne dass eine Fehelermeldung erzeugt wird.
+### Imputation: Ergänzung fehlender Werte
 
-Sinn und Zweck kann es allerdings nicht sein, dass die Prognosen eines Umsatzes am 03.01. sich an den Umstätzen des 24.12. orientieren. Folglich bedarf es eines weiteren Datensatzes, der eine vollständige Zeitreihe enthält. Wie die aufgrund der vorliegenden Datenbasis entstehenden unvollständigen Zeilen mit sinnvollen Werten aufzufüllen sind, ist noch / mit Blick auf die Anwendung verschiedener Modelle zu klären.
+Fehlende Daten sind im Datensatz `df_voll` mit `NA` gefüllt. Das bereitet für die Anwendung u.a. der naiven Modelle Probleme: Wenn bspw. der Umsatz auf Basis des Vorwochenwertes geschätzt werden soll, dann wird ein "sinnvoller" Umsatz für jedes Datum erwartet.
 
-### Rohdaten mit vollständiger Zeitreihe
+Zuerst kennzeichnen wir im Datensatz `df_voll` die Zeilen, die fehlende Umsatzwerte aufweisen mit einem neuen Attribut "Umsatz_NA", das die Werte TRUE (Umsatz fehlt in den Rohdaten und wurde ergänzt) und FALSE (Umsatz vorhanden in den Rohdaten) annimmt.
 
-Zunächst wird ein weiterer Datensatz `df_voll` erstellt, der eine komplette Zeitreihe enthält vom 1.7.2013 bis 31.7.2019 für alle Warengruppen 1 bis 5. Dabei wird in Kauf genommen, dass dieser zunächst viele fehlende Werte enthalten wird, die im weiteren Verlauf für die einzelnen Modelle sinnvoll zu ergänzen sind:
+Danach wollen wir diese fehlenden Umsätze durch werte aus der Vergangenheit ersetzen. In der Regel gucken wir uns die Umsätze der Vorwoche an dem entsprechenden Wochentag an. Eine Ausnahme machen wir für die fehlenden Umsätze an Silvester und Neujahr: Da die Vorwochenwerte erhöht sind (Heiligabend) bzw. fehlen, gehen wir 4 Wochen zurück, weil die ersetzten Werte dann als Schätzer bspw. für die Folgewoche verwendet werden sollen.
 
-```{r message=FALSE}
-## Hinzufügen der vollständigen Zeitreihe
-Zeitreihe_voll_WG <- read_csv2("data/Zeitreihe_voll_WG.csv")
-df_voll <- left_join(Zeitreihe_voll_WG, df, by = c("Datum", "Warengruppe"))
+```{r}
+# ergänze Attribut Umsatz_NA
+df_voll <- df_voll %>% mutate(Umsatz_NA=is.na(Umsatz))
 
-## Die Variablen Monat u. Jahr müssen nun für die vollständige Zeitreihe neu ermittelt werden
-df_voll <- df_voll %>% mutate(Jahr = year(Datum))
-df_voll <- df_voll %>% mutate(Monat = month(Datum))
+# Ergänze Spalten für den Umsatz vor 1 Woche (Umsatz_lag_1W), 2 Wochen (Umsatz_lag_2W), 3 Wochen (Umsatz_lag_3W) und 4 Wochen (Umsatz_lag_4W).
+# WICHTIG: Pro Woche müssen wir 7*5=35 Datensätze zurück gehen (7 Tage mal 5 Warengruppen)
+df_voll <- df_voll %>% mutate(Umsatz_lag_1W=lag(Umsatz,n=35))
+df_voll <- df_voll %>% mutate(Umsatz_lag_2W=lag(Umsatz,n=2*35))
+df_voll <- df_voll %>% mutate(Umsatz_lag_3W=lag(Umsatz,n=3*35))
+df_voll <- df_voll %>% mutate(Umsatz_lag_4W=lag(Umsatz,n=4*35))
+```
 
+Fehlende Umsätze (Umsatz_NA = TRUE) werden dann ersetzt durch den Vorwochenwert (Umsatz_lag_1W). Falls der Wert ebenfalls fehlt, gehen wir 2 Wochen zurück (Umsatz_lag_2W). Und falls der Wert ebenfalls fehlt, gehen wir 3 Wochen zurück (Umsatz_lag_3W). Eine Ausnahme bilden Silvester und Neujahr (Silvester_ext=1): In diesem Fall wollen wir den fehlenden Umsatz aus dem Wert vor 4 Wochen nehmen (Umsatz_lag_4W).
+
+Der ersetzte Wert wird in einer separaten Variable "Umsatz_lag" gespeichert:
+
+```{r}
+# Ergänze Attribut Umsatz_lag für den Vorwochen-Umsatz mit Initialwert 0.
+df_voll <- df_voll %>% mutate(Umsatz_lag = 0)
+
+# nicht Silvester / Neujahr: Dann nehme Umsatz der Vorwoche
+df_voll <- df_voll %>% mutate(Umsatz_lag_temp = Umsatz_lag_1W * Umsatz_NA * !Silvester_ext)
+
+# Zwischenschritt: ersetze NA durch 0
 df_voll <- df_voll %>%
-  arrange(Warengruppe) # alle fehlenden Zeilen werden ans Ende des Datensatzes verschoben
+  mutate(Umsatz_lag_temp = replace_na(Umsatz_lag_temp, 0))
 
-# df_voll %>% filter(is.na(Umsatz))
+# Summiere Umsatz_lag und Umsatz_lag_temp
+df_voll <- df_voll %>% mutate(Umsatz_lag = Umsatz_lag + Umsatz_lag_temp)
+
+# Silvester / Neujahr: Dann nehme Umsatz von vor 4 Wochen
+df_voll <- df_voll %>% mutate(Umsatz_lag_temp = Umsatz_lag_4W * Umsatz_NA * Silvester_ext)
+
+# Zwischenschritt: ersetze NA durch 0
+df_voll <- df_voll %>%
+  mutate(Umsatz_lag_temp = replace_na(Umsatz_lag_temp, 0))
+
+# Summiere Umsatz_lag und Umsatz_lag_temp
+df_voll <- df_voll %>% mutate(Umsatz_lag = Umsatz_lag + Umsatz_lag_temp)
+
+# prüfe: Wo fehlte noch Umsatz in den Rohdaten (Umsatz_NA = TRUE) den wir nicht ersetzen konnten aus Umsatz_lag_1W und Umsatz_lag_4W (Umsatz_lag = 0)? und Umsatz_lag = 0?
+df_voll %>% filter(Umsatz_NA & (Umsatz_lag==0))
+
+# Nehme für diese Fälle den Umsatz vor 2 Wochen (Umsatz_lag_2W)
+df_voll <- df_voll %>% mutate(Umsatz_lag_temp = Umsatz_lag_2W * (df_voll$Umsatz_NA & df_voll$Umsatz_lag == 0))
+
+# Zwischenschritt: ersetze NA durch 0
+df_voll <- df_voll %>%
+  mutate(Umsatz_lag_temp = replace_na(Umsatz_lag_temp, 0))
+
+# Summiere Umsatz_lag und Umsatz_lag_temp
+df_voll <- df_voll %>% mutate(Umsatz_lag = Umsatz_lag + Umsatz_lag_temp)
+
+# prüfe: Wo fehlte noch Umsatz in den Rohdaten (Umsatz_NA = TRUE), der nicht ersetzt werden konnte (Umsatz_lag = 0)?
+df_voll %>% filter(Umsatz_NA & (Umsatz_lag==0))
+
+# Spalte Umsatz_lag_temp nicht mehr benötigt, entfernen!
+df_voll <- df_voll[,1:38]
+```
+
+Führe nun den Umsatz aus den Rohdaten (Umsatz) zusammen mit den aus den Vorwochen ermittelten fehlenden Werten (Umsatz_lag).
+
+```{r}
+# Vorbereitung: ersetze in Spalte Umsatz NA durch 0
+df_voll <- df_voll %>%
+  mutate(Umsatz = replace_na(Umsatz, 0))
+
+# Führe Umsatz und Umsatz_lag zusammen
+df_voll <- df_voll %>% mutate(Umsatz = Umsatz + Umsatz_lag)
 ```
 
 ### Trainings- und Testdaten
 
-Wir verwenden den Zeitraum 2014 bis 2017 als Trainingsdaten. Die Daten des Jahres 2018 dienen als Testdaten. Dafür werden weitere Datensätze erstellt. Die Datensätze `df_train` und `df_test` basieren auf den Rohdaten `df`. Wohingegen die Datensätze `df_train_voll` und `df_test_voll` auf den Rohdaten mit vollständiger Zeitreihe basieren (`df_voll`).
+Wir verwenden den Zeitraum 2014 bis 2017 als Trainingsdaten. Die Daten des Jahres 2018 dienen als Testdaten. Dafür werden weitere Datensätze erstellt. Die Datensätze `df_train` und `df_test` basieren auf dem vollstängigen Datensatz `df_voll`. Der vollständige Datensatz enthält die komplette Zeitreihe vom 01.07.2013 bis 31.07.2019, jedes Datum und jede Warengruppe ist enthalten. Eventuell fehlende Umsätze sind aus den Vorwochen ergänzt. Zeilen, bei denen der Umsatz ergänzt wurden, sind erkennbar am Attribut "Umsatz_NA", die TRUE ist, wenn in den Rohdaten der Umsatz fehlte.
 
 ```{r}
-df <- df %>% arrange(Datum, Warengruppe)
-df_train <- df %>% filter(Jahr >= 2014 & Jahr <= 2017)
-df_test <- df %>% filter(Jahr == 2018)
-df_train_voll <- df_voll %>% filter(Jahr >= 2014 & Jahr <= 2017)
-df_test_voll <- df_voll %>% filter(Jahr == 2018)
+df_voll <- df_voll %>% arrange(Datum, Warengruppe)
+df_train <- df_voll %>% filter(Jahr >= 2014 & Jahr <= 2017)
+df_test <- df_voll %>% filter(Jahr == 2018)
 ```
 
 # 4. Deskriptive Analysen
 
 ## 4.1 Umsatz je Wochentag / Warengruppe
 
-Untersuche den Umsatz je Wochentag und/oder Warengruppe in den Daten. Als Basis genügt dafür der Rohdatensatz `df`.
+Untersuche den Umsatz je Wochentag und/oder Warengruppe in den Daten. Als Basis verwenden wir die zunächst den vollständigen Datensatz `df_voll`.
 
 ```{r}
-df %>% group_by(Warengruppe) %>% summarise(Umsatz_sum = sum(Umsatz))
-df %>% group_by(Wochentag_c) %>% summarise(Umsatz_sum = sum(Umsatz))
-df %>% group_by(Warengruppe, Wochentag_c) %>% summarise(Umsatz_sum = sum(Umsatz))
-df %>% group_by(Warengruppe, Wochentag) %>% summarise(Umsatz_sum = sum(Umsatz))
-df %>% group_by(Warengruppe, Wochenende) %>% summarise(Umsatz_sum = sum(Umsatz))
+df_voll %>% group_by(Warengruppe) %>% summarise(Umsatz_sum = sum(Umsatz))
+df_voll %>% group_by(Wochentag_c) %>% summarise(Umsatz_sum = sum(Umsatz))
+df_voll %>% group_by(Warengruppe, Wochentag_c) %>% summarise(Umsatz_sum = sum(Umsatz))
+df_voll %>% group_by(Warengruppe, Wochentag) %>% summarise(Umsatz_sum = sum(Umsatz))
+df_voll %>% group_by(Warengruppe, Wochenende) %>% summarise(Umsatz_sum = sum(Umsatz))
 ```
 
 * Warengruppe 2 zeigt den höchsten Umsatz insgesamt, gefolgt von Warengruppe 5.
@@ -1031,13 +1095,12 @@ df %>% group_by(Warengruppe, Wochenende) %>% summarise(Umsatz_sum = sum(Umsatz))
   
 ## 4.2 Umsatz je Monat / Warengruppe
 
-In einem weiteren Schritt werden die Umsätze je Warengruppe und Monat untersucht, um eine differenziertere Veretilung der Umsätze im Jahresverlauf zu erhalten:
-
+In einem weiteren Schritt werden die Umsätze je Warengruppe und Monat untersucht, um eine differenziertere Verteilung der Umsätze im Jahresverlauf zu erhalten. 
 
 ```{r}
-df %>% group_by(Warengruppe, Monat) %>% summarise(Umsatz_sum = sum(Umsatz))
+df_voll %>% group_by(Warengruppe, Monat) %>% summarise(Umsatz_sum = sum(Umsatz))
 
-df %>% group_by(Warengruppe, Monat_c) %>% summarise(Umsatz_sum = sum(Umsatz)) %>% arrange(Warengruppe, desc(Umsatz_sum))
+df_voll %>% group_by(Warengruppe, Monat_c) %>% summarise(Umsatz_sum = sum(Umsatz)) %>% arrange(Warengruppe, desc(Umsatz_sum))
 ```
 
 * Es gibt erkennbare Unterschiede zwischen den Warengruppen, was den Umsatz pro Monat anbelangt:
@@ -1198,7 +1261,7 @@ Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengr
 
 **Untersuchung der Warengruppe 1**
 ```{r}
-df %>%
+df_voll %>%
   filter(Warengruppe == "1") %>%
   ggcorr()
 ```
@@ -1214,7 +1277,7 @@ df %>%
 
 **Untersuchung der Warengruppe 2**
 ```{r}
-df %>%
+df_voll %>%
   filter(Warengruppe == "2") %>%
   ggcorr()
 ```
@@ -1230,7 +1293,7 @@ df %>%
 
 **Untersuchung der Warengruppe 3**
 ```{r}
-df %>%
+df_voll %>%
   filter(Warengruppe == "3") %>%
   ggcorr()
 ```
@@ -1239,7 +1302,7 @@ df %>%
 
 **Untersuchung der Warengruppe 4**
 ```{r}
-df %>%
+df_voll %>%
   filter(Warengruppe == "4") %>%
   ggcorr()
 ```
@@ -1253,7 +1316,7 @@ df %>%
   + Winter 
 
 ```{r}
-df %>%
+df_voll %>%
   filter(Warengruppe == "5") %>%
   ggcorr()
 ```
@@ -1267,47 +1330,11 @@ df %>%
 
 # 5 Anwendung naiver Modelle
 
-!!! Einschub: Nur temporär, später entfernen !!!
-```{r}
-# Ausgabe des Datensatzes `df_train_voll` als csv, um damit in EXCEL rum zu spielen.
-write_csv(df_train_voll, "data/df_train_voll.csv")
-```
-!!! Ende Einschub !!!
-
-
-Wir wollen nun einige naive Modelle einsetzen, um die Umsätze je Warengruppe zu prognostizieren. Wir arbeiten dafür mit dem vollständigen Datensatz `df_voll`, der für jeden Tag und jede Warengruppe eine Zeile enthält, fehlenden Daten sind mit `NA` gefüllt.
+Wir wollen nun einige naive Modelle einsetzen, um die Umsätze je Warengruppe zu prognostizieren. Wir arbeiten dafür mit dem vollständigen Datensatz `df_voll`, der für jeden Tag und jede Warengruppe eine Zeile enthält. Fehlende Umsatzwerte in den Rohdaten sind durch die Vorwochenwerte ersetzt, weitere fehlenden Daten sind mit `NA` gefüllt.
 
 ## 5.1 Prognose der Umsätze aufhand des Vorwochenwertes
 
-!!! WEITERES VORGEHEN:
-- df_voll aufblähen zu Analysedatensatz:
-* enthält alle Datümer und Warengruppen, fehlende Daten mit NA
-* fülle systematisch die Lücken, damit wir bspw. Prognose auf Basis des Vorwochenwertes machen können, nehme dafür ggf. die Vorjahreswerte, falls vorhanden
-* Vorsicht: Bspw. der 25./26.12. und 1.1. fehlen immer und dafür macht es Sinn, die fehlenden Werte aus Novemberwerten zu ersetzen und nicht mit Vorwochenwert. Sonst bekommt man bspw. für den 8.1. einen zu hohen Schätzer
-
-ich kümmere mich um Kap 5, Christina um Kap 6, Kap 1-4 möglichst in Ruhe lassen
-
-AUSTAUSCH mit Christina am Freitag späten Vormittag
-
-
-
-
-Wir ergänzen den Vorwochenwert (Umsatz_lag7):
-
-```{r}
-# lag7 ergänzen
-df_voll <- df_voll %>% mutate(Umsatz_lag7 = lag(Umsatz, n=7))
-
-```
-
-
-```{r}
-#df <- df %>% mutate(Umsatz_lag = lag(Umsatz, n=7), order_by = Warengruppe)
-
-df <- df %>% group_by(Warengruppe) %>% mutate(Umsatz_lagged = lag(Umsatz, n=7, order_by = Datum))
-
-df <- df %>% group_by(Warengruppe) %>% mutate(Datum_lagged= lag(Datum, n=7, order_by = Datum))
-```
+(MARCO)
 
 
 # 6 Anwendung statistischer Modelle
