@@ -1336,7 +1336,7 @@ Wir wollen nun einige naive Modelle einsetzen, um die Umsätze je Warengruppe zu
 
 Wir werden im folgenden verschiedene naive Prognosemodelle testen und vergleichen. Zuerst betrachten wir die Schätzung des Umsatzes auf Basis des Vorwochenwertes (Umsatz_lag_1W). 
 
-Im zweiten Teil betrachten wir die Schätzung mittels eines gleitenden Durchschnitts über die letzten 3 Tage (Umsatz_glDS_3T). Wir wissen bereits, dass der Umsatz am Wochenende systematisch höher ist, als unter der Woche. Daher erwarten wir, dass der gleitende Durchschnitt in der Form nur eingeschränkt geeignet ist, wahrscheinlich nur Für Donnerstag und Freitag. Als Erweiterung könnte man den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw).
+Im zweiten Teil betrachten wir die Schätzung mittels eines gleitenden Durchschnitts über die letzten 3 Tage (Umsatz_glDS_3T). Wir wissen bereits, dass der Umsatz am Wochenende systematisch höher ist, als unter der Woche. Daher erwarten wir, dass der gleitende Durchschnitt in der Form nur eingeschränkt geeignet ist, wahrscheinlich nur Für Donnerstag und Freitag. Als Erweiterung könnte man den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw), oder sogar auf Basis der letzten vier Wochentage bzw. Wochenendtage (Umsatz_glDS_4T_erw).
 
 Und schließlich betrachten wir einen gewichteten Mittelwert der Vorwochen (Umsatz_gewMW_4W) als Schätzer. Hierbei gewichten wir den Wert der Vorwoche mit 50%, den Wert zwei Wochen zurück mit 25% und den Wert drei Wochen zurück mit 15% und den Wert vier Wochen zurück mit 10%.
 
@@ -1357,9 +1357,10 @@ Zunächst benötigen wir Werte für folgende Attribute, die teilweise schon vorh
 - Umsatz_lag_3W
 - Umsatz_lag_4W
 - Umsatz_gewMW_4W
-- Umsatz_lag_1T bis Umsatz_lag_8T, sowie Umsatz_lag_13T (1 bis 8 und 13 Tage zurück)
+- Umsatz_lag_1T bis Umsatz_lag_8T, Umsatz_lag_13T, Umsatz_lag_14T (1 bis 8, 13 und 14 Tage zurück)
 - Umsatz_glDS_3T
 - Umsatz_glDS_3T_erw
+- Umsatz_glDS_4T_erw
 
 Wir erstellen für diesen Abschnitt einen Analysedatensatz `df_naiv` auf Basis von `df_voll`.
 
@@ -1389,11 +1390,12 @@ df_naiv <- df_naiv %>% mutate(Umsatz_lag_6T = lag(Umsatz, n=30)) # 6 Tage zurüc
 df_naiv <- df_naiv %>% mutate(Umsatz_lag_7T = lag(Umsatz, n=35)) # 7 Tage zurück
 df_naiv <- df_naiv %>% mutate(Umsatz_lag_8T = lag(Umsatz, n=40)) # 8 Tage zurück
 df_naiv <- df_naiv %>% mutate(Umsatz_lag_13T = lag(Umsatz, n=65)) # 13 Tage zurück
+df_naiv <- df_naiv %>% mutate(Umsatz_lag_14T = lag(Umsatz, n=70)) # 14 Tage zurück
 
 # nun können wir den gleitenden Durchschnitt der letzten 3 Tage erstellen
 df_naiv <- df_naiv %>% mutate(Umsatz_glDS_3T = (Umsatz_lag_1T + Umsatz_lag_2T + Umsatz_lag_3T) / 3)
 
-# Dir Berechnung des erweiterten gleitenden Durchschnitt ist etwas aufwändiger: Hierfür wollen wir den Durchschnitt der letzten 3 Wochentage bzw. Wochenendtage ermitteln. Für einen Montag müssen wir also 3, 4 und 5 Tage zurück gehen, für einen Samstag 6, 7 und 13 Tage. Oder anders ausgedrückt: Der Umsatz 1 Tag zurück (Umsatz_lag_1T) fließt in die Berechnung des erweiterten Durchschnitts für die Tage Di, Mi, Do, Fr und So ein, also alle Tage außer Mo und Sa. Wir errechnen den erweiterten Durchschnitt scheibenweise:
+# Dir Berechnung des erweiterten gleitenden Durchschnitt ist etwas aufwändiger: Hierfür wollen wir zuerst den Durchschnitt der letzten 3 Wochentage bzw. Wochenendtage ermitteln. Für einen Montag müssen wir also 3, 4 und 5 Tage zurück gehen, für einen Samstag 6, 7 und 13 Tage. Oder anders ausgedrückt: Der Umsatz 1 Tag zurück (Umsatz_lag_1T) fließt in die Berechnung des erweiterten Durchschnitts für die Tage Di, Mi, Do, Fr und So ein, also alle Tage außer Mo und Sa. Wir errechnen den erweiterten Durchschnitt scheibenweise:
 df_naiv <- df_naiv %>% mutate(Umsatz_glDS_3T_erw = 0) # initialisiere neue Variable
 
 # speichere die 1. Scheibe in Umsatz_temp zwischen
@@ -1486,8 +1488,112 @@ df_naiv <- df_naiv %>%
 # übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_3T_erw, mit Faktor 1/3
 df_naiv <- df_naiv %>% mutate(Umsatz_glDS_3T_erw = Umsatz_glDS_3T_erw + (Umsatz_temp / 3))
 
-
 # Prüfung: df_naiv %>% filter(is.na(Umsatz_glDS_3T_erw))
+```
+
+```{r}
+# Wir wiederholen das Vorgehen, um noch den Durchschnitt der letzten 4 Wochentage bzw. Wochenendtage ermitteln. Für einen Montag müssen wir also 3, 4, 5 und 6 Tage zurück gehen, für einen Samstag 6, 7, 13 und 14 Tage. Oder anders ausgedrückt: Der Umsatz 1 Tag zurück (Umsatz_lag_1T) fließt in die Berechnung des erweiterten Durchschnitts für die Tage Di, Mi, Do, Fr und So ein, also alle Tage außer Mo und Sa. Wir errechnen den erweiterten Durchschnitt scheibenweise:
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = 0) # initialisiere neue Variable
+
+# speichere die 1. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_1T * (df_naiv$Wochentag_c != "Montag" & df_naiv$Wochentag_c != "Samstag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 2. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_2T * (df_naiv$Wochentag_c == "Mittwoch" | df_naiv$Wochentag_c == "Donnerstag" | df_naiv$Wochentag_c == "Freitag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 3. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_3T * (df_naiv$Wochentag_c == "Montag" | df_naiv$Wochentag_c == "Donnerstag" | df_naiv$Wochentag_c == "Freitag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 4. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_4T * (df_naiv$Wochentag_c == "Montag" | df_naiv$Wochentag_c == "Dienstag" | df_naiv$Wochentag_c == "Freitag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 5. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_5T * (df_naiv$Wochentag_c == "Montag" | df_naiv$Wochentag_c == "Dienstag" | df_naiv$Wochentag_c == "Mittwoch"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 6. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_1T * (df_naiv$Wochentag_c != "Freitag" & df_naiv$Wochentag_c != "Sonntag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 7. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_7T * (df_naiv$Wochentag_c == "Samstag" | df_naiv$Wochentag_c == "Sonntag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 8. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_8T * (df_naiv$Wochentag_c == "Sonntag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 13. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_13T * (df_naiv$Wochentag_c == "Samstag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
+
+# speichere die 14. Scheibe in Umsatz_temp zwischen
+df_naiv <- df_naiv %>% mutate(Umsatz_temp = Umsatz_lag_14T * (df_naiv$Wochentag_c == "Samstag"))
+
+# Zwischenschritt: ersetze NA durch 0
+df_naiv <- df_naiv %>%
+  mutate(Umsatz_temp = replace_na(Umsatz_temp, 0))
+
+# übernehme das Zwischenergebnis in die Zielvariable Umsatz_glDS_4T_erw, mit Faktor 1/4
+df_naiv <- df_naiv %>% mutate(Umsatz_glDS_4T_erw = Umsatz_glDS_4T_erw + (Umsatz_temp / 4))
 ```
 
 Unsere Schätzung machen wir nur für Tage, für die Umsatzdaten in den Rohdaten vorlagen (Umsatz_NA = FALSE). Und für die einzelnen Modelle beginnt die Schätzung erst ab dem Zeitpunkt, ab dem Vorwochenwerte vorliegen. Für die Verwendung des gewichteten MIttelwertes der letzten 4 Wochen können wir bspw. erst ab dem 29. Tag schätzen. Alle anderen Schätzer liegen schon früher vor. Für die Vergleichbarkeit der Modelle starten wir daher einheitlich ab dem 01.08.2013 (also sogar erst 31 Tage nach Beginn der Zeitreihe).
@@ -1768,8 +1874,10 @@ prog_naiv_gewMW_4W %>%
 FEHLT noch:
 
 - betrachte den erweiterten gleitenden Durchschnitt der letzten 4 Wochenendtage, um für Sa und So eine bessere Prognose zu erzielen
-- Gehe tiefer in die Ursachenanalyse: Für welche Tage finden wir besonders große Ausreißer - in BEIDE Richtungen?
-- Übersicht Modellvergleich ALLE naiven Modelle
+- 5% / 95% Quantile für die Abweichung ergänzen
+- Vergleichstabelle der betrachteten Modelle erstellen, um die Kennzahlen zu vergleichen: mittlere Abweichung, Standardabw., Q_5, Q_95, mittlere abs. Abw, quad. Abweichung,...
+- Betrachte neben dem Histogramm lieber die Dichteverteilung der Abweichung und dann in einem Plot übereinander legen für die verschiedenen Modelle
+- Untersuche die Top5 größten Abweichungen nach oben und nach unten: Welche Tage sind das für welches Modell? Gibt es Gemeinsamkeiten, also Tage, die in allen naiven Modellen schlecht prognostiziert werden? Was sind das für Tage?
 
 
 
