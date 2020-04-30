@@ -1341,9 +1341,10 @@ Im zweiten Teil betrachten wir die Schätzung mittels eines gleitenden Durchschn
 Und schließlich betrachten wir einen gewichteten Mittelwert der Vorwochen (Umsatz_gewMW_4W) als Schätzer. Hierbei gewichten wir den Wert der Vorwoche mit 50%, den Wert zwei Wochen zurück mit 25% und den Wert drei Wochen zurück mit 15% und den Wert vier Wochen zurück mit 10%.
 
 Und dann werfen wir einen Blick auf die Prognose-Güte:
+
 - Anteil an zu hoch / zu niedrig geschätzten Umsätze, ggf. je Warengruppe und/oder Wochentag
-- mittlere Abweichung und Standardabweichung, Verteilung der Abweichungen
-- Summe der Fehlerquadrate
+- mittlere Abweichung, mittlere absolute Abweichung, mittlere quadratische Abweichung
+- Standardabweichung, Verteilung der Abweichungen
 
 ## 5.2 Datenaufbereitung
 
@@ -1491,7 +1492,7 @@ df_naiv <- df_naiv %>% mutate(Umsatz_glDS_3T_erw = Umsatz_glDS_3T_erw + (Umsatz_
 
 Unsere Schätzung machen wir nur für Tage, für die Umsatzdaten in den Rohdaten vorlagen (Umsatz_NA = FALSE). Und für die einzelnen Modelle beginnt die Schätzung erst ab dem Zeitpunkt, ab dem Vorwochenwerte vorliegen. Für die Verwendung des gewichteten MIttelwertes der letzten 4 Wochen können wir bspw. erst ab dem 29. Tag schätzen. Alle anderen Schätzer liegen schon früher vor. Für die Vergleichbarkeit der Modelle starten wir daher einheitlich ab dem 01.08.2013 (also sogar erst 31 Tage nach Beginn der Zeitreihe).
 
-## 5.3 Prognose der Umsätze aufhand des Vorwochenwertes
+## 5.3 Prognose der Umsätze anhand des Vorwochenwertes
 
 Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir einen eigenen Datensatz `prog_naiv_lag_1W`.
 
@@ -1500,26 +1501,275 @@ prog_naiv_lag_1W <- df_naiv %>%
   filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
   filter(Datum >= "2013-08-01")  # starte ab 01.08.2013
   
-# ergänze Abweichung (Schätzer - Umsatz), Prognose_zuhoch (TRUE / FALSE), quadratische Abweichung (Abweichung_quad)
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
 prog_naiv_lag_1W <- prog_naiv_lag_1W %>%
-  mutate(Abweichung = Umsatz_lag_1W - Umsatz) %>%
   mutate(Prognose_zuhoch = (Umsatz_lag_1W >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_lag_1W - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_lag_1W - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_lag_1W - Umsatz) / Umsatz) %>%
   mutate(Abweichung_quad = Abweichung^2)
 
-# Prognosegüte: Anteil "zu hoch prognostiziert"
-prog_naiv_lag_1W %>%
+# Prognosegüte: Anteil "zu hoch prognostiziert". Ergänze dafür zunächst die Anzahl der Beobachtungen je Warengruppe (Anzahl), um danach den absoluten Anteil (Anteil_abs) und relativen Anteil (Anteil_rel) zu ermitteln.
+prog_naiv_lag_1W <- prog_naiv_lag_1W %>%
+  group_by(Warengruppe) %>%
+  mutate(Anzahl = n())
+
+prog_naiv_lag_1W %>% 
   group_by(Warengruppe, Prognose_zuhoch) %>%
-  summarise(Anzahl = n())
+  summarise(Anteil_abs = n(), Anteil_rel = round(n() / mean(Anzahl) * 100))
 
-# ergänze rel. Anteil
-
-
-# Prognosegüte: mittlere Abweichung, Standardabweichung, Summe der Fehlerquadrate
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 prog_naiv_lag_1W %>%
   group_by(Warengruppe) %>%
-  summarise(Anzahl = n(), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_quad=sum(Abweichung_quad)/n())
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n())
 
+# visualisiere die relative Abweichung im Histogramm: Erhalte eine Verteilung der Abweichung
+naiv_lag_1W_relAbw_hist <- ggplot(data = prog_naiv_lag_1W, aes(x = Abweichung_rel*100)) + 
+  geom_histogram(binwidth = 5, fill="steelblue", color="black", size=0.5) +
+  ggtitle("Schätzung auf Basis der Vorwoche: Relative Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Anzahl Beobachtungen")
+  
+# zeige das Histogramm
+naiv_lag_1W_relAbw_hist
 ```
+
+Die Verteilung der relativen Abweichung erscheint sehr breit. Unser naiver Schätzer auf Basis des Vorwochenwertes liefert also keine gute Umsatzprognose. Augenscheinlich gibt es einige Prognosewerte, die deutlich zu hoch sind. Diese Ausreißer wollen wir nun näher untersuchen, um zu verstehen, an welchen Stellen unser Modell noch Probleme hat. Für die Untersuchung der Prognosegüte hatten wir den Datensatz `prog_naiv_lag_1W` erstellt, mit dem wir jetzt weiter arbeiten.
+
+```{r}
+# Untersuche die Fälle, in denen die Prognose mehr als 100% höher war als der Umsatz. Die Ausreißer verteilen sich folgendermaßen auf die Warengruuppen:
+prog_naiv_lag_1W %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n())
+
+# Offenbar haben wir ein Problem für die Warengruppen 1 (Brot) und 4 (Konditorei), die wir näher betrachen wollen. Untersuche, ob Feiertage die Ursache sind:
+prog_naiv_lag_1W %>%
+  filter(Abweichung_rel > 1, Warengruppe == 1 | Warengruppe == 4) %>%
+  group_by(Warengruppe, Feiertag) %>%
+  summarise(Anzahl=n())
+
+# Das liefert uns keine nennenswerten Erkenntnisse, Feiertage scheinen nicht die Hauptursache für die starken Abweichungen zu sein. Untersuche, ob einzelne Wochentage besonders betroffen sind, jetzt wieder über alle Warengruppen:
+prog_naiv_lag_1W %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Wochentag_c) %>%
+  summarise(Anzahl=n())
+
+# Für Dienstage und Freitage scheint unser naiver Schätzer nur selten eine deutlich zu hohe Prognose zu liefern. Ansonsten sind keine Unterschiede zu erkennen. 
+```
+
+## 5.4 Prognose der Umsätze anhand des gleitenden Durchschnitts
+
+In diesem Abschnitt betrachten wir die Schätzung mittels eines gleitenden Durchschnitts über die letzten 3 Tage (Umsatz_glDS_3T). Wir wissen bereits, dass der Umsatz am Wochenende systematisch höher ist, als unter der Woche. Daher erwarten wir, dass der gleitende Durchschnitt in der Form nur eingeschränkt geeignet ist, wahrscheinlich nur Für Donnerstag und Freitag. 
+
+Als Erweiterung wollen wir den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw).
+
+Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir eigene Datensätze `prog_naiv_glDS_3T` und `prog_naiv_glDS_3T_erw`. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.
+
+```{r}
+prog_naiv_glDS_3T <- df_naiv %>%
+  filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
+  filter(Datum >= "2013-08-01")  # starte ab 01.08.2013
+  
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+prog_naiv_glDS_3T <- prog_naiv_glDS_3T %>%
+  mutate(Prognose_zuhoch = (Umsatz_glDS_3T >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_glDS_3T - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_glDS_3T - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_glDS_3T - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Prognosegüte: Anteil "zu hoch prognostiziert". Ergänze dafür zunächst die Anzahl der Beobachtungen je Warengruppe (Anzahl), um danach den absoluten Anteil (Anteil_abs) und relativen Anteil (Anteil_rel) zu ermitteln.
+prog_naiv_glDS_3T <- prog_naiv_glDS_3T %>%
+  group_by(Warengruppe) %>%
+  mutate(Anzahl = n())
+
+prog_naiv_glDS_3T %>% 
+  group_by(Warengruppe, Prognose_zuhoch) %>%
+  summarise(Anteil_abs = n(), Anteil_rel = round(n() / mean(Anzahl) * 100))
+
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+prog_naiv_glDS_3T %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n())
+
+# visualisiere die relative Abweichung im Histogramm: Erhalte eine Verteilung der Abweichung
+naiv_glDS_3T_relAbw_hist <- ggplot(data = prog_naiv_glDS_3T, aes(x = Abweichung_rel*100)) + 
+  geom_histogram(binwidth = 5, fill="steelblue", color="black", size=0.5) +
+  ggtitle("Schätzung auf Basis des gl. Durchschnitts (3 Tage): Relative Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Anzahl Beobachtungen")
+  
+# zeige das Histogramm
+naiv_glDS_3T_relAbw_hist
+```
+
+Die Verteilung der relativen Abweichung erscheint ebenfalls sehr breit. Unser naiver Schätzer auf Basis des gleitenden Durchschnitts der letzten 3 Tage liefert also keine gute Umsatzprognose. Augenscheinlich gibt es einige Prognosewerte, die deutlich zu hoch sind. Diese Ausreißer wollen wir nun näher untersuchen, um zu verstehen, an welchen Stellen unser Modell noch Probleme hat. Für die Untersuchung der Prognosegüte hatten wir den Datensatz `prog_naiv_glDS_3T` erstellt, mit dem wir jetzt weiter arbeiten.
+
+```{r}
+# Untersuche die Fälle, in denen die Prognose mehr als 100% höher war als der Umsatz. Die Ausreißer verteilen sich folgendermaßen auf die Warengruuppen:
+prog_naiv_glDS_3T %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n())
+
+# Offenbar haben wir ein Problem für die Warengruppen 1 (Brot) und 4 (Konditorei), die wir näher betrachen wollen. Untersuche, ob Feiertage die Ursache sind:
+prog_naiv_glDS_3T %>%
+  filter(Abweichung_rel > 1, Warengruppe == 1 | Warengruppe == 4) %>%
+  group_by(Warengruppe, Feiertag) %>%
+  summarise(Anzahl=n())
+
+# Das liefert uns keine nennenswerten Erkenntnisse, Feiertage scheinen nicht die Hauptursache für die starken Abweichungen zu sein. Untersuche, ob einzelne Wochentage besonders betroffen sind, jetzt wieder über alle Warengruppen:
+prog_naiv_glDS_3T %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Wochentag_c) %>%
+  summarise(Anzahl=n())
+```
+
+Wie erwartet funktioniert das Modell für die Tage Donnerstag und Freitag sehr gut, weil für diese Tage die Schätzung keine Wochenendtage einbezieht. Offenbar funktioniert das auch für den Samstag relativ gut. Für die übrigen Tage gibt es Probleme.
+
+Als Erweiterung wollen wir den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw).
+
+Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir einen eigenen Datensatz `prog_naiv_glDS_3T_erw`. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.
+
+```{r}
+prog_naiv_glDS_3T_erw <- df_naiv %>%
+  filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
+  filter(Datum >= "2013-08-01")  # starte ab 01.08.2013
+  
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+prog_naiv_glDS_3T_erw <- prog_naiv_glDS_3T_erw %>%
+  mutate(Prognose_zuhoch = (Umsatz_glDS_3T_erw >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_glDS_3T_erw - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_glDS_3T_erw - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_glDS_3T_erw - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Prognosegüte: Anteil "zu hoch prognostiziert". Ergänze dafür zunächst die Anzahl der Beobachtungen je Warengruppe (Anzahl), um danach den absoluten Anteil (Anteil_abs) und relativen Anteil (Anteil_rel) zu ermitteln.
+prog_naiv_glDS_3T_erw <- prog_naiv_glDS_3T_erw %>%
+  group_by(Warengruppe) %>%
+  mutate(Anzahl = n())
+
+prog_naiv_glDS_3T_erw %>% 
+  group_by(Warengruppe, Prognose_zuhoch) %>%
+  summarise(Anteil_abs = n(), Anteil_rel = round(n() / mean(Anzahl) * 100))
+
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+prog_naiv_glDS_3T_erw %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n())
+
+# visualisiere die relative Abweichung im Histogramm: Erhalte eine Verteilung der Abweichung
+naiv_glDS_3T_erw_relAbw_hist <- ggplot(data = prog_naiv_glDS_3T_erw, aes(x = Abweichung_rel*100)) + 
+  geom_histogram(binwidth = 5, fill="steelblue", color="black", size=0.5) +
+  ggtitle("Schätzung auf Basis des erw. gl. Durchschnitts (3 Wochen-/Wochenendtage): Rel. Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Anzahl Beobachtungen")
+  
+# zeige das Histogramm
+naiv_glDS_3T_erw_relAbw_hist
+```
+
+Die Verteilung der relativen Abweichung erscheint deutlich schmaler. Unser naiver Schätzer auf Basis des erweiterten gleitenden Durchschnitts der letzten 3 Wochentage (für Mo bis Fr) bzw. Wochenendtage (für Sa und So) liefert eine treffendere Umsatzprognose. Augenscheinlich gibt es aber immer noch einige Prognosewerte, die deutlich zu hoch sind. Diese Ausreißer wollen wir nun näher untersuchen, um zu verstehen, an welchen Stellen unser Modell noch Probleme hat. Für die Untersuchung der Prognosegüte hatten wir den Datensatz `prog_naiv_glDS_3T_erw` erstellt, mit dem wir jetzt weiter arbeiten.
+
+```{r}
+# Untersuche die Fälle, in denen die Prognose mehr als 100% höher war als der Umsatz. Die Ausreißer verteilen sich folgendermaßen auf die Warengruuppen:
+prog_naiv_glDS_3T_erw %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n())
+
+# Offenbar haben wir ein Problem für die Warengruppen 1 (Brot) und 4 (Konditorei), die wir näher betrachen wollen. Untersuche, ob Feiertage die Ursache sind:
+prog_naiv_glDS_3T_erw %>%
+  filter(Abweichung_rel > 1, Warengruppe == 1 | Warengruppe == 4) %>%
+  group_by(Warengruppe, Feiertag) %>%
+  summarise(Anzahl=n())
+
+# Für die Warengruppe 1 (Brot) spielen Feiertage bei den größeren Ausreißern eine Rolle. Das alleine liefert uns aber keine nennenswerten Erkenntnisse. Untersuche, ob einzelne Wochentage besonders betroffen sind, jetzt wieder über alle Warengruppen:
+prog_naiv_glDS_3T_erw %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Wochentag_c) %>%
+  summarise(Anzahl=n())
+```
+
+Das Modell funktioniert - wie erwartet - deutlich besser für alle Wochentage Mo bis Fr. Allerdings gibt es offenbar noch Schwachstellen für das Wochenende: Besonders die Schätzung für Sonntage liegt auffällig oft deutlich zu hoch.
+
+!!! fehlt noch ERWEITERUNG: Verwende den gleitenden Durchschnitt der letzten 4 Wochenendtage! (Dann hat man 2 mal Sa und 2 mal So drin!)
+
+## 5.5 Prognose der Umsätze anhand des gewichteten Vorwochendurchschnitts
+
+Nun betrachten wir einen gewichteten Mittelwert der Vorwochen (Umsatz_gewMW_4W) als Schätzer. Hierbei gewichten wir den Wert der Vorwoche mit 50%, den Wert zwei Wochen zurück mit 25% und den Wert drei Wochen zurück mit 15% und den Wert vier Wochen zurück mit 10%.
+
+Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir einen eigenen Datensatz `prog_naiv_gewMW_4W`. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.
+
+```{r}
+prog_naiv_gewMW_4W <- df_naiv %>%
+  filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
+  filter(Datum >= "2013-08-01")  # starte ab 01.08.2013
+  
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+prog_naiv_gewMW_4W <- prog_naiv_gewMW_4W %>%
+  mutate(Prognose_zuhoch = (Umsatz_gewMW_4W >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_gewMW_4W - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_gewMW_4W - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_gewMW_4W - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Prognosegüte: Anteil "zu hoch prognostiziert". Ergänze dafür zunächst die Anzahl der Beobachtungen je Warengruppe (Anzahl), um danach den absoluten Anteil (Anteil_abs) und relativen Anteil (Anteil_rel) zu ermitteln.
+prog_naiv_gewMW_4W <- prog_naiv_gewMW_4W %>%
+  group_by(Warengruppe) %>%
+  mutate(Anzahl = n())
+
+prog_naiv_gewMW_4W %>% 
+  group_by(Warengruppe, Prognose_zuhoch) %>%
+  summarise(Anteil_abs = n(), Anteil_rel = round(n() / mean(Anzahl) * 100))
+
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+prog_naiv_gewMW_4W %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n())
+
+# visualisiere die relative Abweichung im Histogramm: Erhalte eine Verteilung der Abweichung
+naiv_gewMW_4W_relAbw_hist <- ggplot(data = prog_naiv_gewMW_4W, aes(x = Abweichung_rel*100)) + 
+  geom_histogram(binwidth = 5, fill="steelblue", color="black", size=0.5) +
+  ggtitle("Schätzung auf Basis des gewichteten Vorwochendurchschnitts: Rel. Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Anzahl Beobachtungen")
+  
+# zeige das Histogramm
+naiv_gewMW_4W_relAbw_hist
+```
+
+Die Verteilung der relativen Abweichung erscheint zwar breit. Aber es scheint weniger Ausreißer nach oben zu geben, als in den anderen naiven Modellen. Unser naiver Schätzer auf Basis des gewichteten Vorwochendurchschnitts liefert insgesamt keine gute Umsatzprognose. Augenscheinlich gibt es einige Prognosewerte, die deutlich zu hoch sind. Diese Ausreißer wollen wir nun näher untersuchen, um zu verstehen, an welchen Stellen unser Modell noch Probleme hat. Für die Untersuchung der Prognosegüte hatten wir den Datensatz `prog_naiv_gewMW_4W` erstellt, mit dem wir jetzt weiter arbeiten.
+
+```{r}
+# Untersuche die Fälle, in denen die Prognose mehr als 100% höher war als der Umsatz. Die Ausreißer verteilen sich folgendermaßen auf die Warengruuppen:
+prog_naiv_gewMW_4W %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Warengruppe) %>%
+  summarise(Anzahl=n())
+
+# Offenbar haben wir ein Problem für die Warengruppen 1 (Brot) und 4 (Konditorei), die wir näher betrachen wollen. Untersuche, ob Feiertage die Ursache sind:
+prog_naiv_gewMW_4W %>%
+  filter(Abweichung_rel > 1, Warengruppe == 1 | Warengruppe == 4) %>%
+  group_by(Warengruppe, Feiertag) %>%
+  summarise(Anzahl=n())
+
+# Für die Warengruppe 1 (Brot) spielen Feiertage bei den größeren Ausreißern eine Rolle. Das alleine liefert uns aber keine nennenswerten Erkenntnisse. Untersuche, ob einzelne Wochentage besonders betroffen sind, jetzt wieder über alle Warengruppen:
+prog_naiv_gewMW_4W %>%
+  filter(Abweichung_rel > 1) %>%
+  group_by(Wochentag_c) %>%
+  summarise(Anzahl=n())
+
+# Für alle Wochentage ähnlich.
+```
+
+
+FEHLT noch:
+
+- betrachte den erweiterten gleitenden Durchschnitt der letzten 4 Wochenendtage, um für Sa und So eine bessere Prognose zu erzielen
+- Gehe tiefer in die Ursachenanalyse: Für welche Tage finden wir besonders große Ausreißer - in BEIDE Richtungen?
+- Übersicht Modellvergleich ALLE naiven Modelle
 
 
 
