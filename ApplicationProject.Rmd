@@ -2053,8 +2053,63 @@ prog_naiv_gewMW_4W %>%
 
 Für Silvester liefert unser naiver Schätzer auf Basis des erweiterten gleitenden Durchschnitts der letzten 4 Wochen- bzw. Wochenendtage offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Ebenso liefert das Modell für den 7. Januar konsequent zu hohe Schätzwerte, weil diese - zumindest zu einem großen Teil (50%) - auf Basis der sehr hohen Silvester-Umsätze prognostiziert werden.
 
+## 5.6 Vergleich der naiven Modelle
 
-FEHLT noch:
+Wir wollen jetzt die Ergebnisse der verschiedenen naiven Modelle vergleichen. Wir haben in diesem Kapitel die folgenden Analysedatensätze verwendet und gefüllt:
+
+- prog_naiv_lag_1W
+- prog_naiv_glDS_3T
+- prog_naiv_glDS_3T_erw
+- prog_naiv_glDS_4T_erw
+- prog_naiv_gewMW_4W
+
+Nun vereinen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung, Boxplots und Violinplots der Verteilungen zu erstellen.
+
+Als Grundgerüst (Datum, Warengruppe) für die gemeinsame Tabelle dient uns der ursprüngliche Datensatz `df_naiv`. Wir starten ab dem 01.08.2013, weil wir ab diesem Datum Schätzer für alle Modelle haben. Und wir streichen die Datensätze, für die die Umsätze in den Rohdaten fehlen.
+
+```{r}
+prog_naiv_vgl_relAbw <- df_naiv %>%
+  filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
+  filter(Datum >= "2013-08-01") %>%  # starte ab 01.08.2013
+  select(Datum, Warengruppe) # behalte nur die Spalten Datum und Warengruppe
+```
+
+Füge als nächstes die relativen Abweichungen an die Tabelle an:
+```{r}
+prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>% 
+  mutate(lag_1W = prog_naiv_lag_1W$Abweichung_rel) %>%
+  mutate(glDS_3T = prog_naiv_glDS_3T$Abweichung_rel) %>%
+  mutate(glDS_3T_erw = prog_naiv_glDS_3T_erw$Abweichung_rel) %>%
+  mutate(glDS_4T_erw = prog_naiv_glDS_4T_erw$Abweichung_rel) %>%
+  mutate(gewMW_4W = prog_naiv_gewMW_4W$Abweichung_rel)
+
+```
+
+Wir müssen die Tabelle noch pivotieren (pivot_longer), als Vorbereitung für den anschließenden Plot:
+```{r}
+prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>% 
+  pivot_longer(cols=-c("Datum", "Warengruppe"), names_to="Modell", values_to="Abweichung_rel")
+```
+
+Stelle nun die Verteilung der relativen Abweichung für die verschiedenen naiven Modelle in einem Plot dar, je Warengruppe:
+
+```{r}
+prog_naiv_vgl_relAbw %>%
+  filter(Warengruppe==1) %>%
+  ggplot(data=prog_naiv_vgl_relAbw, mapping=aes(x=Abweichung_rel*100)) +
+  geom_density(aes(fill=Modell), alpha=0.3) + 
+  scale_fill_brewer(palette = "Paired") +
+  ggtitle("WG1 - Vergleich der naiven Modelle: Relative Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte")
+```
+
+!!! auch für die übrigen Warengruppen
+!!! Alternative: Boxplots / Violinplots
+
+Danach bringen wir die ermittelten Güte-Kennzahlen in einer weiteren Tabelle zusammen. 
+
+und FEHLT noch:
 
 - Vergleichstabelle der betrachteten Modelle erstellen, um die Kennzahlen zu vergleichen: mittlere Abweichung, Standardabw., Q_5, Q_95, mittlere abs. Abw, quad. Abweichung,...
 - Betrachte neben dem Histogramm und der Dichteverteilung der Abweichung noch Boxplots für die Abweichung. Versuche Dichteverteilungen und Boxplots jeweils in einem Plot für die verschiedenen Modelle zu zeigen ("facetting").
