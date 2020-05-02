@@ -985,7 +985,7 @@ Fehlende Daten sind im Datensatz `df_voll` mit `NA` gefüllt. Das bereitet für 
 
 Zuerst kennzeichnen wir im Datensatz `df_voll` die Zeilen, die fehlende Umsatzwerte aufweisen mit einem neuen Attribut "Umsatz_NA", das die Werte TRUE (Umsatz fehlt in den Rohdaten und wurde ergänzt) und FALSE (Umsatz vorhanden in den Rohdaten) annimmt.
 
-Danach wollen wir diese fehlenden Umsätze durch werte aus der Vergangenheit ersetzen. In der Regel gucken wir uns die Umsätze der Vorwoche an dem entsprechenden Wochentag an. Eine Ausnahme machen wir für die fehlenden Umsätze an Silvester und Neujahr: Da die Vorwochenwerte erhöht sind (Heiligabend) bzw. fehlen, gehen wir 4 Wochen zurück, weil die ersetzten Werte dann als Schätzer bspw. für die Folgewoche verwendet werden sollen.
+Danach wollen wir diese fehlenden Umsätze durch Werte aus der Vergangenheit ersetzen. In der Regel gucken wir uns die Umsätze der Vorwoche an dem entsprechenden Wochentag an. Eine Ausnahme machen wir für die fehlenden Umsätze an Silvester und Neujahr: Da die Vorwochenwerte erhöht sind (Heiligabend) bzw. fehlen, gehen wir 4 Wochen zurück, weil die ersetzten Werte dann als Schätzer bspw. für die Folgewoche verwendet werden sollen.
 
 ```{r}
 # ergänze Attribut Umsatz_NA
@@ -2065,7 +2065,7 @@ Wir haben in diesem Kapitel die folgenden Analysedatensätze verwendet und gefü
 - prog_naiv_glDS_4T_erw
 - prog_naiv_gewMW_4W
 
-Nun vereinen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung, Boxplots und Violinplots der Verteilungen zu erstellen.
+Nun bringen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung, Boxplots und Violinplots der Verteilungen zu erstellen.
 
 Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabelle dient uns der ursprüngliche Datensatz `df_naiv`. Wir starten ab dem 01.08.2013, weil wir ab diesem Datum Schätzer für alle Modelle haben. Und wir streichen die Datensätze, für die die Umsätze in den Rohdaten fehlen.
 
@@ -2073,7 +2073,7 @@ Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabel
 prog_naiv_vgl_relAbw <- df_naiv %>%
   filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
   filter(Datum >= "2013-08-01") %>%  # starte ab 01.08.2013
-  select(Datum, Warengruppe, Jahr, Wochentag_c) # behalte nur diese Spalten
+  select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c) # behalte nur diese Spalten
 ```
 
 Füge als nächstes die relativen Abweichungen an die Tabelle an:
@@ -2090,7 +2090,7 @@ prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>%
 Wir müssen die Tabelle noch pivotieren (pivot_longer), als Vorbereitung für den anschließenden Plot:
 ```{r}
 prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>% 
-  pivot_longer(cols=-c("Datum", "Warengruppe", "Jahr", "Wochentag_c"), names_to="Modell", values_to="Abweichung_rel")
+  pivot_longer(cols=-c("Datum", "Warengruppe", "Jahr", "Wochentag", "Wochentag_c"), names_to="Modell", values_to="Abweichung_rel")
 ```
 
 Stelle nun die Verteilung der relativen Abweichung für die verschiedenen naiven Modelle in einem Plot dar, examplarisch für die Warengruppe 1:
@@ -2125,17 +2125,100 @@ prog_naiv_vgl_relAbw %>%
 
 AUSWERTUNG: Stelle auch die übrigen Wochentag dar! Unterschiede?!?
 
-!!! Alternative: Boxplots / Violinplots
-!!! UND: Facet_wrap, für ein Modell die Dichteverteilung für die Wochentage nebeneinander und die verschiedenen Modelle untereinander, wenn möglich
-(siehe R Tutorial)
+Um die Dichteverteilungen besser vergleichen zu können, wählen wir einen Boxplot:
 
-Danach bringen wir die ermittelten Güte-Kennzahlen in einer weiteren Tabelle zusammen. 
+```{r}
+# Jahr 2018, alle Wochentage und Warengruppen
+prog_naiv_vgl_relAbw %>%
+  filter(Jahr == 2018) %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - Vergleich der naiven Modelle: Relative Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
+  ylim(-100, 200)
 
-und FEHLT noch:
+# Jahr 2018, nur Montage, alle Warengruppen
+# prog_naiv_vgl_relAbw %>%
+#   filter(Jahr == 2018 & Wochentag_c=="Montag") %>%
+#   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+#   geom_boxplot() + coord_flip() +
+#   ggtitle("2018 / Montag - Vergleich der naiven Modelle: Relative Abweichung") +
+#   xlab("rel. Abweichung (%)") + 
+#   ylab("Dichte") +
+#  ylim(-100, 200)
 
-- Vergleichstabelle der betrachteten Modelle erstellen, um die Kennzahlen zu vergleichen: mittlere Abweichung, Standardabw., Q_5, Q_95, mittlere abs. Abw, quad. Abweichung,...
+# Jahr 2018, nur Sonntage, alle Warengruppen
+#prog_naiv_vgl_relAbw %>%
+#  filter(Jahr == 2018 & Wochentag_c=="Sonntag") %>%
+#  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+#  geom_boxplot() + coord_flip() +
+#  ggtitle("2018 / Sonntag - Vergleich der naiven Modelle: Relative Abweichung") +
+#  xlab("rel. Abweichung (%)") + 
+#  ylab("Dichte") +
+#  ylim(-100, 200)
+
+# Jahr 2018, nach Wochentag, alle Warengruppen
+# Wochentag_c sortiert nach Wochentag
+prog_naiv_vgl_relAbw %>%
+  filter(Jahr == 2018) %>%
+  mutate(Wochentag_ord = reorder(Wochentag_c,Wochentag)) %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Wochentag") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
+  ylim(-100, 200) +
+  facet_wrap(vars(Wochentag_ord))
+
+# Jahr 2018, nach Warengruppen, alle Wochentage
+prog_naiv_vgl_relAbw %>%
+  filter(Jahr == 2018) %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Warengruppe") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
+  ylim(-100, 200) +
+  facet_wrap(vars(Warengruppe))
+```
+
+Vergleicht man die Dichteverteilungen für das Jahr 2018 insgesamt (über alle Warengruppen und Wochentage), liefert der erweiterte gleitende Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage die besten Ergebnisse.
+
+Unterteilt man die Verteilungen nach Wochentag oder Warengruppe, ergibt sich ein differenzierteres Bild: 
+
+Nach Wochentag liefert der erweiterte gleitende Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage die besten Ergebnisse unter der Woche (Mo bis Fr), versagt aber an Wochenenden (Sa und So), wie wir bereits gesehen hatten. Für Samstage liefert der erweiterte gleitende Durchschnitt der letzten 4 anstatt 3 Wochen- bzw. Wochenendtage die besten Ergebnisse. Für Sonntage liefert das einfachste Modell auf Basis des Vorwochenwertes offenbar die treffendsten Schätzer.
+
+Nach Warengruppe liefert der gleitende Durchschnitt der letzten 3 Tage die besten Ergebnisse für Warengruppe 1 (Brot). Die übrigen Warengruppen werden durch den erweiterten gleitenden Durchschnitt der letzten 3 Wochen- bzw. Wochenendtagen am besten prognostiziert.
+
+
+FEHLT noch:
+
+- die ermittelten Güte-Kennzahlen zusammen bringen: Vergleichstabelle der betrachteten Modelle erstellen, um die Kennzahlen zu vergleichen: mittlere Abweichung, Standardabw., Q_5, Q_95, mittlere abs. Abw, quad. Abweichung,...
 - Detailanalyse der Tage mit den Top10 Abweichungen nach oben und nach unten:
-Einschränken auf 2018 (damit wir das später mit den anderen Modellen vergleichen können!), Vergleichstabelle für die verschiedenen Modelle. Gibt es Tage, die in allen Modellen schlecht prognostiziert werden? Für die zu niedrigen Prognosen war das vor allem der Silvester in WG5 (Kuchen = Berliner). Aber was ist mit den Tagen, an denen die Prognose zu hoch war? Den 7. Januar haben wir für einige Modelle schon erklärt. Weitere Tage?
+Einschränken auf 2018 (damit wir das später mit den anderen Modellen vergleichen können!), Vergleichstabelle für die verschiedenen Modelle. Gibt es Tage, die in allen Modellen schlecht prognostiziert werden? Für die zu niedrigen Prognosen war das vor allem der Silvester in WG5 (Kuchen = Berliner). Aber was ist mit den Tagen, an denen die Prognose zu hoch war? Den 7. Januar haben wir für einige Modelle schon erklärt. Weitere Tage? Weiterer systematischer Effekt: Sommerferien?
+
+
+```{r}
+# initialisiere Vergleichstabelle für die naiven Modelle:
+# prog_naiv_vgl_Kennz
+
+# Und zur Erinnerung: So hatten wir oben für jedes Modell die Gütekennzahlen ermittelt:
+
+# Prognosegüte: Anteil "zu hoch prognostiziert". Ergänze dafür zunächst die Anzahl der Beobachtungen je Warengruppe (Anzahl), um danach den absoluten Anteil (Anteil_abs) und relativen Anteil (Anteil_rel) zu ermitteln.
+# prog_naiv_lag_1W <- prog_naiv_lag_1W %>%
+#  group_by(Warengruppe) %>%
+#  mutate(Anzahl = n())
+
+# prog_naiv_lag_1W %>% 
+#  group_by(Warengruppe, Prognose_zuhoch) %>%
+#  summarise(Anteil_abs = n(), Anteil_rel = round(n() / mean(Anzahl) * 100))
+
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+# prog_naiv_lag_1W %>%
+#  group_by(Warengruppe) %>%
+#  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+```
 
 
 
