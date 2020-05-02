@@ -2065,6 +2065,8 @@ Wir haben in diesem Kapitel die folgenden Analysedatensätze verwendet und gefü
 - prog_naiv_glDS_4T_erw
 - prog_naiv_gewMW_4W
 
+### Vergleich der relativen Abweichung
+
 Nun bringen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung, Boxplots und Violinplots der Verteilungen zu erstellen.
 
 Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabelle dient uns der ursprüngliche Datensatz `df_naiv`. Wir starten ab dem 01.08.2013, weil wir ab diesem Datum Schätzer für alle Modelle haben. Und wir streichen die Datensätze, für die die Umsätze in den Rohdaten fehlen.
@@ -2191,35 +2193,232 @@ Nach Wochentag liefert der erweiterte gleitende Durchschnitt der letzten 3 Woche
 
 Nach Warengruppe liefert der gleitende Durchschnitt der letzten 3 Tage die besten Ergebnisse für Warengruppe 1 (Brot). Die übrigen Warengruppen werden durch den erweiterten gleitenden Durchschnitt der letzten 3 Wochen- bzw. Wochenendtagen am besten prognostiziert.
 
+### Vergleich der Güte-Kennzahlen
 
-FEHLT noch:
-
-- die ermittelten Güte-Kennzahlen zusammen bringen: Vergleichstabelle der betrachteten Modelle erstellen, um die Kennzahlen zu vergleichen: mittlere Abweichung, Standardabw., Q_5, Q_95, mittlere abs. Abw, quad. Abweichung,...
-- Detailanalyse der Tage mit den Top10 Abweichungen nach oben und nach unten:
-Einschränken auf 2018 (damit wir das später mit den anderen Modellen vergleichen können!), Vergleichstabelle für die verschiedenen Modelle. Gibt es Tage, die in allen Modellen schlecht prognostiziert werden? Für die zu niedrigen Prognosen war das vor allem der Silvester in WG5 (Kuchen = Berliner). Aber was ist mit den Tagen, an denen die Prognose zu hoch war? Den 7. Januar haben wir für einige Modelle schon erklärt. Weitere Tage? Weiterer systematischer Effekt: Sommerferien?
-
+Wir wollen nun die ermittelten Güte-Kennzahlen für die verschiedenen naiven Modelle zusammen bringen. Dafür erstellen wir eine Vergleichstabelle (prog_naiv_vgl_kennz), die die Kennzahlen je Modell für 2018 enthält. Im ersten Schritt für alle Warengruppen und Wochentage.
 
 ```{r}
-# initialisiere Vergleichstabelle für die naiven Modelle:
-# prog_naiv_vgl_Kennz
-
-# Und zur Erinnerung: So hatten wir oben für jedes Modell die Gütekennzahlen ermittelt:
-
-# Prognosegüte: Anteil "zu hoch prognostiziert". Ergänze dafür zunächst die Anzahl der Beobachtungen je Warengruppe (Anzahl), um danach den absoluten Anteil (Anteil_abs) und relativen Anteil (Anteil_rel) zu ermitteln.
-# prog_naiv_lag_1W <- prog_naiv_lag_1W %>%
-#  group_by(Warengruppe) %>%
-#  mutate(Anzahl = n())
-
-# prog_naiv_lag_1W %>% 
-#  group_by(Warengruppe, Prognose_zuhoch) %>%
-#  summarise(Anteil_abs = n(), Anteil_rel = round(n() / mean(Anzahl) * 100))
-
+# starte mit lag_1W
 # Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
-# prog_naiv_lag_1W %>%
-#  group_by(Warengruppe) %>%
-#  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+temp <- prog_naiv_lag_1W %>%
+  group_by() %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "lag_1W")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_kennz <- temp
+
+# weiter mit glDS_3T
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+temp <- prog_naiv_glDS_3T %>%
+  group_by() %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "glDS_3T")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
+
+# weiter mit glDS_3T_erw
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+temp <- prog_naiv_glDS_3T_erw %>%
+  group_by() %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "glDS_3T_erw")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
+
+# weiter mit glDS_4T_erw
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+temp <- prog_naiv_glDS_4T_erw %>%
+ group_by() %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "glDS_4T_erw")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
+
+# weiter mit gewMW_4W
+# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+temp <- prog_naiv_gewMW_4W %>%
+  group_by() %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "gewMW_4W")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
+
+head(prog_naiv_vgl_kennz)
 ```
 
+### Top10 Tage der größten Abweichungen
+
+Wir untersuchen nun die Tage mit den größten Abweichungen nach oben und unten für die verschiedenen naiven Modelle. Dabei beschränken wir uns auf das Jahr 2018, weil dieser Zeitraum auch für die anderen Modelle als Testzeitraum feststeht und wir dann die Modelle besser vergleichen können. Wir erstellen eine gemeinsame Tabelle für alle Modelle (prog_naiv_vgl_top).
+
+Wir wollen rausfinden, ob es Tage gibt, die in allen Modellen schlecht prognostiziert werden. Für die zu niedrigen Prognosen war das vor allem der Silvester in WG5 (Kuchen = Berliner). Aber was ist mit den Tagen, an denen die Prognose zu hoch war? Den 7. Januar haben wir für einige Modelle schon erklärt. Gibt es weitere auffällige Tage? Oder führen bspw. die Sommerferien systematisch zu größeren Abweichungen?
+
+```{r}
+# starte mit lag_1W: Größte rel. Abweichungen, bei denen der Umsatz zu hoch geschätzt wurde
+temp <- prog_naiv_lag_1W %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  head(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "lag_1W") %>%
+  mutate(Prognose = "zu hoch")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- temp
+
+# Größte rel. Abweichungen, bei denen der Umsatz zu niedrig geschätzt wurde
+temp <- prog_naiv_lag_1W %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  tail(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "lag_1W") %>%
+  mutate(Prognose = "zu tief")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# weiter mit glDS_3T: Größte rel. Abweichungen, bei denen der Umsatz zu hoch geschätzt wurde
+temp <- prog_naiv_glDS_3T %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  head(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "glDS_3T") %>%
+  mutate(Prognose = "zu hoch")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# Größte rel. Abweichungen, bei denen der Umsatz zu niedrig geschätzt wurde
+temp <- prog_naiv_glDS_3T %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  tail(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "glDS_3T") %>%
+  mutate(Prognose = "zu tief")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# weiter mit glDS_3T_erw: Größte rel. Abw., bei denen der Umsatz zu hoch geschätzt wurde
+temp <- prog_naiv_glDS_3T_erw %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  head(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "glDS_3T_erw") %>%
+  mutate(Prognose = "zu hoch")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# Größte rel. Abweichungen, bei denen der Umsatz zu niedrig geschätzt wurde
+temp <- prog_naiv_glDS_3T_erw %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  tail(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "glDS_3T_erw") %>%
+  mutate(Prognose = "zu tief")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# weiter mit glDS_4T_erw: Größte rel. Abw., bei denen der Umsatz zu hoch geschätzt wurde
+temp <- prog_naiv_glDS_4T_erw %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  head(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "glDS_4T_erw") %>%
+  mutate(Prognose = "zu hoch")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# Größte rel. Abweichungen, bei denen der Umsatz zu niedrig geschätzt wurde
+temp <- prog_naiv_glDS_4T_erw %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  tail(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "glDS_4T_erw") %>%
+  mutate(Prognose = "zu tief")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# weiter mit gewMW_4W: Größte rel. Abw., bei denen der Umsatz zu hoch geschätzt wurde
+temp <- prog_naiv_gewMW_4W %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  head(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "gewMW_4W") %>%
+  mutate(Prognose = "zu hoch")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+# Größte rel. Abweichungen, bei denen der Umsatz zu niedrig geschätzt wurde
+temp <- prog_naiv_gewMW_4W %>%
+  filter(Jahr==2018) %>%
+  arrange(Abweichung_rel) %>%
+  tail(n=10)
+
+# füge das Modell und die Kategorie hinzu
+temp <- temp %>% 
+  mutate(Modell = "gewMW_4W") %>%
+  mutate(Prognose = "zu tief")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
+
+```
+
+WEITER MIT:
+
+- Vergleichstabelle analysieren: Gibt es Tage, für die der Umsatz in mehreren Modellen auffällig oft zu hoch / zu tief geschätzt wurde?
+- Was steckt dahinter? Feiertage? Ferien? Wetter?
 
 
 # 6 Anwendung statistischer Modelle
