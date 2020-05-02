@@ -1562,6 +1562,9 @@ $(document).ready(function () {
       <li><a href="#anwendung-statistischer-modelle">6 Anwendung statistischer Modelle</a><ul>
       <li><a href="#lineare-regression">Lineare Regression</a></li>
       </ul></li>
+      <li><a href="#anwendung-von-machine-learning-verfahren">7 Anwendung von Machine Learning Verfahren</a><ul>
+      <li><a href="#support-vector-machines">Support Vector Machines</a></li>
+      </ul></li>
       </ul>
     </div>
 </div>
@@ -3813,6 +3816,8 @@ $(document).ready(function () {
 <h2>5.4 Prognose der Umsätze anhand des gleitenden Durchschnitts</h2>
 <p>In diesem Abschnitt betrachten wir die Schätzung mittels eines gleitenden Durchschnitts über die letzten 3 Tage (Umsatz_glDS_3T). Wir wissen bereits, dass der Umsatz am Wochenende systematisch höher ist, als unter der Woche. Daher erwarten wir, dass der gleitende Durchschnitt in der Form nur eingeschränkt geeignet ist, wahrscheinlich nur Für Donnerstag und Freitag.</p>
 <p>Als Erweiterung wollen wir den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw). Und am Ende erweitern wir dieses Vorgehen sogar noch um einen Tag (Umsatz_glDS_4T_erw) und beziehen die letzten vier Wochen- bzw. Wochenendtage in die Prognose ein.</p>
+<div id="gleitender-durchschnitt-der-letzten-3-tage" class="section level3">
+<h3>Gleitender Durchschnitt der letzten 3 Tage</h3>
 <p>Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir eigene Datensätze <code>prog_naiv_glDS_3T</code> und <code>prog_naiv_glDS_3T_erw</code> bzw. <code>prog_naiv_glDS_4T_erw</code>. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.</p>
 <div class="sourceCode" id="cb299"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb299-1" title="1">prog_naiv_glDS_3T &lt;-<span class="st"> </span>df_naiv <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb299-2" title="2"><span class="st">  </span><span class="kw">filter</span>(Umsatz_NA <span class="op">==</span><span class="st"> </span><span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="co"># fehlende Umsätze in den Rohdaten raus nehmen</span></a>
@@ -3995,6 +4000,9 @@ $(document).ready(function () {
 ## #   Abweichung_abs &lt;dbl&gt;, Abweichung_rel &lt;dbl&gt;, Abweichung_quad &lt;dbl&gt;,
 ## #   Anzahl &lt;int&gt;</code></pre>
 <p>Für Silvester liefert unser naiver Schätzer auf Basis des gleitenden Durchschnitts offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.</p>
+</div>
+<div id="erweiterter-gl.-durchschnitt-der-letzten-3-wochen--bzw.-wochenendtage" class="section level3">
+<h3>Erweiterter gl. Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage</h3>
 <p>Als Erweiterung wollen wir den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw).</p>
 <p>Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir einen eigenen Datensatz <code>prog_naiv_glDS_3T_erw</code>. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.</p>
 <div class="sourceCode" id="cb315"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb315-1" title="1">prog_naiv_glDS_3T_erw &lt;-<span class="st"> </span>df_naiv <span class="op">%&gt;%</span></a>
@@ -4177,6 +4185,9 @@ $(document).ready(function () {
 ## #   Abweichung_abs &lt;dbl&gt;, Abweichung_rel &lt;dbl&gt;, Abweichung_quad &lt;dbl&gt;,
 ## #   Anzahl &lt;int&gt;</code></pre>
 <p>Für Silvester liefert unser naiver Schätzer auf Basis des erweiterten gleitenden Durchschnitts der letzten 3 Wochen- bzw. Wochenendtage offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.</p>
+</div>
+<div id="erweiterter-gl.-durchschnitt-der-letzten-4-wochen--bzw.-wochenendtage" class="section level3">
+<h3>Erweiterter gl. Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage</h3>
 <p>Als Modellerweiterung betrachten wir nun die letzten 4 Wochen- bzw. Wochenendtage und erhoffen uns davon, dass die Schätzung für den Sonntag treffsicherer wird.</p>
 <p>Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir einen eigenen Datensatz <code>prog_naiv_glDS_4T_erw</code>. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.</p>
 <div class="sourceCode" id="cb331"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb331-1" title="1">prog_naiv_glDS_4T_erw &lt;-<span class="st"> </span>df_naiv <span class="op">%&gt;%</span></a>
@@ -4358,6 +4369,7 @@ $(document).ready(function () {
 ## #   Abweichung_abs &lt;dbl&gt;, Abweichung_rel &lt;dbl&gt;, Abweichung_quad &lt;dbl&gt;,
 ## #   Anzahl &lt;int&gt;</code></pre>
 <p>Für Silvester liefert unser naiver Schätzer auf Basis des erweiterten gleitenden Durchschnitts der letzten 4 Wochen- bzw. Wochenendtage offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.</p>
+</div>
 </div>
 <div id="prognose-der-umsatze-anhand-des-gewichteten-vorwochendurchschnitts" class="section level2">
 <h2>5.5 Prognose der Umsätze anhand des gewichteten Vorwochendurchschnitts</h2>
@@ -4919,32 +4931,94 @@ $(document).ready(function () {
 ##  9 2018-03-18 zu tief       3
 ## 10 2018-04-01 zu hoch       3
 ## # ... with 35 more rows</code></pre>
-<p>Die erste Beobachtung ist, einige Daten tauchen mehrfach auftauchen. Besonders auffällig ist - wie schon bekannt - Silvester. Und dann fällt noch der 29.03.2018 auf.</p>
-<p>Bemerkung: Für fast alle Daten ist die Prognose entweder konsequent zu hoch oder konsequent zu tief. Das Datum 07.01.2018 ist das einzige Datum, für das je zwei Schätzungen stark zu hoch bzw. stark zu niedrieg waren. Es handelt sich um den Tag eine Woche nach Silvester und es sind zwei verschiedene Warengruppen, wie wir gleich sehen werden…</p>
-<p>wir nehmen zunächst die Warengruppe und das Modell hinzu:</p>
+<p>Die erste Beobachtung ist, dass einige Daten mehrfach auftauchen. Auffällig ist - wie schon bekannt - Silvester: Dieser Tag ist in jedem Jahr sehr umsatzstark und wird von den naiven Modellen auf Basis der jüngeren Vergangenheit nicht gut vorhergesagt. Und dann fällt noch der 29.03.2018 auf.</p>
+<p>Um insgesamt besser zu verstehen, was die stark zu hohen oder zu niedrigen Schätzwerte verursacht, nehmen wir weitere Einflussfaktoren für die gefundenen Daten hinzu:</p>
 <div class="sourceCode" id="cb384"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb384-1" title="1">prog_naiv_vgl_top <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb384-2" title="2"><span class="st">  </span><span class="kw">group_by</span>(Datum, Warengruppe, Modell, Prognose) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb384-2" title="2"><span class="st">  </span><span class="kw">group_by</span>(Datum, Warengruppe, Prognose) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb384-3" title="3"><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Anzahl =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
 <a class="sourceLine" id="cb384-4" title="4"><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(Anzahl))</a></code></pre></div>
-<pre><code>## # A tibble: 100 x 5
-## # Groups:   Datum, Warengruppe, Modell [100]
-##    Datum      Warengruppe Modell      Prognose Anzahl
-##    &lt;date&gt;           &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;     &lt;int&gt;
-##  1 2018-01-03           5 glDS_3T     zu hoch       1
-##  2 2018-01-06           1 gewMW_4W    zu hoch       1
-##  3 2018-01-06           1 lag_1W      zu hoch       1
-##  4 2018-01-06           5 glDS_3T_erw zu hoch       1
-##  5 2018-01-07           4 gewMW_4W    zu tief       1
-##  6 2018-01-07           4 lag_1W      zu tief       1
-##  7 2018-01-07           5 gewMW_4W    zu hoch       1
-##  8 2018-01-07           5 lag_1W      zu hoch       1
-##  9 2018-01-13           5 glDS_3T_erw zu hoch       1
-## 10 2018-01-13           5 glDS_4T_erw zu hoch       1
-## # ... with 90 more rows</code></pre>
-<p>WEITER MIT:</p>
-<ul>
-<li>Vergleichstabelle analysieren: Was steckt dahinter? Feiertage? Ferien? Wetter?</li>
-</ul>
+<pre><code>## # A tibble: 53 x 4
+## # Groups:   Datum, Warengruppe [53]
+##    Datum      Warengruppe Prognose Anzahl
+##    &lt;date&gt;           &lt;dbl&gt; &lt;chr&gt;     &lt;int&gt;
+##  1 2018-03-29           1 zu tief       5
+##  2 2018-03-29           3 zu tief       5
+##  3 2018-04-02           1 zu hoch       5
+##  4 2018-12-31           5 zu tief       5
+##  5 2018-03-31           1 zu tief       4
+##  6 2018-06-23           5 zu tief       4
+##  7 2018-11-10           4 zu hoch       4
+##  8 2018-02-18           1 zu hoch       3
+##  9 2018-04-01           1 zu hoch       3
+## 10 2018-05-24           4 zu hoch       3
+## # ... with 43 more rows</code></pre>
+<p>Jetzt sehen wir u.a., dass für den 29.03.2018 die Umsätze in den Warengruppen 1 und 3 für alle 5 naiven Modellen zu tief geschätzt wird. Und Silvester wird die Warengruppe 5 (Kuchen = Berliner) ebenfalls in allen Modelle zu tief geschätzt.</p>
+<p>Für fast alle Daten ist die Prognose entweder konsequent zu hoch oder konsequent zu tief. Das Datum 07.01.2018 ist das einzige Datum, für das je zwei Schätzungen stark zu hoch (Warengruppe 5) bzw. stark zu niedrieg (Warengruppe 4) waren. Es handelt sich um den Tag eine Woche nach Silvester, der in den Modellen auf Basis des Vorwochendurchschnitts (lag_1W) und des gewichteten Vorwochendurchschnitts (gewDS_4W) schlecht geschätzt wird, weil die Schätzgrundlage (Silvester) verzerrt ist.</p>
+<p>Wir prüfen nun, ob allgemein Ferien oder Feiertage für die Tage mit starken Abweichungen zwischen Schätzer und tatsächlichem Umsatz eine Rolle spielen.</p>
+<div class="sourceCode" id="cb386"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb386-1" title="1">prog_naiv_vgl_top <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb386-2" title="2"><span class="st">  </span><span class="kw">group_by</span>(Prognose, SommerferienSH) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb386-3" title="3"><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Anzahl =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb386-4" title="4"><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(Anzahl))</a></code></pre></div>
+<pre><code>## # A tibble: 3 x 3
+## # Groups:   Prognose [2]
+##   Prognose SommerferienSH Anzahl
+##   &lt;chr&gt;             &lt;dbl&gt;  &lt;int&gt;
+## 1 zu hoch               0     50
+## 2 zu tief               0     47
+## 3 zu tief               1      3</code></pre>
+<div class="sourceCode" id="cb388"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb388-1" title="1">prog_naiv_vgl_top <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb388-2" title="2"><span class="st">  </span><span class="kw">group_by</span>(Prognose, Feiertag) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb388-3" title="3"><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Anzahl =</span> <span class="kw">n</span>()) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb388-4" title="4"><span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(Anzahl))</a></code></pre></div>
+<pre><code>## # A tibble: 4 x 3
+## # Groups:   Prognose [2]
+##   Prognose Feiertag Anzahl
+##   &lt;chr&gt;       &lt;dbl&gt;  &lt;int&gt;
+## 1 zu tief         0     42
+## 2 zu hoch         0     39
+## 3 zu hoch         1     11
+## 4 zu tief         1      8</code></pre>
+<p>Die Sommerferien in Schleswig-Holstein haben offenbar nichts mit der schlechten Schätzung zu tun. Die Feiertage hingegen schon, aber das hatten wir erwartet: Besonders Silvester hat hier einen nennenswerten Einfluss.</p>
+<p>Als letztes gucken wir uns den Einzeltag 29.03.2018 genau an, für den die Umsätze in den Warengruppen 1 und 3 für alle 5 naiven Modellen zu tief geschätzt wird.</p>
+<div class="sourceCode" id="cb390"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb390-1" title="1">prog_naiv_vgl_top <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb390-2" title="2"><span class="st">  </span><span class="kw">filter</span>(Datum <span class="op">==</span><span class="st"> &quot;2018-03-29&quot;</span>)</a></code></pre></div>
+<pre><code>## # A tibble: 10 x 61
+## # Groups:   Warengruppe [2]
+##    Datum      Warengruppe Umsatz  Jahr KielerWoche Bewoelkung Temperatur
+##    &lt;date&gt;           &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+##  1 2018-03-29           3   266.  2018           0          7        0.9
+##  2 2018-03-29           1   370.  2018           0          7        0.9
+##  3 2018-03-29           1   370.  2018           0          7        0.9
+##  4 2018-03-29           3   266.  2018           0          7        0.9
+##  5 2018-03-29           1   370.  2018           0          7        0.9
+##  6 2018-03-29           3   266.  2018           0          7        0.9
+##  7 2018-03-29           1   370.  2018           0          7        0.9
+##  8 2018-03-29           3   266.  2018           0          7        0.9
+##  9 2018-03-29           3   266.  2018           0          7        0.9
+## 10 2018-03-29           1   370.  2018           0          7        0.9
+## # ... with 54 more variables: Windgeschwindigkeit &lt;dbl&gt;, Wochentag &lt;dbl&gt;,
+## #   Monat &lt;dbl&gt;, Wochentag_c &lt;chr&gt;, Monat_c &lt;chr&gt;, Wochenende &lt;dbl&gt;,
+## #   SommerferienSH &lt;dbl&gt;, SommerferienNRW &lt;dbl&gt;, SommerferienNDS &lt;dbl&gt;,
+## #   SommerferienHE &lt;dbl&gt;, Feiertag &lt;dbl&gt;, Ostern &lt;dbl&gt;,
+## #   ChristiHimmelfahrt &lt;dbl&gt;, Pfingsten &lt;dbl&gt;, TDE &lt;dbl&gt;, Silvester &lt;dbl&gt;,
+## #   Ostern_ext &lt;dbl&gt;, ChristiHimmelfahrt_ext &lt;dbl&gt;, Pfingsten_ext &lt;dbl&gt;,
+## #   Silvester_ext &lt;dbl&gt;, Jahreszeit &lt;chr&gt;, Fruehling &lt;dbl&gt;, Sommer &lt;dbl&gt;,
+## #   Herbst &lt;dbl&gt;, Winter &lt;dbl&gt;, Umsatz_NA &lt;lgl&gt;, Umsatz_lag_1W &lt;dbl&gt;,
+## #   Umsatz_lag_2W &lt;dbl&gt;, Umsatz_lag_3W &lt;dbl&gt;, Umsatz_lag_4W &lt;dbl&gt;,
+## #   Umsatz_lag &lt;dbl&gt;, Umsatz_gewMW_4W &lt;dbl&gt;, Umsatz_lag_1T &lt;dbl&gt;,
+## #   Umsatz_lag_2T &lt;dbl&gt;, Umsatz_lag_3T &lt;dbl&gt;, Umsatz_lag_4T &lt;dbl&gt;,
+## #   Umsatz_lag_5T &lt;dbl&gt;, Umsatz_lag_6T &lt;dbl&gt;, Umsatz_lag_7T &lt;dbl&gt;,
+## #   Umsatz_lag_8T &lt;dbl&gt;, Umsatz_lag_13T &lt;dbl&gt;, Umsatz_lag_14T &lt;dbl&gt;,
+## #   Umsatz_glDS_3T &lt;dbl&gt;, Umsatz_glDS_3T_erw &lt;dbl&gt;, Umsatz_temp &lt;dbl&gt;,
+## #   Umsatz_glDS_4T_erw &lt;dbl&gt;, Prognose_zuhoch &lt;lgl&gt;, Abweichung &lt;dbl&gt;,
+## #   Abweichung_abs &lt;dbl&gt;, Abweichung_rel &lt;dbl&gt;, Abweichung_quad &lt;dbl&gt;,
+## #   Anzahl &lt;int&gt;, Modell &lt;chr&gt;, Prognose &lt;chr&gt;</code></pre>
+<p>Und auch hier ist die Erklärung für den zu niedrig geschätzten Umsatz ein Feiertagseffekt: Beim 29.03.2018 handelt es sich um den Donnerstag vor Karfreitag.</p>
+</div>
+<div id="fazit-naive-modelle" class="section level3">
+<h3>Fazit naive Modelle</h3>
+<p>Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Basis der jüngeren Vergangenheit schätzen. Stärkere Umsätze an oder vor Feiertagen werden nicht vorhergesagt. Und die Umsätze nach Feiertagen werden entsprechend zu hoch geschätzt.</p>
+<p>Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsätze für Feiertage auf Basis der Vorjahreswerte schätzen. Das funktioniert naiv aber nur für Feiertage, die an festen Daten liegen, wie bspw. Silvester. Für Ostern funktioniert dieses naive Vorgehen nicht. Wir verzichten auf diese Modellerweiterung und widmen uns stattdessen im Folgenden statistischen Modellen und betrachten Machine Learning und Deep Learning Modelle.</p>
 </div>
 </div>
 </div>
@@ -4953,6 +5027,12 @@ $(document).ready(function () {
 <div id="lineare-regression" class="section level2">
 <h2>Lineare Regression</h2>
 <p>Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden, ein Zusammenahng besteht.</p>
+</div>
+</div>
+<div id="anwendung-von-machine-learning-verfahren" class="section level1">
+<h1>7 Anwendung von Machine Learning Verfahren</h1>
+<div id="support-vector-machines" class="section level2">
+<h2>Support Vector Machines</h2>
 </div>
 </div>
 </div>

@@ -1695,6 +1695,8 @@ In diesem Abschnitt betrachten wir die Schätzung mittels eines gleitenden Durch
 
 Als Erweiterung wollen wir den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw). Und am Ende erweitern wir dieses Vorgehen sogar noch um einen Tag (Umsatz_glDS_4T_erw) und beziehen die letzten vier Wochen- bzw. Wochenendtage in die Prognose ein.
 
+### Gleitender Durchschnitt der letzten 3 Tage
+
 Für die Schätzung und die anschließende Ermittlung der Gütemaße verwenden wir eigene Datensätze `prog_naiv_glDS_3T` und `prog_naiv_glDS_3T_erw` bzw. `prog_naiv_glDS_4T_erw`. Wir starten wieder am 01.08.2013, um die Vergleichbarkeit der naiven Modelle zu wahren.
 
 ```{r}
@@ -1781,6 +1783,8 @@ prog_naiv_glDS_3T %>%
 ```
 
 Für Silvester liefert unser naiver Schätzer auf Basis des gleitenden Durchschnitts offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.
+
+### Erweiterter gl. Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage
 
 Als Erweiterung wollen wir den Umsatz für Wochentage auf Basis des Durchschnitts der letzten drei Wochentage schätzen und den Umsatz für Wochenendtage auf Basis der letzten drei Wochenendtage (Umsatz_glDS_3T_erw).
 
@@ -1870,6 +1874,8 @@ prog_naiv_glDS_3T_erw %>%
 ```
 
 Für Silvester liefert unser naiver Schätzer auf Basis des erweiterten gleitenden Durchschnitts der letzten 3 Wochen- bzw. Wochenendtage offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.
+
+### Erweiterter gl. Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage
 
 Als Modellerweiterung betrachten wir nun die letzten 4 Wochen- bzw. Wochenendtage und erhoffen uns davon, dass die Schätzung für den Sonntag treffsicherer wird.
 
@@ -2437,26 +2443,57 @@ prog_naiv_vgl_top %>%
   arrange(desc(Anzahl))
 ```
 
-Die erste Beobachtung ist, einige Daten tauchen mehrfach auftauchen. Besonders auffällig ist - wie schon bekannt - Silvester. Und dann fällt noch der 29.03.2018 auf.
+Die erste Beobachtung ist, dass einige Daten mehrfach auftauchen. Auffällig ist - wie schon bekannt - Silvester: Dieser Tag ist in jedem Jahr sehr umsatzstark und wird von den naiven Modellen auf Basis der jüngeren Vergangenheit nicht gut vorhergesagt. Und dann fällt noch der 29.03.2018 auf.
 
-Bemerkung: Für fast alle Daten ist die Prognose entweder konsequent zu hoch oder konsequent zu tief. Das Datum 07.01.2018 ist das einzige Datum, für das je zwei Schätzungen stark zu hoch bzw. stark zu niedrieg waren. Es handelt sich um den Tag eine Woche nach Silvester und es sind zwei verschiedene Warengruppen, wie wir gleich sehen werden...
-
-wir nehmen zunächst die Warengruppe und das Modell hinzu:
+Um insgesamt besser zu verstehen, was die stark zu hohen oder zu niedrigen Schätzwerte verursacht, nehmen wir weitere Einflussfaktoren für die gefundenen Daten hinzu:
 
 ```{r}
 prog_naiv_vgl_top %>%
-  group_by(Datum, Warengruppe, Modell, Prognose) %>%
+  group_by(Datum, Warengruppe, Prognose) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+```
+ Jetzt sehen wir u.a., dass für den 29.03.2018 die Umsätze in den Warengruppen 1 und 3 für alle 5 naiven Modellen zu tief geschätzt wird. Und Silvester wird die Warengruppe 5 (Kuchen = Berliner) ebenfalls in allen Modelle zu tief geschätzt.
+ 
+Für fast alle Daten ist die Prognose entweder konsequent zu hoch oder konsequent zu tief. Das Datum 07.01.2018 ist das einzige Datum, für das je zwei Schätzungen stark zu hoch (Warengruppe 5) bzw. stark zu niedrieg (Warengruppe 4) waren. Es handelt sich um den Tag eine Woche nach Silvester, der in den Modellen auf Basis des Vorwochendurchschnitts (lag_1W) und des gewichteten Vorwochendurchschnitts (gewDS_4W) schlecht geschätzt wird, weil die Schätzgrundlage (Silvester) verzerrt ist.
+
+Wir prüfen nun, ob allgemein Ferien oder Feiertage für die Tage mit starken Abweichungen zwischen Schätzer und tatsächlichem Umsatz eine Rolle spielen.
+
+```{r}
+prog_naiv_vgl_top %>%
+  group_by(Prognose, SommerferienSH) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+
+prog_naiv_vgl_top %>%
+  group_by(Prognose, Feiertag) %>%
   summarise(Anzahl = n()) %>%
   arrange(desc(Anzahl))
 ```
 
-WEITER MIT:
+Die Sommerferien in Schleswig-Holstein haben offenbar nichts mit der schlechten Schätzung zu tun. Die Feiertage hingegen schon, aber das hatten wir erwartet: Besonders Silvester hat hier einen nennenswerten Einfluss.
 
-- Vergleichstabelle analysieren: Was steckt dahinter? Feiertage? Ferien? Wetter?
+Als letztes gucken wir uns den Einzeltag 29.03.2018 genau an, für den die Umsätze in den Warengruppen 1 und 3 für alle 5 naiven Modellen zu tief geschätzt wird.
 
+```{r}
+prog_naiv_vgl_top %>%
+  filter(Datum == "2018-03-29")
+```
+
+Und auch hier ist die Erklärung für den zu niedrig geschätzten Umsatz ein Feiertagseffekt: Beim 29.03.2018 handelt es sich um den Donnerstag vor Karfreitag.
+
+### Fazit naive Modelle
+
+Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Basis der jüngeren Vergangenheit schätzen. Stärkere Umsätze an oder vor Feiertagen werden nicht vorhergesagt. Und die Umsätze nach Feiertagen werden entsprechend zu hoch geschätzt.
+
+Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsätze für Feiertage auf Basis der Vorjahreswerte schätzen. Das funktioniert naiv aber nur für Feiertage, die an festen Daten liegen, wie bspw. Silvester. Für Ostern funktioniert dieses naive Vorgehen nicht. Wir verzichten auf diese Modellerweiterung und widmen uns stattdessen im Folgenden statistischen Modellen und betrachten Machine Learning und Deep Learning Modelle.
 
 # 6 Anwendung statistischer Modelle
 
 ## Lineare Regression
 
 Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden, ein Zusammenahng besteht. 
+
+# 7 Anwendung von Machine Learning Verfahren
+
+## Support Vector Machines
