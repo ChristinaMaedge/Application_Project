@@ -2075,7 +2075,7 @@ Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabel
 prog_naiv_vgl_relAbw <- df_naiv %>%
   filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
   filter(Datum >= "2013-08-01") %>%  # starte ab 01.08.2013
-  select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c) # behalte nur diese Spalten
+  select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c, SommerferienSH, Feiertag) # behalte nur diese Spalten
 ```
 
 Füge als nächstes die relativen Abweichungen an die Tabelle an:
@@ -2092,7 +2092,7 @@ prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>%
 Wir müssen die Tabelle noch pivotieren (pivot_longer), als Vorbereitung für den anschließenden Plot:
 ```{r}
 prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>% 
-  pivot_longer(cols=-c("Datum", "Warengruppe", "Jahr", "Wochentag", "Wochentag_c"), names_to="Modell", values_to="Abweichung_rel")
+  pivot_longer(cols=-c("Datum", "Warengruppe", "Jahr", "Wochentag", "Wochentag_c", "SommerferienSH", "Feiertag"), names_to="Modell", values_to="Abweichung_rel")
 ```
 
 Stelle nun die Verteilung der relativen Abweichung für die verschiedenen naiven Modelle in einem Plot dar, examplarisch für die Warengruppe 1:
@@ -2183,6 +2183,17 @@ prog_naiv_vgl_relAbw %>%
   ylab("Dichte") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
+
+# Jahr 2018, nach Warengruppen, alle Wochentage, OHNE Sommerferien und OHNE Feiertage
+prog_naiv_vgl_relAbw %>%
+  filter(Jahr == 2018 & SommerferienSH == 0 & Feiertag == 0) %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 OHNE SoFerien u. Feiertage - Vgl. der naiven Modelle: Rel. Abw. nach Warengruppe") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
+  ylim(-100, 200) +
+  facet_wrap(vars(Warengruppe))
 ```
 
 Vergleicht man die Dichteverteilungen für das Jahr 2018 insgesamt (über alle Warengruppen und Wochentage), liefert der erweiterte gleitende Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage die besten Ergebnisse.
@@ -2192,6 +2203,8 @@ Unterteilt man die Verteilungen nach Wochentag oder Warengruppe, ergibt sich ein
 Nach Wochentag liefert der erweiterte gleitende Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage die besten Ergebnisse unter der Woche (Mo bis Fr), versagt aber an Wochenenden (Sa und So), wie wir bereits gesehen hatten. Für Samstage liefert der erweiterte gleitende Durchschnitt der letzten 4 anstatt 3 Wochen- bzw. Wochenendtage die besten Ergebnisse. Für Sonntage liefert das einfachste Modell auf Basis des Vorwochenwertes offenbar die treffendsten Schätzer.
 
 Nach Warengruppe liefert der gleitende Durchschnitt der letzten 3 Tage die besten Ergebnisse für Warengruppe 1 (Brot). Die übrigen Warengruppen werden durch den erweiterten gleitenden Durchschnitt der letzten 3 Wochen- bzw. Wochenendtagen am besten prognostiziert.
+
+Guckt man sich die Verteilungen nach Warengruppe OHNE Sommerferien und OHNE Feiertage an, erhält man fast identische Ergebnisse.
 
 ### Vergleich der Güte-Kennzahlen
 
@@ -2282,7 +2295,7 @@ temp <- prog_naiv_lag_1W %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "lag_1W") %>%
-  mutate(Prognose = "zu hoch")
+  mutate(Prognose = "zu tief")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- temp
@@ -2296,7 +2309,7 @@ temp <- prog_naiv_lag_1W %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "lag_1W") %>%
-  mutate(Prognose = "zu tief")
+  mutate(Prognose = "zu hoch")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2310,7 +2323,7 @@ temp <- prog_naiv_glDS_3T %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "glDS_3T") %>%
-  mutate(Prognose = "zu hoch")
+  mutate(Prognose = "zu tief")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2324,7 +2337,7 @@ temp <- prog_naiv_glDS_3T %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "glDS_3T") %>%
-  mutate(Prognose = "zu tief")
+  mutate(Prognose = "zu hoch")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2338,7 +2351,7 @@ temp <- prog_naiv_glDS_3T_erw %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "glDS_3T_erw") %>%
-  mutate(Prognose = "zu hoch")
+  mutate(Prognose = "zu tief")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2352,7 +2365,7 @@ temp <- prog_naiv_glDS_3T_erw %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "glDS_3T_erw") %>%
-  mutate(Prognose = "zu tief")
+  mutate(Prognose = "zu hoch")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2366,7 +2379,7 @@ temp <- prog_naiv_glDS_4T_erw %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "glDS_4T_erw") %>%
-  mutate(Prognose = "zu hoch")
+  mutate(Prognose = "zu tief")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2380,7 +2393,7 @@ temp <- prog_naiv_glDS_4T_erw %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "glDS_4T_erw") %>%
-  mutate(Prognose = "zu tief")
+  mutate(Prognose = "zu hoch")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2394,7 +2407,7 @@ temp <- prog_naiv_gewMW_4W %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "gewMW_4W") %>%
-  mutate(Prognose = "zu hoch")
+  mutate(Prognose = "zu tief")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
@@ -2408,17 +2421,38 @@ temp <- prog_naiv_gewMW_4W %>%
 # füge das Modell und die Kategorie hinzu
 temp <- temp %>% 
   mutate(Modell = "gewMW_4W") %>%
-  mutate(Prognose = "zu tief")
+  mutate(Prognose = "zu hoch")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_top <- rbind(prog_naiv_vgl_top, temp)
 
 ```
 
+Nun wollen wir im Detail analysieren, für welche Tage der Umsatz systematisch zu hoch oder zu tief geschätzt wird durch unsere verschiedenen naiven Modelle.
+
+```{r}
+prog_naiv_vgl_top %>%
+  group_by(Datum, Prognose) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+```
+
+Die erste Beobachtung ist, einige Daten tauchen mehrfach auftauchen. Besonders auffällig ist - wie schon bekannt - Silvester. Und dann fällt noch der 29.03.2018 auf.
+
+Bemerkung: Für fast alle Daten ist die Prognose entweder konsequent zu hoch oder konsequent zu tief. Das Datum 07.01.2018 ist das einzige Datum, für das je zwei Schätzungen stark zu hoch bzw. stark zu niedrieg waren. Es handelt sich um den Tag eine Woche nach Silvester und es sind zwei verschiedene Warengruppen, wie wir gleich sehen werden...
+
+wir nehmen zunächst die Warengruppe und das Modell hinzu:
+
+```{r}
+prog_naiv_vgl_top %>%
+  group_by(Datum, Warengruppe, Modell, Prognose) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+```
+
 WEITER MIT:
 
-- Vergleichstabelle analysieren: Gibt es Tage, für die der Umsatz in mehreren Modellen auffällig oft zu hoch / zu tief geschätzt wurde?
-- Was steckt dahinter? Feiertage? Ferien? Wetter?
+- Vergleichstabelle analysieren: Was steckt dahinter? Feiertage? Ferien? Wetter?
 
 
 # 6 Anwendung statistischer Modelle
