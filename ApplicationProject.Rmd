@@ -1240,94 +1240,6 @@ Beobachtungen:
 
 Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze im Februar aufweist.
 
-## 4.4 Zusammenhangsanalysen
-
-Im weiteren Verlauf werden u. a. statistische Modelle, bspw. eine Regressionsanalyse, für die Prognose der Umsätze herangezogen werden. Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regressionsmodell in Betracht kommen, wird zunächst ein sog. Correlogram erstellt, dass einen schnellen Überblick über den Zusammenhang zwischen dem Umsatz und den potientiellen Einflussfaktoren ermöglicht:
-
-**Correlogram**
-```{r warning=FALSE}
-ggcorr(df)
-```
-
-* Auf den ersten Blick scheint keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz über alle Warengruppen zu haben.
-* Gewisse Effekte sind zu beobachten bei den Variablen:
-  + Bewölkung
-  + Wochenende
-  + sämtliche betrachteten Sommerferien-Variablen
-  + Silverster
-  + Sommer.
-
-Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengruppen erkennbar waren, wird in einem zweiten Schritt überprüft, ob die Korrelogramme für die einzelnen Variablen unterschiedlich sind.
-
-**Untersuchung der Warengruppe 1**
-```{r}
-df_voll %>%
-  filter(Warengruppe == "1") %>%
-  ggcorr()
-```
-
-* Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
-* Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder scheinen die folgenden Variablen einen Einfluss zu haben:
-  + Bewölkung
-  + sämtliche betrachteten Sommerferien-Variablen
-  + Silverster
-  + Sommer
-* Hinzu kommen Temparatur, der Wochentag und die erweiterte Osternvariable.
-
-
-**Untersuchung der Warengruppe 2**
-```{r}
-df_voll %>%
-  filter(Warengruppe == "2") %>%
-  ggcorr()
-```
-
-* Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
-* Vom Muster her ergibt sich ein ähnliches Bild. Folgende Variablen haben einen Einfluss:
-  + Bewölkung,
-  + Monat
-  + Wochenende
-  + sämtliche Ferien-Variablen
-  + der Sommer
-* Hinzu kommt die Temperatur. Weniger stark als bei Warengruppe 1 wirken die erweiterte Ostervariable und Silvester.
-
-**Untersuchung der Warengruppe 3**
-```{r}
-df_voll %>%
-  filter(Warengruppe == "3") %>%
-  ggcorr()
-```
-
-* Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung.
-
-**Untersuchung der Warengruppe 4**
-```{r}
-df_voll %>%
-  filter(Warengruppe == "4") %>%
-  ggcorr()
-```
-
-* Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
-* Allenfalls die folgenden Variabeln könnten einen spürbaren Einfluss haben:
-  + Temperatur, 
-  + Wochenende, 
-  + Monat, 
-  + Feiertag,
-  + Winter 
-
-```{r}
-df_voll %>%
-  filter(Warengruppe == "5") %>%
-  ggcorr()
-```
-
-* Bei der Warengruppe 5 scheint der Sivester (+ Silvester_ext) der einflussstärkste Tag zu sein. Ein mögliche Erklärung wäre, dass der Verkauf von Berlinern an diesem Tag exoritant hoch ist. Bei der Modellierung muss die Interkorrelation dieser Variablen beachtet werden.
-* Weiterhin Einfluss zu haben scheinen erneut zu haben:
-  + Sommer,
-  + Sommerferien und 
-  + das Wochenende.
-  
-
 # 5 Anwendung naiver Modelle
 
 ## 5.1 Vorhaben
@@ -2488,11 +2400,196 @@ Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Bas
 
 Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsätze für Feiertage auf Basis der Vorjahreswerte schätzen. Das funktioniert naiv aber nur für Feiertage, die an festen Daten liegen, wie bspw. Silvester. Für Ostern funktioniert dieses naive Vorgehen nicht. Wir verzichten auf diese Modellerweiterung und widmen uns stattdessen im Folgenden statistischen Modellen und betrachten Machine Learning und Deep Learning Modelle.
 
+
 # 6 Anwendung statistischer Modelle
 
-## Lineare Regression
+In einem nächsten Schritt wird mit der linearen Regression ein statistisches Modelle zur Prognose der Bäckereiumsätze eingesetzt. 
+Lineare Regressionen sind traditionelle statistische Modelle. 
+
+## 6.1 Lineare Regression
 
 Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden, ein Zusammenahng besteht. 
+
+
+## 6.2 Zusammenhangsanalysen
+
+Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regressionsmodell in Betracht kommen, wird zunächst ein sog. Korrelogram erstellt, dass einen schnellen Überblick über den Zusammenhang zwischen dem Umsatz und den potientiellen Einflussfaktoren ermöglicht:
+
+**Korrelogramm**
+```{r warning=FALSE}
+df_voll %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+  ggcorr()
+  theme_classic() +
+  ggtitle("Korrelogramm über alle Warengruppen")
+```
+
+* Auf den ersten Blick scheint keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz über alle Warengruppen zu haben.
+* Gewisse Effekte sind zu beobachten bei den Variablen:
+  + Temperatur
+  + Wochenende
+  + sämtliche betrachteten Sommerferien-Variablen
+  + Silverster
+  + Sommer.
+
+Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengruppen erkennbar waren, wird in einem zweiten Schritt überprüft, ob die Korrelogramme für die einzelnen Variablen unterschiedlich sind.
+
+**Untersuchung der Warengruppe 1**
+```{r}
+df_voll %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+  filter(Warengruppe == "1") %>%
+  ggcorr()
+```
+
+* Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
+* Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder scheinen die folgenden Variablen einen Einfluss zu haben:
+  + Temperatur
+  + sämtliche betrachteten Sommerferien-Variablen
+  + Silvester
+  + Sommer
+* Hinzu kommen Temparatur, noch deutlicher der Wochentag und die erweiterte Osternvariable.
+
+
+**Untersuchung der Warengruppe 2**
+```{r}
+df_voll %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+  filter(Warengruppe == "2") %>%
+  ggcorr()
+```
+
+* Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
+* Vom Muster her ergibt sich ein ähnliches Bild. Folgende Variablen haben einen Einfluss:
+  + Temperatur,
+  + Monat (schwach),
+  + Wochenende,
+  + sämtliche Ferien-Variablen
+  + der Sommer,
+  + der Winter und in gewissem Maße der Herbst (diese beiden wirken eher in negativer Richtung).
+* Weniger stark als bei Warengruppe 1 wirken der Wochentag, die erweiterte Ostervariable und Silvester.
+
+**Untersuchung der Warengruppe 3**
+```{r}
+df_voll %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+  filter(Warengruppe == "3") %>%
+  ggcorr()
+```
+
+* Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung.
+
+**Untersuchung der Warengruppe 4**
+```{r}
+df_voll %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+  filter(Warengruppe == "4") %>%
+  ggcorr()
+```
+
+* Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
+* Allenfalls die folgenden Variabeln könnten einen spürbaren Einfluss haben:
+  + Wochentag (im negativen Sinne), 
+  + Wochenende, 
+  + ansatzweise Feiertag,
+  + ansatzweise Winter.
+
+```{r}
+df_voll %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+  filter(Warengruppe == "5") %>%
+  ggcorr()
+```
+
+* Bei der Warengruppe 5 scheint der Sivester (+ Silvester_ext) deutlich der einflussstärkste Faktor zu sein. Ein mögliche Erklärung wäre, dass der Verkauf von Berlinern an diesem Tag exorbitant hoch ist. Bei der Modellierung muss die Interkorrelation dieser Variablen beachtet werden.
+* Weiterhin Einfluss zu haben scheinen erneut zu haben:
+  + Sommer,
+  + Herbst (im negativen Sinne),
+  + die Sommerferien,
+  + das Wochenende und
+  + die allgemeine Feiertagsvariable (Überschneidung mit bzw. Effekt von Silvester beachten).
+
+
+## 6.3 Visualisierung der Zusammenhänge zwischen ausgewählten Variablen 
+
+**Betrachtung der Warengruppe 1**
+
+*Potentieller Einflussfaktor Temperatur*
+```{r}
+df_voll %>%
+  select(Warengruppe, Umsatz, Temperatur) %>%
+  filter(Warengruppe == "1") %>%
+  ggplot(aes(x = Temperatur, y = Umsatz)) +
+  geom_point() +
+  geom_smooth(model = lm) +
+  theme_classic() +
+  ggtitle("Zusammenhang zwischen Temperatur und Umsatz - Warengruppe 1")
+```
+
+*Potentieller Einflussfaktor Sommerferien*
+```{r}
+library(vcd) # Kontingenzkoeffizient
+df_voll %>% 
+assocstats(tally(SommerferienSH ~ Umsatz))
+
+tally(Umsatz ~ SommerferienSH, data = df_voll, format = "percent")
+
+df_voll %>%
+  select(Warengruppe, Umsatz, SommerferienSH) %>%
+  filter(Warengruppe == "1") %>%
+  ggplot(aes(x = SommerferienSH, y = Umsatz)) +
+  geom_point() +
+  geom_smooth(model = lm) +
+  theme_classic() +
+  ggtitle("Zusammenhang zwischen Sommerferien Schleswig-Holstein und Umsatz - Warengruppe 1")
+
+df_voll %>%
+  select(Warengruppe, Umsatz, SommerferienNRW) %>%
+  filter(Warengruppe == "1") %>%
+  ggplot(aes(x = SommerferienNRW, y = Umsatz)) +
+  geom_point() +
+  geom_smooth(model = lm) +
+  theme_classic() +
+  ggtitle("Zusammenhang zwischen Sommerferien NRW und Umsatz - Warengruppe 1")
+
+df_voll %>%
+  select(Warengruppe, Umsatz, SommerferienNDS) %>%
+  filter(Warengruppe == "1") %>%
+  ggplot(aes(x = SommerferienNDS, y = Umsatz)) +
+  geom_point() +
+  geom_smooth(model = lm) +
+  theme_classic() +
+  ggtitle("Zusammenhang zwischen Sommerferien NDS 
+  und Umsatz - Warengruppe 1")
+
+df_voll %>%
+  select(Warengruppe, Umsatz, SommerferienHE) %>%
+  filter(Warengruppe == "1") %>%
+  ggplot(aes(x = SommerferienHE, y = Umsatz)) +
+  geom_point() +
+  geom_smooth(model = lm) +
+  theme_classic() +
+  ggtitle("Zusammenhang zwischen Sommerferien Hessen 
+  und Umsatz - Warengruppe 1")
+```
+
++++ 6.3 Überarbeiten +++
+
+## 6.4 Regressionsmodelle 
+
+### 6.4.1 Warengruppe 1
+
+```{r}
+library(ggplot2)
+library(dplyr)
+lm_train_WG1 <- lm(Umsatz ~ Temperatur + Wochenende + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Silvester + Sommer, data = df_train)
+#tidy(lm_train_WG1)
+#glance(lm_train_WG1)
+summary.lm(lm_train_WG1)
+```
+
+
+
 
 # 7 Anwendung von Machine Learning Verfahren
 
