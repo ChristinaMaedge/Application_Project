@@ -2419,7 +2419,7 @@ Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regre
 ```{r warning=FALSE}
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
-  ggcorr()
+  ggcorr() +
   theme_classic() +
   ggtitle("Korrelogramm über alle Warengruppen")
 ```
@@ -2529,10 +2529,10 @@ df_voll %>%
 *Potentieller Einflussfaktor Sommerferien*
 ```{r}
 library(vcd) # Kontingenzkoeffizient
-df_voll %>% 
-assocstats(tally(SommerferienSH ~ Umsatz))
+# df_voll %>% 
+# assocstats(tally(SommerferienSH ~ Umsatz))
 
-tally(Umsatz ~ SommerferienSH, data = df_voll, format = "percent")
+# tally(Umsatz ~ SommerferienSH, data = df_voll, format = "percent")
 
 df_voll %>%
   select(Warengruppe, Umsatz, SommerferienSH) %>%
