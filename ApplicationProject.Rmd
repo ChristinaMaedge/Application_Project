@@ -2054,8 +2054,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Relative Abweichung") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  ylab("rel. Abweichung (%)") + 
+  xlab("Modell") +
   ylim(-100, 200)
 
 # Jahr 2018, nur Montage, alle Warengruppen
@@ -2086,8 +2086,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Wochentag") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  ylab("rel. Abweichung (%)") + 
+  xlab("Modell") +
   ylim(-100, 200) +
   facet_wrap(vars(Wochentag_ord))
 
@@ -2097,8 +2097,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Warengruppe") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  ylab("rel. Abweichung (%)") + 
+  xlab("Modell") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
 
@@ -2108,8 +2108,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 OHNE SoFerien u. Feiertage - Vgl. der naiven Modelle: Rel. Abw. nach Warengruppe") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  ylab("rel. Abweichung (%)") + 
+  xlab("Modell") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
 ```
