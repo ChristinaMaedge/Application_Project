@@ -2420,7 +2420,6 @@ Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regre
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
   ggcorr() +
-  theme_classic() +
   ggtitle("Korrelogramm über alle Warengruppen")
 ```
 
@@ -2439,7 +2438,8 @@ Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengr
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
   filter(Warengruppe == "1") %>%
-  ggcorr()
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 1")
 ```
 
 * Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
@@ -2448,7 +2448,7 @@ df_voll %>%
   + sämtliche betrachteten Sommerferien-Variablen
   + Silvester
   + Sommer
-* Hinzu kommen Temparatur, noch deutlicher der Wochentag und die erweiterte Osternvariable.
+* Hinzu kommen der Wochentag und die erweiterte Osternvariable.
 
 
 **Untersuchung der Warengruppe 2**
@@ -2456,7 +2456,8 @@ df_voll %>%
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
   filter(Warengruppe == "2") %>%
-  ggcorr()
+  ggcorr()+
+  ggtitle("Korrelogramm Warengruppe 2")
 ```
 
 * Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
@@ -2474,7 +2475,8 @@ df_voll %>%
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
   filter(Warengruppe == "3") %>%
-  ggcorr()
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 3")
 ```
 
 * Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung.
@@ -2484,7 +2486,8 @@ df_voll %>%
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
   filter(Warengruppe == "4") %>%
-  ggcorr()
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 4")
 ```
 
 * Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
@@ -2498,7 +2501,8 @@ df_voll %>%
 df_voll %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
   filter(Warengruppe == "5") %>%
-  ggcorr()
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 5")
 ```
 
 * Bei der Warengruppe 5 scheint der Sivester (+ Silvester_ext) deutlich der einflussstärkste Faktor zu sein. Ein mögliche Erklärung wäre, dass der Verkauf von Berlinern an diesem Tag exorbitant hoch ist. Bei der Modellierung muss die Interkorrelation dieser Variablen beachtet werden.
@@ -2579,16 +2583,64 @@ df_voll %>%
 
 ### 6.4.1 Warengruppe 1
 
+**Einfache lineare Regressionsmodelle**
+  + Temperatur
+  + sämtliche betrachteten Sommerferien-Variablen
+  + Silvester
+  + Sommer
+* Hinzu kommen der Wochentag und die erweiterte Osternvariable.
+
+Zunächst wird der isolierte Einfluss der Variable `Temperatur` überprüft:
 ```{r}
-library(ggplot2)
-library(dplyr)
-lm_train_WG1 <- lm(Umsatz ~ Temperatur + Wochenende + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Silvester + Sommer, data = df_train)
-#tidy(lm_train_WG1)
-#glance(lm_train_WG1)
-summary.lm(lm_train_WG1)
+#library(ggplot2)
+#library(dplyr)
+lm_train_WG1_e1 <- lm(Umsatz ~ Temperatur, data = df_train) # Benennung Lineares Modell, Training, Warengruppe, einfaches Modell 1
+#tidy(lm_train_WG1_e1)
+#glance(lm_train_WG1_e1)
+summary.lm(lm_train_WG1_e1)
+```
+(Bewertung/Interpretation)
+
+Als nächstes werden Modelle für die verschiedenen `Sommerferien`-Variablen betrachtet:
+```{r}
+# Einfaches Modell Sommerferien Schleswig-Holstein:
+lm_train_WG1_e2 <- lm(Umsatz ~ SommerferienSH, data = df_train)
+summary.lm(lm_train_WG1_e2)
+
+# Einfaches Modell Sommerferien Nordrhein-Westfalen:
+lm_train_WG1_e3 <- lm(Umsatz ~ SommerferienNRW, data = df_train)
+summary.lm(lm_train_WG1_e3)
+
+# Einfaches Modell Sommerferien Niedersachsen:
+lm_train_WG1_e4 <- lm(Umsatz ~ SommerferienNDS, data = df_train)
+summary.lm(lm_train_WG1_e4)
+
+# Einfaches Modell Sommerferien Hessen:
+lm_train_WG1_e5 <- lm(Umsatz ~ SommerferienNDS, data = df_train)
+summary.lm(lm_train_WG1_e5)
+```
+
+(Bewertung/Interpretation)
+
+Ein weiteres einfaches Modell wird für die Variable `Sommer` erstellt:
+```{r}
+lm_train_WG1_e6 <- lm(Umsatz ~ Sommer, data = df_train)
+summary.lm(lm_train_WG1_e6)
+```
+
+Verglichen wird der Einfluss der `Sommer`-Variable mit der Variable `Jahreszeit`:
+```{r}
+lm_train_WG1_e7 <- lm(Umsatz ~ Jahreszeit, data = df_train)
+summary.lm(lm_train_WG1_e7)
 ```
 
 
+Abschließend für die einfachen Modelle wird der isolierte Einfluss der Variable `Silvester` geprüft:
+
+```{r}
+lm_train_WG1_e7 <- lm(Umsatz ~ Silvester, data = df_train)
+summary.lm(lm_train_WG1_e7)
+```
 
 
 # 7 Anwendung von Machine Learning Verfahren
