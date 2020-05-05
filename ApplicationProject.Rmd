@@ -2403,13 +2403,13 @@ Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsät
 
 # 6 Anwendung statistischer Modelle
 
-In einem nächsten Schritt wird mit der linearen Regression ein statistisches Modelle zur Prognose der Bäckereiumsätze eingesetzt. 
-Lineare Regressionen sind traditionelle statistische Modelle. 
+In einem nächsten Schritt wird mit der linearen Regression ein traditionelles statistisches Modell zur Prognose der Bäckereiumsätze eingesetzt. Die lineare Regression ist ein sehr einfacher Ansatz für das sog. "überwachte Lernen" (supervised learning). Lineare Regressionsmodelle sind insbesondere ein nützliches Werkzeug zur Vorhersage einer quantitativen Output-Variable, die in diesem Fall dem Umsatz pro Tag entspricht. Auch wenn die lineare Regression im Vergleich modernen statistischen Lernmethoden ein vergleichsweise einfaches Modell ist, ist sie immer noch weit verbreitet. Überdies dient sie als guter Ausgangspunkt für neuere Ansätze: viele neuere statistische Lernansätze können als Generalisierung oder Erweiterung der linearen Regression betrachtet werden.
 
 ## 6.1 Lineare Regression
 
-Im Rahmen einer linearen Regression ist es entscheidend, dass zwischen den Variablen, die in das Regressionsmodell einbezogen werden, ein Zusammenahng besteht. 
+Im Allgemeinen ist bei der linearen Regression zwischen der einfachen und der multiplen Regression zu unterscheiden. Während im ersten Fall nur eine einzelne Variable als Vorhersageparameter für die abhängige Variable betrachtet wird, werden bei der multiplen linearen Regression mehrere Input-Variablen in das Modell einbezogen. Da hinsichtlich der beeinflussenden Variablen Unterschiede bei den einzelnen Warengruppen zu erwarten sind, werden die Warengruppen isoliert betrachtet. Das heißt, für jede Warengruppe werden unterschiedliche Modelle angwendet und verglichen.  
 
+Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst werden im Rahmen einer Korrelationsanalyse Zusammenhänge zwischen dem Umsatz und potentiell beeinflussenden Variablen untersucht, um zu prüfen, welche Variablen für die Aufnahme in ein Regressionsmodell geeignet erscheinen. Da einfache statistische Maßzahlen zur Beschreibung der Daten nicht immer ausreichen und ein und demselben Wert des Korrelationskoeffizienten unterschiedliche Zusammenhänge (neben dem linearen) zugrunde liegen können, werden für die potentiell beeinflussenden Variablen in einem weiteren Schritt Streudiagramme erstellt (vgl. hierzu auch Anscombes Quartett aus dem Jahr 1973). Im Anschluss können die Modelle auf einer vergleichsweise fundierten / begründeten Basis erstellt werden. 
 
 ## 6.2 Zusammenhangsanalysen
 
