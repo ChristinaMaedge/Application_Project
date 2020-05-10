@@ -2054,8 +2054,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Relative Abweichung") +
-  ylab("rel. Abweichung (%)") + 
-  xlab("Modell") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
   ylim(-100, 200)
 
 # Jahr 2018, nur Montage, alle Warengruppen
@@ -2086,8 +2086,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Wochentag") +
-  ylab("rel. Abweichung (%)") + 
-  xlab("Modell") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
   ylim(-100, 200) +
   facet_wrap(vars(Wochentag_ord))
 
@@ -2097,8 +2097,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Warengruppe") +
-  ylab("rel. Abweichung (%)") + 
-  xlab("Modell") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
 
@@ -2108,8 +2108,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 OHNE SoFerien u. Feiertage - Vgl. der naiven Modelle: Rel. Abw. nach Warengruppe") +
-  ylab("rel. Abweichung (%)") + 
-  xlab("Modell") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
 ```
@@ -2126,15 +2126,55 @@ Guckt man sich die Verteilungen nach Warengruppe OHNE Sommerferien und OHNE Feie
 
 ### Vergleich der Güte-Kennzahlen
 
-Wir wollen nun die ermittelten Güte-Kennzahlen für die verschiedenen naiven Modelle zusammen bringen. Dafür erstellen wir eine Vergleichstabelle (prog_naiv_vgl_kennz), die die Kennzahlen je Modell für 2018 enthält. Im ersten Schritt für alle Warengruppen und Wochentage.
+Wir wollen nun die ermittelten Güte-Kennzahlen für die verschiedenen naiven Modelle verfeinern und zusammen bringen. Dafür erstellen wir eine Vergleichstabelle (prog_naiv_vgl_kennz), die die Kennzahlen je Modell für 2018 enthält. Im ersten Schritt betrachten wir nur die Gesamtgüte für die 5 Modelle und trennen erst später nach Warengruppen und Wochentagen.
+
+Wir möchten nun folgende Güte-Kennzahlen für die Umsatzschätzung vergleichen:
+
+- mittlere absolute Abweichung (MAE)
+- mittlere relative Abweichung (MPE)
+- mittlere Absolutwert der relativen Abweichung (MAPE)
+- gewichtetes Mittel des Absolutwerts der relativen Abweichung (WAPE)
+- mittlere quadratische Abweichung (MSE)
+
+Die mittlere absulute Abweichung (MAE = mean absolute error) gibt uns ein Gefühl, wie start der Schätzer vom tatsächlichen Umsatz abweicht.
+
+Die mittlere relative Abweichung (MPE = mean percentage error) gibt uns Anhaltspunkte, ob und wir stark die Prognose eines Modells systematisch daneben liegt - in Prozent.
+
+Der mittlere Absolutwert der relativen Abweichung (MAPE = mean absolute percentage error) verrät uns, wie stark die Schätzung im Mittel vom tatsächlichen Umsatz abweicht - in beide Richtungen - in Prozent.
+
+Das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE = weighted absolute percentage error) bezieht den Umsatz des Schätzers zusätzlich als Gewicht mit ein. Das Ergebnis ist ebenfalls ein Prozentwert.
+
+Die mittlere quadratische Abweichung (MSE = mean squared error) bestraft größere Abweichungen stärker als die übrigen Kennzahlen.
+
+Wir haben in diesem Kapitel bisher die folgenden Analysedatensätze verwendet und gefüllt:
+
+- prog_naiv_lag_1W
+- prog_naiv_glDS_3T
+- prog_naiv_glDS_3T_erw
+- prog_naiv_glDS_4T_erw
+- prog_naiv_gewMW_4W
+
+Diese enthalten schon:
+
+- Abweichung: Differenz zwischen prognostiziertem und tatsächlichem Umsatz
+- Abweichung_abs: Der Absolutwert der Abweichung
+- Abweichung_rel: Die relative Abweichung
+
+Wir benötigen noch weitere Hilfsgrößen:
+
+- Abweichung_rel_abs: Der Absolutwert der relativen Abweichung
+- Abweichung_rel_abs_mult_Umsatz: Das ganze noch multipliziert mit dem tatsächlichen Umsatz
 
 ```{r}
-# starte mit lag_1W
-# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+# starte mit lag_1W: Ergänze die benötigten Hilfsgrößen
+prog_naiv_lag_1W <-  prog_naiv_lag_1W %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- prog_naiv_lag_1W %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "lag_1W")
@@ -2142,12 +2182,15 @@ temp <- temp %>% mutate(Modell = "lag_1W")
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_kennz <- temp
 
-# weiter mit glDS_3T
-# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+# weiter mit glDS_3T: Ergänze die benötigten Hilfsgrößen
+prog_naiv_glDS_3T <-  prog_naiv_glDS_3T %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- prog_naiv_glDS_3T %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "glDS_3T")
@@ -2155,12 +2198,15 @@ temp <- temp %>% mutate(Modell = "glDS_3T")
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
 
-# weiter mit glDS_3T_erw
-# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+# weiter mit glDS_3T_erw: Ergänze die benötigten Hilfsgrößen
+prog_naiv_glDS_3T_erw <-  prog_naiv_glDS_3T_erw %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- prog_naiv_glDS_3T_erw %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "glDS_3T_erw")
@@ -2168,12 +2214,15 @@ temp <- temp %>% mutate(Modell = "glDS_3T_erw")
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
 
-# weiter mit glDS_4T_erw
-# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+# weiter mit glDS_4T_erw: Ergänze die benötigten Hilfsgrößen
+prog_naiv_glDS_4T_erw <-  prog_naiv_glDS_4T_erw %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- prog_naiv_glDS_4T_erw %>%
- group_by() %>%
+  group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "glDS_4T_erw")
@@ -2181,12 +2230,15 @@ temp <- temp %>% mutate(Modell = "glDS_4T_erw")
 # füge die Kennzahlen nun an die Vergleichstabelle
 prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
 
-# weiter mit gewMW_4W
-# Prognosegüte: mittlere Abweichung, Standardabweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung, das 5% und das 95% Quantil für die Abweichung
+# weiter mit gewMW_4W: Ergänze die benötigten Hilfsgrößen
+prog_naiv_gewMW_4W <-  prog_naiv_gewMW_4W %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- prog_naiv_gewMW_4W %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), mittlUmsatz=mean(Umsatz), mittlAbw=mean(Abweichung), StdAbw=sd(Abweichung), mittlAbw_abs=mean(Abweichung_abs), mittlAbw_rel=round(mean(Abweichung_abs)/mean(Umsatz)*100), mittlAbw_quad=sum(Abweichung_quad)/n(), Abweichung_Q5 = quantile(Abweichung,  probs = c(0.05)), Abweichung_Q95 = quantile(Abweichung,  probs = c(0.95)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "gewMW_4W")
@@ -2196,6 +2248,34 @@ prog_naiv_vgl_kennz <- rbind(prog_naiv_vgl_kennz, temp)
 
 head(prog_naiv_vgl_kennz)
 ```
+
+Im Vergleich der Gütekennzahlen fällt auf, dass alle Modelle den Umsatz im Schnitt zu hoch schätzen und zwar um 4 bis 6% (MPE). Der erweiterte gleitende Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage (glDS_4T_erw) schneidet am besten ab - zumindest in der Gesamtsicht. Wir wollen nun die Kennzahlen für dieses Modell je warengruppe und Wochentag betrachten.
+
+```{r}
+temp <- prog_naiv_glDS_4T_erw %>%
+  group_by(Warengruppe) %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+
+temp
+```
+
+Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Und das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt die niedrigsten Werte.
+
+Auch für Warengruppe 5 (Kuchen) liefert das Modell offenbar gute Schätzungen. Auffällig ist jedoch, dass die mittlere quadratische Abweichung (MSE) deutlich höher ist, als für die anderen Warengruppen. Das liegt vermutlich am Schätzfehler für Silvester, wird hier aber nicht weiter geprüft.
+
+Zuletzt gucken wir uns die Gütekennzahlen für dieses Modell je Wochentag an.
+
+```{r}
+temp <- prog_naiv_glDS_4T_erw %>%
+  group_by(Wochentag_c) %>%
+  filter(Jahr==2018) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+
+temp
+```
+
+Offenbar versagt dieses Modell für Montage und Sonntage: Allein die mittlere relative Abweichung (MPE) liegt für diese beiden Tage bei 10%.
 
 ### Top10 Tage der größten Abweichungen
 
@@ -2749,6 +2829,8 @@ Umsatz_SommerferienSH
  #mutate(SoFeTF = car::recode(.$SommerferienSH, "0 = FALSE; 1 = TRUE", as.factor = TRUE))
 
 ## Visualisierung
+# MLH: Folgender Ausdruck auskommentiert, läuft auf Fehlermeldung: Error in FUN(X[[i]], ...) : object 'Umsatz' not found
+
 df_lm %>%
   select(Warengruppe, Umsatz, SommerferienSH) %>%
   filter(Warengruppe == "1") %>%
@@ -3078,6 +3160,47 @@ step.model$results
 !!!!!!!!!!!!!!!!!!!!!!!!!
 Da die schrittweise Methode vorläufig noch nihct funktioniert, wird auf Basis der Voruntersuchungen in Kap. 6.3 und 6.4 ein erstes lm-Modell erstellt, damit der Code für die anderen Dinge wie Modellgüte / Modellbewertung schon einmal (vor)programmiert werden können.
 
-# 7 Anwendung von Machine Learning Verfahren
+# 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
-## Support Vector Machines
+# 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
+
+## 8.1 Vorhaben
+
+Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen.
+
+## 8.2 Datenaufbereitung
+
+Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable Umsatz_NA (= TRUE).
+
+Für unser Vorhaben beschränken wir uns auf die in den Rohdaten vorhandenen Umsätze (Umsatz_NA = FALSE). Und wir schränken die Trainingsdaten später auf den Zeitraum 2015 bis 2017 ein, weil wir oben gesehen hatten, dass die Umsätze in 2014 systematisch höher liegen als in den folgenden Jahren. Die Umsätze des Jahres 2018 dienen uns dann als Testdaten.
+
+Wir erstellen für diesen Abschnitt einen Analysedatensatz `df_MLP` auf Basis von `df_voll`.
+
+```{r}
+df_MLP <- df_voll
+
+# verwende nur originäre Umsatzdaten und grenze den Zeitraum auf 2015 bis 2018 ein
+df_MLP <- df_MLP %>% 
+  filter(Umsatz_NA == FALSE) %>%
+  filter(Jahr >= 2015 & Jahr <= 2018)
+
+# behalte nur die Spalten, die wir für unser MLP verwenden wollen
+df_MLP <- df_MLP %>%
+  select(Datum, Warengruppe, Umsatz, Jahr, KielerWoche, Temperatur, Wochentag_c, SommerferienSH, Feiertag, Silvester_ext, Fruehling, Sommer, Herbst, Winter)
+```
+
+Im ersten Schritt verzichten wir auf die Variablen Windgeschwindigkeit und Bewölkung: Wir hatten nämlich in unserer Korrelationsanalyse gesehen, dass die Windgeschwindigkeit allenfalls einen sehr geringen Einfluss hat. Und die Bewölkung würde weitere 8 Dummyvariablen erfordern als Eingabe für unser MLP, daher verzichten wir darauf, um unser Modell nicht zu sehr aufzublähen.
+
+Die Variable Wochentag_c muss nun noch dummyfiziert werden: Wir bilden für jeden Wochentag eine Variable mit Ausprägung 0/1. Und entfernen danach die alte Variable Wochentag_c.
+
+```{r}
+df_MLP <- df_MLP %>%
+  mutate(Montag=as.integer(df_MLP$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_MLP$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_MLP$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_MLP$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_MLP$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_MLP$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_MLP$Wochentag_c=="Sonntag")) %>%
+  select(-Wochentag_c)
+```
