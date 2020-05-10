@@ -2471,7 +2471,69 @@ df_lm %>%
   ggtitle("Korrelogramm Warengruppe 1 - reduzierte Version")
 ```
 
+*Überprüfung auf Multikollinearität:*
 
+Multikollinearität tritt dann auf, wenn zwei oder mehr der Prädiktoren miteinander stark korrelieren. Wenn das passiert, haben wir zwei Probleme:
+
+1. Wir wissen nicht, welche der beiden Variablen tatsächlich zur Varianzaufklärung beiträgt. Eventuell messen beide Variablen auch dasselbe und sind damit redundant.
+2. Mathematische Probleme bei der Berechnung der Regression. Wenn zwei Prädiktoren beispielsweise zu 1 miteinander korrelieren, wie würden die Regressionskoeffizienten dann beschaffen sein? Welcher Prädiktor würde in das Modell aufgenommen werden?
+
+Multikollinearität kann auf zwei verschiedene Arten überprüft werden: Zum einen durch die Korrelation der Variablen untereinander, zum anderen durch den Toleranz/VIF (variance influence factor) Wert.
+
+Es gibt einige Warnzeichen für Multikollinearität:
+
+* Nachdem wir einen weiteren Prädiktor in das Modell hinzugefügt haben, ändern sich die Regressionskoeffizienten stark
+* Der Regressionskoeffizient ist nicht signifikant, auch wenn der Prädiktor eigentlich stark mit dem Kriterium korrelieren sollte
+* Die Prädiktoren korrelieren stark miteinander
+
+Überprüfung durch Korrelation:
+
+Die Korrelationen nach Pearson können in R einfach über den Befehl `cor()` berechnet werden. Hier sollte kein Wert größer als .7 sein. 
+```{r}
+df_lm %>% 
+  filter(Warengruppe == "1") %>%
+  dplyr::select(-Umsatz, -Warengruppe, - Jahr, -Datum, -Wochentag_c, -Monat_c, -Jahreszeit) %>%
+  cor()
+```
+
+Einige der unabhängigen Variablen weisen starke bis mittelstarke Korrelationen auf (auf 3 Stellen gerundet):
+
+* SommerferienSH und SommerferienNRW: 0.648
+* SommerferienSH und SommerferienNDS: 0.593
+* SommerferienSH und SommerferienHE: 0.688
+* SommerferienNDS und SommerferienHE: 0.774
+* SommerferienSH und Sommer: 0.615
+* SommerferienNRW und Sommer: 0.629
+* SommerferienNDS und Sommer: 0.621
+* SommerferienHE und Sommer: 0.613
+* Herbst und Monat: 0.699
+* Winter und Monat: -0.600
+* Feiertag und Ostern: 0.537
+* Feiertag und Pfingsten: 0.514
+* Ostern und Ostern_ext: 0.708
+* Pfingsten und Pfingsten_ext: 0.690
+* Silvester und Silvester_ext: 0.706
+
+Schwache, aber noch deutliche Korrelationen weisen folgende Variablen auf:
+* Feiertag und ChristiHimmelfahrt: 0.379
+* ChristiHimmelfahrt und ChristiHimmelfahrt_ext: 0.445
+* Feiertag und TDE: 0.379
+* Feiertag und Silvester: 0.379
+* Feiertag und Silvester_ext: 0.264
+* Feiertag und Ostern_ext: 0.376
+* Feiertag und Pfingsten_ext: 0.349
+* Fruehling und Monat: -0.316
+* Fruehling und sämtliche SommerferienVariablen: ~ 0.220
+* Fruehling und Sommer: -0.349
+* Fruehling und Herbst: -0.329
+* Fruehling und Winter: - 0.321
+* Sommer und Herbst: -0.346
+* Sommer und Winter: -0.337
+* Herbst und Winter: - 0.318.
+
+Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise deutlich ankratzen, muss für das weitere Vorgehen eine Auswahl erfolgen, da bspw. die schrittweise Regression bei Multikollinearität versagt.
+
+... HIER WEITERMACHEN.
 
 ### 6.3.2 Untersuchung der Warengruppe 2
 ```{r}
@@ -3000,9 +3062,10 @@ Wir variieren `nvmax` von 1 bis 10, was zur Identifizierung der 10 besten Modell
 Wir verwenden die 10-fache Kreuzvalidierung, um den durchschnittlichen Vorhersagefehler (RMSE) jedes der 5 Modelle zu schätzen. Die statistische RMSE-Metrik wird verwendet, um die 10 Modelle zu vergleichen und automatisch das beste auszuwählen, wobei best als das Modell definiert ist, das den RMSE minimiert.
 
 ```{r}
-# Trainieren des Modells
+# Set up repeated k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
 
-df_lm_train_WG1 <- df_lm_train_WG1 %>%  drop_na()
+# Trainieren des Modells
 step.model <- train(Umsatz ~., data = df_lm_train_WG1,
                     method = "leapBackward", 
                     tuneGrid = data.frame(nvmax = 1:10),
@@ -3011,6 +3074,9 @@ step.model <- train(Umsatz ~., data = df_lm_train_WG1,
 step.model$results
 ```
 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!
+Da die schrittweise Methode vorläufig noch nihct funktioniert, wird auf Basis der Voruntersuchungen in Kap. 6.3 und 6.4 ein erstes lm-Modell erstellt, damit der Code für die anderen Dinge wie Modellgüte / Modellbewertung schon einmal (vor)programmiert werden können.
 
 # 7 Anwendung von Machine Learning Verfahren
 
