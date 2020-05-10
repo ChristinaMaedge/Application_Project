@@ -2409,16 +2409,26 @@ In einem nächsten Schritt wird mit der linearen Regression ein traditionelles s
 
 Im Allgemeinen ist bei der linearen Regression zwischen der einfachen und der multiplen Regression zu unterscheiden. Während im ersten Fall nur eine einzelne Variable als Vorhersageparameter für die abhängige Variable betrachtet wird, werden bei der multiplen linearen Regression mehrere Input-Variablen in das Modell einbezogen. Da hinsichtlich der beeinflussenden Variablen Unterschiede bei den einzelnen Warengruppen zu erwarten sind, werden die Warengruppen isoliert betrachtet. Das heißt, für jede Warengruppe werden unterschiedliche Modelle angwendet und verglichen.  
 
-Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst werden im Rahmen einer Korrelationsanalyse Zusammenhänge zwischen dem Umsatz und potentiell beeinflussenden Variablen untersucht, um zu prüfen, welche Variablen für die Aufnahme in ein Regressionsmodell geeignet erscheinen. Da einfache statistische Maßzahlen zur Beschreibung der Daten nicht immer ausreichen und ein und demselben Wert des Korrelationskoeffizienten unterschiedliche Zusammenhänge (neben dem linearen) zugrunde liegen können, werden für die potentiell beeinflussenden Variablen in einem weiteren Schritt Streudiagramme erstellt (vgl. hierzu auch Anscombes Quartett aus dem Jahr 1973). Im Anschluss können die Modelle auf einer vergleichsweise fundierten / begründeten Basis erstellt werden. 
+Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt soll im Rahmen von Korrelationsanalysen bzw. auf Basis von Korrelogrammen ein erster Eindruck über potentielle Zusammenhänge zwischen dem Umsatz und potentiell beeinflussenden Variablen gewonnen werden, um zu ermessen/prüfen, welche Variablen für die Aufnahme in ein Regressionsmodell geeignet erscheinen. Da einfache statistische Maßzahlen zur Beschreibung der Daten nicht immer ausreichen und ein und demselben Wert des Korrelationskoeffizienten unterschiedliche Zusammenhänge (neben dem linearen) zugrunde liegen können, werden für die potentiell beeinflussenden Variablen in einem weiteren Schritt Streudiagramme erstellt (vgl. hierzu auch Anscombes Quartett aus dem Jahr 1973) sowie die eine odere andere weitere Maßzahl berechnet. 
 
-## 6.2 Zusammenhangsanalysen
+Diese Voruntersuchungen legen eine gute Basis zur Auswahl der relevanten Variablen. Bevor die linearen Modelle schließlich angewendet werden, wird eine schrittweise Regression durchgeführt. 
+
+## 6.2 Erstellung des Arbeitsdatensatzes für die Anwendung der linearen Modelle
+```{r}
+df_lm <- df_voll %>%
+  filter(Umsatz_NA == FALSE) %>%
+  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag)
+df_lm_train <- df_lm %>% filter(Jahr >= 2014 & Jahr <= 2017) 
+df_lm_test <- df_lm %>% filter(Jahr == 2018)
+```
+
+## 6.3 Zusammenhangsanalysen
 
 Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regressionsmodell in Betracht kommen, wird zunächst ein sog. Korrelogram erstellt, dass einen schnellen Überblick über den Zusammenhang zwischen dem Umsatz und den potientiellen Einflussfaktoren ermöglicht:
 
-**Korrelogramm**
+### 6.3.1 Korrelogramm über alle Warengruppen
 ```{r warning=FALSE}
-df_voll %>%
-  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+df_lm %>% 
   ggcorr() +
   ggtitle("Korrelogramm über alle Warengruppen")
 ```
@@ -2428,15 +2438,15 @@ df_voll %>%
   + Temperatur
   + Wochenende
   + sämtliche betrachteten Sommerferien-Variablen
-  + Silverster
+  + (Feiertag)
+  + Silvester
   + Sommer.
 
 Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengruppen erkennbar waren, wird in einem zweiten Schritt überprüft, ob die Korrelogramme für die einzelnen Variablen unterschiedlich sind.
 
-**Untersuchung der Warengruppe 1**
+### 6.3.2 Untersuchung der Warengruppe 1
 ```{r}
-df_voll %>%
-  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+df_lm %>% 
   filter(Warengruppe == "1") %>%
   ggcorr() +
   ggtitle("Korrelogramm Warengruppe 1")
@@ -2445,16 +2455,27 @@ df_voll %>%
 * Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
 * Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder scheinen die folgenden Variablen einen Einfluss zu haben:
   + Temperatur
+  + Wochenende (leicht negativer Effekt)
   + sämtliche betrachteten Sommerferien-Variablen
   + Silvester
   + Sommer
 * Hinzu kommen der Wochentag und die erweiterte Osternvariable.
 
-
-**Untersuchung der Warengruppe 2**
+Betrachten wir noch ein Korrelogramm mit diesen selektierten Variablen:
 ```{r}
-df_voll %>%
-  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+## reduzierte Variante mit weniger Variablen als Ergenis des ersten Korrelogramms; Ziel: Stärke des jeweiligen Einflusses sichtbarere machen
+df_lm %>% 
+  select(Warengruppe, Umsatz, Temperatur, Wochentag, Wochenende, SommerferienSH, SommerferienNRW, SommerferienNDS, SommerferienHE, Silvester, Ostern_ext, Sommer) %>%
+  filter(Warengruppe == "1") %>%
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 1 - reduzierte Version")
+```
+
+
+
+### 6.3.2 Untersuchung der Warengruppe 2
+```{r}
+df_lm %>% 
   filter(Warengruppe == "2") %>%
   ggcorr()+
   ggtitle("Korrelogramm Warengruppe 2")
@@ -2462,6 +2483,7 @@ df_voll %>%
 
 * Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
 * Vom Muster her ergibt sich ein ähnliches Bild. Folgende Variablen haben einen Einfluss:
+  + KiWo,
   + Temperatur,
   + Monat (schwach),
   + Wochenende,
@@ -2470,36 +2492,64 @@ df_voll %>%
   + der Winter und in gewissem Maße der Herbst (diese beiden wirken eher in negativer Richtung).
 * Weniger stark als bei Warengruppe 1 wirken der Wochentag, die erweiterte Ostervariable und Silvester.
 
-**Untersuchung der Warengruppe 3**
+Betrachten wir noch ein Korrelogramm mit diesen ausgewählten Variablen:
 ```{r}
-df_voll %>%
-  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+## reduzierte Variante mit weniger Variablen als Ergenis des ersten Korrelogramms; Ziel: Stärke des jeweiligen Einflusses sichtbarere machen
+df_lm %>% 
+  select(Warengruppe, Umsatz, Jahr, KielerWoche, Temperatur, Monat, Wochenende, SommerferienSH, SommerferienNRW, SommerferienNDS, SommerferienHE, Sommer, Herbst, Winter) %>%
+  filter(Warengruppe == "2") %>%
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 2 - reduzierte Version")
+```
+
+
+### 6.3.4 Untersuchung der Warengruppe 3
+```{r}
+df_lm %>% 
   filter(Warengruppe == "3") %>%
   ggcorr() +
   ggtitle("Korrelogramm Warengruppe 3")
 ```
 
-* Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung.
+* Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung. Das Jahr scheint überdies nicht mal einen leichten Einfluss zu haben.
 
-**Untersuchung der Warengruppe 4**
+Betrachten wir erneut ein weiteres Korrelogramm mit diesen ausgewählten Variablen (s. Warengruppe 2, ohne `Jahr`):
 ```{r}
-df_voll %>%
-  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+df_lm %>% 
+  select(Warengruppe, Umsatz, KielerWoche, Temperatur, Monat, Wochenende, SommerferienSH, SommerferienNRW, SommerferienNDS, SommerferienHE, Sommer, Herbst, Winter) %>%
+  filter(Warengruppe == "3") %>%
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 3 - reduzierte Version")
+```
+
+
+### 6.3.5 Untersuchung der Warengruppe 4
+```{r}
+df_lm %>%
   filter(Warengruppe == "4") %>%
   ggcorr() +
   ggtitle("Korrelogramm Warengruppe 4")
 ```
 
-* Die Warengruppe unterscheidet sich abermals von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
+* Die Warengruppe unterscheidet sich deutlich von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
 * Allenfalls die folgenden Variabeln könnten einen spürbaren Einfluss haben:
   + Wochentag (im negativen Sinne), 
   + Wochenende, 
   + ansatzweise Feiertag,
   + ansatzweise Winter.
 
+Betrachten wir erneut ein weiteres Korrelogramm mit diesen ausgewählten Variablen:
 ```{r}
-df_voll %>%
-  select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag) %>% 
+df_lm %>% 
+  select(Warengruppe, Umsatz, Wochentag, Wochenende, Feiertag, Winter) %>%
+  filter(Warengruppe == "4") %>%
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 4 - reduzierte Version")
+```
+
+### 6.3.6 Untersuchung der Warengruppe 5
+```{r}
+df_lm %>%
   filter(Warengruppe == "5") %>%
   ggcorr() +
   ggtitle("Korrelogramm Warengruppe 5")
@@ -2507,20 +2557,105 @@ df_voll %>%
 
 * Bei der Warengruppe 5 scheint der Sivester (+ Silvester_ext) deutlich der einflussstärkste Faktor zu sein. Ein mögliche Erklärung wäre, dass der Verkauf von Berlinern an diesem Tag exorbitant hoch ist. Bei der Modellierung muss die Interkorrelation dieser Variablen beachtet werden.
 * Weiterhin Einfluss zu haben scheinen erneut zu haben:
+  + Temperatur,
+  + das Wochenende,
   + Sommer,
   + Herbst (im negativen Sinne),
-  + die Sommerferien,
-  + das Wochenende und
+  + die Sommerferien sowie
   + die allgemeine Feiertagsvariable (Überschneidung mit bzw. Effekt von Silvester beachten).
 
-
-## 6.3 Visualisierung der Zusammenhänge zwischen ausgewählten Variablen 
-
-**Betrachtung der Warengruppe 1**
-
-*Potentieller Einflussfaktor Temperatur*
+Betrachten wir erneut ein weiteres Korrelogramm mit diesen ausgewählten Variablen:
 ```{r}
-df_voll %>%
+df_lm %>% 
+  select(Warengruppe, Umsatz, Wochentag, Wochenende, Feiertag, Winter) %>%
+  filter(Warengruppe == "4") %>%
+  ggcorr() +
+  ggtitle("Korrelogramm Warengruppe 4 - reduzierte Version")
+```
+
+### 6.3.7 Zwischenfazit
+
+Die beeinflussenden Variablen scheinen nicht bei allen Warengruppen die gleichen zu sein. Zwar scheinen in Ansätzen ähnliche Muster bei einzelnen Warengruppen erkennbar, diese gelten dann jedoch sichtbar für eine andere Warengruppe nicht. Daher werden im Folgenden die Warengruppen auf Einzelebene analysiert.
+
+## 6.4 Visualisierung der Zusammenhänge zwischen ausgewählten Variablen auf Warengruppenebene und weitere Untersuchungen
+
+Da eine hohe Korrelation nicht automatisch einhergeht mit einem linearen Zusammenhang, wir aber genau diesen Ansatz bei unseren linearen Modellen verfolgen, werden für die einzelnen Warengruppen einzelne, ausgewählte Variablen - resultierend aus den Ergebnissen / angelehnt an die Ergebnisse in Kapitel 6.3 - genauer untersucht.
+
+### 6.4.1 Betrachtung der Warengruppe 1
+
+**Potentieller Einflussfaktor Kieler Woche**
+Bei der Variable `KielerWoche` handelt es sich um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Kieler Woche) und `0` (keine Kieler Woche) hat. 
+
+Vergleichen wir die Mittelwerte des Umsatzes zwischen den Zeiten, in denen die Kieler Woche stattfindet und denen, in denen sie nicht stattfindet:
+```{r}
+Umsatz_KiWo_WG1 <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, KielerWoche) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(KielerWoche) %>%
+  summarise(avgUmsatzKiWoWG1 = mean(Umsatz))
+Umsatz_KiWo_WG1
+```
+Sehr großen Einfluss auf den Abverkauf von Brot scheint die Kieler Woche nicht zu haben. Die Umsätze liegen zwar im Durchschnitt während des Kieler Woche-Zeitraums höher, jedoch beträgt diese Steiegrung lediglich 9,6%. 
+
+```{r}
+library(broom)
+df_arbeit <- df_lm %>%
+  filter(Warengruppe == "1") 
+lm_Umsatz_KiWo_WG1 <- lm(Umsatz ~ KielerWoche, data = df_arbeit)
+tidy(lm_Umsatz_KiWo_WG1)
+glance(lm_Umsatz_KiWo_WG1)
+```
+
+**Potentieller Einflussfaktor Monat**
+Die Variable `Monat` hat zwölf Ausprägungen. 
+Vergleichen wir die Mittelwerte des Umsatzes zwischen den verschiedenen Monaten:
+```{r}
+Umsatz_Monat_WG1 <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, Monat) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(Monat) %>%
+  summarise(avgUmsatzMonatWG1 = mean(Umsatz))
+Umsatz_Monat_WG1
+Umsatz_Monat_WG1 %>%
+  summarise(minUmsatz = min(avgUmsatzMonatWG1), 
+            maxUmsatz = max(avgUmsatzMonatWG1), 
+            Differenz = ((maxUmsatz - minUmsatz)/minUmsatz))
+```
+
+Die Variable `Monat` scheint einen Einfluss zu haben. Betrachtet man beispielsweise den höchsten durchschnittlichen Umsatz für Brot, der im August liegt (148.25€) und vergleicht diesen mit dem kleinsten durchschnittlichen Wert (Januar: 107.8427), so bedeutet dies, dass der Umsatz im August 37,4% höher ist. Eine mögliche Interaktion mit den Sommerferienvariablen sollte hier beachtet werden.
+
+```{r}
+lm_Umsatz_Monat_WG1 <- lm(Umsatz ~ Monat_c, data = df_arbeit)
+tidy(lm_Umsatz_Monat_WG1)
+glance(lm_Umsatz_Monat_WG1)
+```
+
+**Potentieller Einflussfaktor Wochenende** 
+Bei der Variable `Wochenende` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Wochenende) und `0` (kein Wochenende) hat. 
+
+Vergleichen wir die Mittelwerte des Umsatzes am Wochenende mit den Nicht-Wochenendtagen:
+```{r}
+Umsatz_WE_WG1 <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, Wochenende) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(Wochenende) %>%
+  summarise(avgUmsatzWEWG1 = mean(Umsatz))
+Umsatz_WE_WG1
+```
+Der Umsatz der Warengruppe 1 ist am Wochenende um 11% geringer als unterhalb der Woche. Eine mögliche Erklärung könnten verkürzte Öffnungszeiten an den Wochenendtagen sein. Genauso wäre es jedoch auch denkbar, dass die Kunden am Wochenende tatsächlich ein anderes Käuferverhalten haben als an den Wochentagen. Was diesem verringerten Umsatz am Wochenende zugrunde liegt, ist für die weiteren Schritte erst einmal unerheblich.
+
+```{r}
+lm_Umsatz_WE_WG1 <- lm(Umsatz ~ Wochenende, data = df_arbeit)
+tidy(lm_Umsatz_WE_WG1)
+glance(lm_Umsatz_WE_WG1)
+```
+
+**Potentieller Einflussfaktor Temperatur**
+```{r}
+df_lm %>%
   select(Warengruppe, Umsatz, Temperatur) %>%
   filter(Warengruppe == "1") %>%
   ggplot(aes(x = Temperatur, y = Umsatz)) +
@@ -2530,7 +2665,110 @@ df_voll %>%
   ggtitle("Zusammenhang zwischen Temperatur und Umsatz - Warengruppe 1")
 ```
 
-*Potentieller Einflussfaktor Sommerferien*
+**Potentieller Einflussfaktor Sommerferien**
+
+Bei der Variable Sommerferien handelt es sich um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Sommerferien) und `0` (keine Sommeferien) hat. 
+
+Vergleichen wir die Mittelwerte des Umsatzes zwischen den Zeiten Sommerferien und keine Sommerferien:
+
+*Sommerferien in Schleswig-Holstein*
+```{r}
+library(ggplot2)
+
+Umsatz_SommerferienSH <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, SommerferienSH) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(SommerferienSH) %>%
+  summarise(avgUmsatzSH = mean(Umsatz))
+Umsatz_SommerferienSH
+
+#Umsatz_SommerferienSH <- Umsatz_SommerferienSH %>%
+ #mutate(SoFeTF = car::recode(.$SommerferienSH, "0 = FALSE; 1 = TRUE", as.factor = TRUE))
+
+## Visualisierung
+df_lm %>%
+  select(Warengruppe, Umsatz, SommerferienSH) %>%
+  filter(Warengruppe == "1") %>%
+  ggplot() +
+  aes(x = SommerferienSH, y = Umsatz) +
+  geom_boxplot(width = .1) +
+  geom_jitter(width = .1, alpha = .1) +
+  geom_point(data = Umsatz_SommerferienSH,
+             color = "red",
+             size = 5, 
+             shape = 17) +
+  geom_line(data = Umsatz_SommerferienSH,
+            group = 1,
+            color = "red")
+```
+
+Die Mittelwerte weichen bei der Variablen `SommerferienSH` deutlich voneinander ab: in den Zeiten, in denen die Schüler in Schleswig-Holstein Sommerferien haben, ist der Umsatz in der Warengruppe *Brot* durchschnittlich 25,7% höher als außerhalb der Sommerferienzeit. 
+
+```{r}
+lm_Umsatz_SoFeSH_WG1 <- lm(Umsatz ~ SommerferienSH, data = df_arbeit)
+tidy(lm_Umsatz_SoFeSH_WG1)
+glance(lm_Umsatz_SoFeSH_WG1)
+```
+
+*Sommerferien in Nordrhein-Westfalen*
+```{r}
+Umsatz_SommerferienNRW <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, SommerferienNRW) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(SommerferienNRW) %>%
+  summarise(avgUmsatzNRW = mean(Umsatz))
+Umsatz_SommerferienNRW
+```
+Für die Sommerferienzeit in NRW ergibt sich ein ähnliches Bild: Während der Sommerferienzeiten in NRW liegen die Umsätze in der Warengruppe 1 22% höher als außerhalb dieser Zeit bzw. dieses Zeitraumes.
+
+```{r}
+lm_Umsatz_SoFeNRW_WG1 <- lm(Umsatz ~ SommerferienNRW, data = df_arbeit)
+tidy(lm_Umsatz_SoFeNRW_WG1)
+glance(lm_Umsatz_SoFeNRW_WG1)
+```
+
+
+*Sommerferien in Niedersachsen*
+```{r}
+Umsatz_SommerferienNDS <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, SommerferienNDS) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(SommerferienNDS) %>%
+  summarise(avgUmsatzNDS = mean(Umsatz))
+Umsatz_SommerferienNDS
+```
+Erneut ist ein deutlicher Effekt der Variable Sommerferien auf den Umsatz sichtbar: sind Sommerferien in Niedersachsen geht dies mit einer Steigerung des Umsatzes in Höhe von 20,9% einher.
+
+```{r}
+lm_Umsatz_SoFeNDS_WG1 <- lm(Umsatz ~ SommerferienNDS, data = df_arbeit)
+tidy(lm_Umsatz_SoFeNDS_WG1)
+glance(lm_Umsatz_SoFeNDS_WG1)
+```
+
+*Sommerferien in Hessen*
+```{r}
+Umsatz_SommerferienHE <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, SommerferienHE) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(SommerferienHE) %>%
+  summarise(avgUmsatzHE = mean(Umsatz))
+Umsatz_SommerferienHE
+```
+Die Schulferienzeit in Hessen führt zu dem gleichen Effekt: Es ist eine deutliche Steigerung des Umsatzes beobachtbar. Diese Steigerung ist mit 23,5% höher als bei der Betrachtung der Sommerferienzeiten in NRW und Niedersachsen.
+
+```{r}
+lm_Umsatz_SoFeHE_WG1 <- lm(Umsatz ~ SommerferienHE, data = df_arbeit)
+tidy(lm_Umsatz_SoFeHE_WG1)
+glance(lm_Umsatz_SoFeHE_WG1)
+```
+
+> Da alle betrachteten Sommerferienzeiträume einen vergleichsweise gleich hohen Einfluss haben, sollte eventuell eine Sommerferienvariable erstellen, die die Überschneidungszeiträume aller betrachteten Bundesländer erfasst.
+
+ÜBERARBEITEN!
 ```{r}
 library(vcd) # Kontingenzkoeffizient
 # df_voll %>% 
@@ -2538,7 +2776,7 @@ library(vcd) # Kontingenzkoeffizient
 
 # tally(Umsatz ~ SommerferienSH, data = df_voll, format = "percent")
 
-df_voll %>%
+df_lm %>%
   select(Warengruppe, Umsatz, SommerferienSH) %>%
   filter(Warengruppe == "1") %>%
   ggplot(aes(x = SommerferienSH, y = Umsatz)) +
@@ -2577,69 +2815,200 @@ df_voll %>%
   und Umsatz - Warengruppe 1")
 ```
 
-+++ 6.3 Überarbeiten +++
+**Potentieller Einflusfaktor Sommer**
+Bei der Variable `Sommer` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Sommer) und `0` (kein Sommer) hat. 
 
-## 6.4 Regressionsmodelle 
-
-### 6.4.1 Warengruppe 1
-
-**Einfache lineare Regressionsmodelle**
-  + Temperatur
-  + sämtliche betrachteten Sommerferien-Variablen
-  + Silvester
-  + Sommer
-* Hinzu kommen der Wochentag und die erweiterte Osternvariable.
-
-Zunächst wird der isolierte Einfluss der Variable `Temperatur` überprüft:
+Vergleichen wir den Mittelwert des Umsatzes im Sommer mit dem in den Nicht-Sommermonaten:
 ```{r}
-#library(ggplot2)
-#library(dplyr)
-lm_train_WG1_e1 <- lm(Umsatz ~ Temperatur, data = df_train) # Benennung Lineares Modell, Training, Warengruppe, einfaches Modell 1
-#tidy(lm_train_WG1_e1)
-#glance(lm_train_WG1_e1)
-summary.lm(lm_train_WG1_e1)
+Umsatz_Sommer_WG1 <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, Sommer) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(Sommer) %>%
+  summarise(avgUmsatzSommerWG1 = mean(Umsatz))
+Umsatz_Sommer_WG1
 ```
-(Bewertung/Interpretation)
+Im Sommer ist der Umsatz in der Warengruppe Brot um 18,1% höher als in den Nicht-Sommermonaten. Dies mag auch verstärkt der Tatsache geschuldet sein, dass in den Sommermonaten viele Touristen im Land sind. Insofern muss die Überschneidung / Interkorrelation dieser beiden Variablen beachtet werden.
 
-Als nächstes werden Modelle für die verschiedenen `Sommerferien`-Variablen betrachtet:
 ```{r}
-# Einfaches Modell Sommerferien Schleswig-Holstein:
-lm_train_WG1_e2 <- lm(Umsatz ~ SommerferienSH, data = df_train)
-summary.lm(lm_train_WG1_e2)
-
-# Einfaches Modell Sommerferien Nordrhein-Westfalen:
-lm_train_WG1_e3 <- lm(Umsatz ~ SommerferienNRW, data = df_train)
-summary.lm(lm_train_WG1_e3)
-
-# Einfaches Modell Sommerferien Niedersachsen:
-lm_train_WG1_e4 <- lm(Umsatz ~ SommerferienNDS, data = df_train)
-summary.lm(lm_train_WG1_e4)
-
-# Einfaches Modell Sommerferien Hessen:
-lm_train_WG1_e5 <- lm(Umsatz ~ SommerferienNDS, data = df_train)
-summary.lm(lm_train_WG1_e5)
+lm_Umsatz_Sommer_WG1 <- lm(Umsatz ~ Sommer, data = df_arbeit)
+tidy(lm_Umsatz_Sommer_WG1)
+glance(lm_Umsatz_Sommer_WG1)
 ```
 
-(Bewertung/Interpretation)
+**Potentieller Einflussfaktor Herbst**
+Bei der Variable `Herbst` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Herbst) und `0` (kein Herbst) hat. 
 
-Ein weiteres einfaches Modell wird für die Variable `Sommer` erstellt:
+Vergleichen wir den Mittelwert des Umsatzes im Herbst mit dem in den Nicht-Herbstmonaten:
 ```{r}
-lm_train_WG1_e6 <- lm(Umsatz ~ Sommer, data = df_train)
-summary.lm(lm_train_WG1_e6)
+Umsatz_Herbst_WG1 <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, Herbst) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(Herbst) %>%
+  summarise(avgUmsatzHerbstWG1 = mean(Umsatz))
+Umsatz_Herbst_WG1
 ```
+Im Herbst werden umsatztechnisch betrachtet 10.6% weniger Brot verkauft verglichen mit den anderen Jahreszeiten.
 
-Verglichen wird der Einfluss der `Sommer`-Variable mit der Variable `Jahreszeit`:
+
 ```{r}
-lm_train_WG1_e7 <- lm(Umsatz ~ Jahreszeit, data = df_train)
-summary.lm(lm_train_WG1_e7)
+lm_Umsatz_Herbst_WG1 <- lm(Umsatz ~ Herbst, data = df_arbeit)
+tidy(lm_Umsatz_Herbst_WG1)
+glance(lm_Umsatz_Herbst_WG1)
 ```
 
 
-Abschließend für die einfachen Modelle wird der isolierte Einfluss der Variable `Silvester` geprüft:
+**Potentieller Einflusfaktor Winter**
+Bei der Variable `Winter` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Winter) und `0` (kein Winter) hat. 
+
+Vergleichen wir den Mittelwert des Umsatzes im Winter mit dem in den Nicht-Wintermonaten:
+```{r}
+Umsatz_Winter_WG1 <- 
+  df_lm %>%
+  select(Warengruppe, Umsatz, Winter) %>%
+  filter(Warengruppe == "1") %>%
+  group_by(Winter) %>%
+  summarise(avgUmsatzWinterWG1 = mean(Umsatz))
+Umsatz_Winter_WG1
+```
+Im Herbst werden umsatztechnisch betrachtet 11,0% weniger Brot verkauft verglichen mit den anderen Jahreszeiten.
+
 
 ```{r}
-lm_train_WG1_e7 <- lm(Umsatz ~ Silvester, data = df_train)
-summary.lm(lm_train_WG1_e7)
+lm_Umsatz_Winter_WG1 <- lm(Umsatz ~ Winter, data = df_arbeit)
+tidy(lm_Umsatz_Winter_WG1)
+glance(lm_Umsatz_Winter_WG1)
+```
+
+**Einflussfaktor Jahreszeit**
+Zum Vergleich mit den Einzelergebnissen der konkreten Jahreszeiten-Variablen wird noch eine kurze, einfach lineare Regression mit der Variable `Jahreszeit` durchgeführt:
+
+
+```{r}
+lm_Umsatz_Jahreszeit_WG1 <- lm(Umsatz ~ Jahreszeit, data = df_arbeit)
+tidy(lm_Umsatz_Jahreszeit_WG1)
+glance(lm_Umsatz_Jahreszeit_WG1)
+```
+
+## 6.5 Lineare Regressionsmodelle 
+
+### 6.5.1 Warengruppe 1
+Die Vorarbeiten in den Kapiteln 6.3 und 6.4 haben einen ersten, guten Eindruck/Anhalt geliefert, welche Variablen in ein multiples Regressionsmodell aufgenommen werden sollten. 
+
+Da es sich abschließend nur um einen Anhalt und keine abschließende Entscheidungsgrundlage handelt, wird in einem nächsten Schritt zunächst eine schrittweise Regression (stepwise regression) durchgeführt. 
+
+#### 6.5.1.1 Schrittweise Regression
+In der Statistik ist die schrittweise Regression eine Methode zur Anpassung von Regressionsmodellen, bei der die Auswahl der Vorhersagevariablen durch ein automatisches Verfahren erfolgt. In jedem Schritt wird eine Variable zur Addition oder Subtraktion von dem Satz erklärender Variablen auf der Grundlage eines vorgegebenen Kriteriums betrachtet. Normalerweise erfolgt dies in Form einer Folge von F-Tests oder t-Tests. Es sind jedoch auch andere Techniken möglich, z. B. angepasstes R2, Akaike-Informationskriterium, Bayes'sches Informationskriterium, Mallows $C_p$, PRESS oder Falschentdeckungsrate (false discovery rate).
+
+Die Hauptansätze sind:
+
+* Die sog. **Forward selection** (Vorwärtsauswahl), bei der ohne Variablen im Modell begonnen wird, die Addition jeder Variablen anhand eines ausgewählten Modellanpassungskriteriums getestet wird, die Variable (falls vorhanden) hinzugefügt wird, deren Einbeziehung die statistisch signifikanteste Verbesserung der Anpassung ergibt, und dieser Vorgang bis wiederholt wird Keiner verbessert das Modell in einem statistisch signifikanten Ausmaß.
+* Die sog. **Backward elimination** (Rückwärtseliminierung) umfasst das Beginnen mit allen Kandidatenvariablen, das Testen der Löschung jeder Variablen unter Verwendung eines ausgewählten Modellanpassungskriteriums, das Löschen der Variablen (falls vorhanden), deren Verlust die statistisch unbedeutendste Verschlechterung der Modellanpassung ergibt, und das Wiederholen dieses Vorgangs bis Nr Weitere Variablen können ohne statistisch nicht signifikanten Anpassungsverlust gelöscht werden.
+* Die sog. **Birectional elimination** (Bidirektionale Eliminierung), eine Kombination der oben genannten, wobei bei jedem Schritt geprüft wird, ob Variablen eingeschlossen oder ausgeschlossen werden sollen.
+
+*Selektionskriterium*
+
+Ein weit verbreiteter Algorithmus wurde erstmals von Efroymson (1960) vorgeschlagen (Efroymson, MA (1960) "Multiple regression analysis." In Ralston, A. and Wilf, HS, editors, Mathematical Methods for Digital Computers. Wiley.). Dies ist ein automatisches Verfahren für die statistische Modellauswahl in Fällen, in denen es eine große Anzahl potenzieller erklärender Variablen gibt und keine zugrunde liegende Theorie, auf der die Modellauswahl basieren kann. Das Verfahren wird hauptsächlich in der Regressionsanalyse verwendet, obwohl der grundlegende Ansatz in vielen Formen der Modellauswahl anwendbar ist. Dies ist eine Variation der Vorwärtsauswahl. In jeder Phase des Prozesses wird nach dem Hinzufügen einer neuen Variablen geprüft, ob einige Variablen gelöscht werden können, ohne die verbleibende Quadratsumme (RSS) merklich zu erhöhen. Das Verfahren wird beendet, wenn die Maßnahme (lokal) maximiert ist oder wenn die verfügbare Verbesserung einen kritischen Wert unterschreitet.
+
+Eines der Hauptprobleme bei der schrittweisen Regression besteht darin, dass ein großer Bereich möglicher Modelle durchsucht wird. Daher besteht die Gefahr einer Überanpassung der Daten. Mit anderen Worten, die schrittweise Regression passt häufig viel besser in die Stichprobe als bei neuen Daten außerhalb der Stichprobe. Es wurden extreme Fälle festgestellt, in denen Modelle statistische Signifikanz bei der Arbeit mit Zufallszahlen erreicht haben. [11] Dieses Problem kann gemindert werden, wenn das Kriterium zum Hinzufügen (oder Löschen) einer Variablen steif genug ist. Die Schlüssellinie im Sand befindet sich an dem Punkt, der als Bonferroni-Punkt angesehen werden kann: Wie bedeutend die beste Störvariable sein sollte, sollte allein auf dem Zufall beruhen. Auf einer t-statistischen Skala tritt dies bei ungefähr $$\sqrt{2 log*p} $$ auf, wobei p die Anzahl der Prädiktoren ist. Leider bedeutet dies, dass viele Variablen, die tatsächlich ein Signal übertragen, nicht enthalten sind. Dieser Kompromiss stellt sich als der richtige Kompromiss zwischen Überanpassung und fehlendem Signal heraus. Wenn wir das Risiko unterschiedlicher Cutoffs betrachten, liegt die Verwendung dieser Grenze innerhalb eines 2-logp-Faktors des bestmöglichen Risikos. Jeder andere Cutoff wird eine größere solche Risikoinflation haben. [12] [13]
+
+*Modellgenauigkeit*
+
+Eine Möglichkeit zum Testen auf Fehler in Modellen, die durch schrittweise Regression erstellt wurden, besteht darin, sich nicht auf die F-Statistik, Signifikanz oder mehrere R des Modells zu stützen, sondern das Modell anhand eines Datensatzes zu bewerten, der nicht zum Erstellen des Modells verwendet wurde [14] Dies geschieht häufig, indem ein Modell basierend auf einer Stichprobe des verfügbaren Datensatzes (z. B. 70%) - dem „Trainingssatz“ - erstellt und der Rest des Datensatzes (z. B. 30%) als Validierungssatz zur Bewertung der Genauigkeit verwendet wird des Modells. Die Genauigkeit wird dann häufig als tatsächlicher Standardfehler (SE), MAPE (mittlerer absoluter prozentualer Fehler) oder mittlerer Fehler zwischen dem vorhergesagten Wert und dem tatsächlichen Wert in der Hold-out-Stichprobe gemessen. [15] Diese Methode ist besonders wertvoll, wenn Daten in unterschiedlichen Umgebungen (z. B. zu unterschiedlichen Zeiten, in sozialen oder in Einzelsituationen) erfasst werden oder wenn angenommen wird, dass Modelle verallgemeinerbar sind.
+
+
+**Laden der benötigten Pakete**
+Wir beginnen unsere Analyse mit dem Laden der notwendigen Pakete, die bislang noch nicht geladen wurden:
+
+* `caret` für einen einfachen Machine Learning workflow
+* `leaps` für die Berechnung einer schrittweisen Regression
+
+```{r}
+library(caret)
+library(leaps)
+library(MASS)
+```
+
+**Erstellung von Trainings- und Testdatensätzen für Warengruppe 1**
+```{r}
+df_lm_train_WG1 <- df_lm_train %>%  filter(Warengruppe == "1")
+df_lm_test_WG1 <- df_lm_test %>% filter(Warengruppe == "1")
+```
+
+
+**Berechnung der schrittweisen Regression**
+
+Es gibt viele Funktionen und R-Pakete zur Berechnung der schrittweisen Regression. Diese beinhalten:
+
+* `stepAIC()` [MASS-Paket], das das beste Modell nach dem `AIC` auswählt. Es gibt eine Option namens Richtung `direction`, die die folgenden Werte annehmen kann: i) "both" (für schrittweise Regression sowohl Vorwärts- als auch Rückwärtsauswahl); "backward" (für Rückwärtsauswahl) und "forward" (für Vorwärtsauswahl). Es gibt das beste endgültige Modell zurück.
+
+```{r}
+# Anpassung des vollständigen Modells
+lm_voll_WG1 <- lm(Umsatz ~., data = df_lm_train_WG1)
+
+# Schrittweises Regressionsmodelle
+# forward
+step_lm_forward_WG1 <- stepAIC(lm_voll_WG1, direction = "forward", 
+                      trace = FALSE)
+summary(step_lm_forward_WG1)
+
+# forward
+step_lm_backward_WG1 <- stepAIC(lm_voll_WG1, direction = "backward", 
+                      trace = FALSE)
+summary(step_lm_backward_WG1)
+
+```
+
+* `regsubsets()` [leaps package], dessen Optimierungsparameter `nvmax` die maximale Anzahl von Prädiktoren angibt, die in das Modell aufgenommen werden sollen). Es werden mehrere Modelle mit unterschiedlicher Größe bis zu nvmax zurückgegeben. Die Performance der verschiedenen Modelle muss sodann verglichen werden, um das beste auszuwählen. `regsubsets()` verfügt über die Option `method`, die die Werte "backward", "forward" und "seqrep" (seqrep = sequentielles Ersetzen, Kombination von Vorwärts- und Rückwärtsauswahl) annehmen kann.
+
+```{r}
+lm_regsub <- regsubsets(Umsatz~., data = df_lm_train_WG1, nvmax = 5,
+                     method = "forward")
+summary(lm_regsub)
+```
+
+Die schrittweise Regression führt in dieser Form zu einer Fehlermeldung, die offensichtlich einer Interkorreliertheit beeinflussender Variablen geschuldet ist. Insofern werden (vermeintlich) interkorrelierte Variablen entfernt und die Analyse erneut durchgeführt:
+
+```{r}
+df_lm_WG1_TEST <- df_lm_train_WG1 %>% 
+  dplyr::select(-Datum, -Warengruppe, -Jahr, -Wochentag, -Fruehling, -Sommer, -Herbst, -Winter, -SommerferienNRW, -SommerferienNDS, -SommerferienHE, -Ostern_ext, -Silvester, -Pfingsten, -ChristiHimmelfahrt_ext, -Feiertag, -Monat, -Temperatur, -TDE, -Bewoelkung)
+
+df_lm_WG1_TEST %>% 
+  ggcorr()
+lm_regsub <- regsubsets(Umsatz~., data = df_lm_WG1_TEST, nvmax = 5,
+                     method = "forward")
+summary(lm_regsub)
+```
+
+* Einen einfachen Workflow für die schrittweise Auswahl bietet die Funktion `train()` [Caret-Paket] mithilfe der `leaps`- und der `MASS`-Pakete. Es gibt auch ier eine Option namens `method`, die folgende Werte annehmen kann:
+
+  + "leapBackward", um die lineare Regression an die Rückwärtsauswahl anzupassen
+  + "leapForward", um die lineare Regression an die Vorwärtsauswahl anzupassen
+  + "leapSeq", um die lineare Regression mit schrittweiser Auswahl anzupassen.
+
+Auch der Optimierungsparameter `nvmax` muss angegeben werden. `nvmax` entspricht dabei wiederum der maximalen Anzahl von Prädiktoren, die in das Modell aufgenommen werden sollen.
+
+Beispielsweise kann `nvmax` von 1 bis 5 variiert werden. In diesem Fall beginnt die Funktion mit der Suche nach verschiedenen besten Modellen unterschiedlicher Größe bis zum besten 5-Variablen-Modell. Das heißt, es wird nach dem besten 1-Variablen-Modell, dem besten 2-Variablen-Modell,…, den besten 5-Variablen-Modellen gesucht.
+
+Im Folgenden wird anhand des Datensatzes `df_lm_train_WG1` eine Rückwärtsauswahl (Methode = "leapBackward") durchgeführt, um das beste Modell für die Vorhersage des Umsatzes auf der Grundlage der vorliegenden potentiellen Indikaoren zu ermitteln.
+
+Da der Datensatz xy Prädiktoren enthält, variieren wir nvmax von 1 bis 5, 
+
+Wir variieren `nvmax` von 1 bis 10, was zur Identifizierung der 10 besten Modelle mit unterschiedlichen Größen führt: das beste 1-Variablen-Modell, das beste 2-Variablen-Modell,…, die besten 10-Variablen Modell.
+
+Wir verwenden die 10-fache Kreuzvalidierung, um den durchschnittlichen Vorhersagefehler (RMSE) jedes der 5 Modelle zu schätzen. Die statistische RMSE-Metrik wird verwendet, um die 10 Modelle zu vergleichen und automatisch das beste auszuwählen, wobei best als das Modell definiert ist, das den RMSE minimiert.
+
+```{r}
+# Trainieren des Modells
+
+df_lm_train_WG1 <- df_lm_train_WG1 %>%  drop_na()
+step.model <- train(Umsatz ~., data = df_lm_train_WG1,
+                    method = "leapBackward", 
+                    tuneGrid = data.frame(nvmax = 1:10),
+                    trControl = trainControl
+                    )
+step.model$results
 ```
 
 
