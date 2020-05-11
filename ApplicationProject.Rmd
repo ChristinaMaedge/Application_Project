@@ -3204,3 +3204,10 @@ df_MLP <- df_MLP %>%
   mutate(Sonntag=as.integer(df_MLP$Wochentag_c=="Sonntag")) %>%
   select(-Wochentag_c)
 ```
+
+Das MLP wird in Python aufgebaut, daher exportieren wir den Datansatz `df_MLP` als .csv.
+
+```{r}
+write_csv(df_MLP, path="data/df_MLP.csv")
+```
+
