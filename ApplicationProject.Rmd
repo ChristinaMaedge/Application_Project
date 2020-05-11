@@ -2452,6 +2452,7 @@ alias(lm(Umsatz ~., data = df_lm_train))
 Das folgende Regressionsmodell enthält alle unabhängigen Variablen:
 
 ```{r}
+library(caret)
 # Erstellung des Modells
 model1 <- lm(Umsatz ~., data = df_lm_train)
 # Vorhersagen
@@ -2464,101 +2465,35 @@ data.frame(
 ```
 
 **Überprüfung auf Multikollinearität**
+
+Bei der multiplen Regression können zwei oder mehr Prädiktorvariablen miteinander korreliert sein. Diese Situation wird als Kollinearität bezeichnet.
+
+Es gibt eine extreme Situation, die als Multikollinearität bezeichnet wird und in der Kollinearität zwischen drei oder mehr Variablen besteht, selbst wenn kein Variablenpaar eine besonders hohe Korrelation aufweist. Dies bedeutet, dass zwischen Prädiktorvariablen Redundanz besteht.
+
+Bei Vorhandensein von Multikollinearität wird die Lösung des Regressionsmodells instabil.
+
+Multikollinearität kann auf zwei verschiedene Arten überprüft werden:
+
+Zum einen kann die Multikollinearität für einen gegebenen Prädiktor (p) bewertet werden, indem ein Score berechnet wird, der als Varianzinflationsfaktor (oder VIF) bezeichnet wird und misst, wie stark die Varianz eines Regressionskoeffizienten aufgrund der Multikollinearität im Modell aufgeblasen wird; zum anderen durch die Korrelation der Variablen untereinander
+
+Der kleinstmögliche Wert von VIF ist eins (Fehlen von Multikollinearität). Als Faustregel gilt, dass ein VIF-Wert, der 5 oder 10 überschreitet, ein problematisches Maß an Kollinearität anzeigt (James et al. 2014).
+
+Bei Multikollinearität sollten die betroffenen Variablen entfernt werden, da das Vorhandensein von Multikollinearität impliziert, dass die Informationen, die diese Variable über die Antwort liefert, bei Vorhandensein der anderen Variablen redundant sind (James et al. 2014, P. Bruce und Bruce (2017)).
+
 Die R-Funktion `vif()` [`car package`] kann genutzt werden um Multikollinearität zu erkennen:
 ```{r}
 car::vif(model1)
 ```
 
-Der VIF-Wert für die Variablen `Datum` und `Jahr` sind sehr hoch (VIF = 50.184566 respektive 48.757019). Dies könnte problematisch sein. Die Variablen werden insofern ebenfalls entfernt.
+Der VIF-Wert für die Variablen `Datum` und `Jahr` sind sehr hoch (VIF = 50.184566 respektive 48.757019). Dies könnte problematisch sein. Insofern sollten die Variablen entfernt werden. Dies würde zu einem einfacheren Modell führen, ohne die Modellgenauigkeit zu beeinträchtigen, was gut ist.
 
+*Überprüfung durch Korrelation:*
 
-**Umgang mit Multikollinearität**
-In diesem Abschnitt, wird das Modell erneut erstellt. Dieses Mal ohne die beiden problematischen Variablen.
+Die Korrelationen nach Pearson können in R einfach über den Befehl `cor()` berechnet werden. Hier sollte kein Wert größer als .7 sein.
 
 ```{r}
-df_lm_train <- df_lm_train %>% select(-Datum, -Jahr)
-# Modellbildung ohne die beiden Variablen
-model2 <- lm(Umsatz ~., data = df_lm_train)
-# Make predictions
-predictions <- model2 %>% predict(df_lm_test)
-# Model performance
-data.frame(
-  RMSE = RMSE(predictions, df_lm_test$Umsatz),
-  R2 = R2(predictions, df_lm_test$Umsatz)
-)
-```
-
-## 6.3 Zusammenhangsanalysen
-
-Um zu überprüfen, welche Variablen für die Einbeziehung in ein lineares Regressionsmodell in Betracht kommen, wird zunächst ein sog. Korrelogram erstellt, dass einen schnellen Überblick über den Zusammenhang zwischen dem Umsatz und den potientiellen Einflussfaktoren ermöglicht:
-
-### 6.3.1 Korrelogramm über alle Warengruppen
-```{r warning=FALSE}
-df_lm %>% 
-  ggcorr() +
-  ggtitle("Korrelogramm über alle Warengruppen")
-```
-
-* Auf den ersten Blick scheint keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz über alle Warengruppen zu haben.
-* Gewisse Effekte sind zu beobachten bei den Variablen:
-  + Temperatur
-  + Wochenende
-  + sämtliche betrachteten Sommerferien-Variablen
-  + (Feiertag)
-  + Silvester
-  + Sommer.
-
-Da auch bei den Untersuchungen zuvor Unterschiede zwischen den einzelnen Warengruppen erkennbar waren, wird in einem zweiten Schritt überprüft, ob die Korrelogramme für die einzelnen Variablen unterschiedlich sind.
-
-### 6.3.2 Untersuchung der Warengruppe 1
-```{r}
-df_lm %>% 
-  filter(Warengruppe == "1") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 1")
-```
-
-* Auch bei der Betrachtung der Warengruppe 1 (Brot) scheint auf den ersten Blick keine der untersuchten Variablen einen übermäßig deutlichen Einfluss auf den Umsatz innerhalb der Warengruppen zu haben.
-* Insgesamt ist eine ähnliches Muster wie bei der Auswertung über alle Warengruppen erkennbar. Wieder scheinen die folgenden Variablen einen Einfluss zu haben:
-  + Temperatur
-  + Wochenende (leicht negativer Effekt)
-  + sämtliche betrachteten Sommerferien-Variablen
-  + Silvester
-  + Sommer
-* Hinzu kommen der Wochentag und die erweiterte Osternvariable.
-
-Betrachten wir noch ein Korrelogramm mit diesen selektierten Variablen:
-```{r}
-## reduzierte Variante mit weniger Variablen als Ergenis des ersten Korrelogramms; Ziel: Stärke des jeweiligen Einflusses sichtbarere machen
-df_lm %>% 
-  select(Warengruppe, Umsatz, Temperatur, Wochentag, Wochenende, SommerferienSH, SommerferienNRW, SommerferienNDS, SommerferienHE, Silvester, Ostern_ext, Sommer) %>%
-  filter(Warengruppe == "1") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 1 - reduzierte Version")
-```
-
-*Überprüfung auf Multikollinearität:*
-
-Multikollinearität tritt dann auf, wenn zwei oder mehr der Prädiktoren miteinander stark korrelieren. Wenn das passiert, haben wir zwei Probleme:
-
-1. Wir wissen nicht, welche der beiden Variablen tatsächlich zur Varianzaufklärung beiträgt. Eventuell messen beide Variablen auch dasselbe und sind damit redundant.
-2. Mathematische Probleme bei der Berechnung der Regression. Wenn zwei Prädiktoren beispielsweise zu 1 miteinander korrelieren, wie würden die Regressionskoeffizienten dann beschaffen sein? Welcher Prädiktor würde in das Modell aufgenommen werden?
-
-Multikollinearität kann auf zwei verschiedene Arten überprüft werden: Zum einen durch die Korrelation der Variablen untereinander, zum anderen durch den Toleranz/VIF (variance influence factor) Wert.
-
-Es gibt einige Warnzeichen für Multikollinearität:
-
-* Nachdem wir einen weiteren Prädiktor in das Modell hinzugefügt haben, ändern sich die Regressionskoeffizienten stark
-* Der Regressionskoeffizient ist nicht signifikant, auch wenn der Prädiktor eigentlich stark mit dem Kriterium korrelieren sollte
-* Die Prädiktoren korrelieren stark miteinander
-
-Überprüfung durch Korrelation:
-
-Die Korrelationen nach Pearson können in R einfach über den Befehl `cor()` berechnet werden. Hier sollte kein Wert größer als .7 sein. 
-```{r}
-df_lm %>% 
-  filter(Warengruppe == "1") %>%
-  dplyr::select(-Umsatz, -Warengruppe, - Jahr, -Datum, -Wochentag_c, -Monat_c, -Jahreszeit) %>%
+df_lm_train %>% 
+  dplyr::select(-Datum, -Warengruppe, -Umsatz, -Wochentag_c, -Monat_c, -Jahreszeit) %>%
   cor()
 ```
 
@@ -2581,6 +2516,7 @@ Einige der unabhängigen Variablen weisen starke bis mittelstarke Korrelationen 
 * Silvester und Silvester_ext: 0.706
 
 Schwache, aber noch deutliche Korrelationen weisen folgende Variablen auf:
+
 * Feiertag und ChristiHimmelfahrt: 0.379
 * ChristiHimmelfahrt und ChristiHimmelfahrt_ext: 0.445
 * Feiertag und TDE: 0.379
@@ -2597,454 +2533,30 @@ Schwache, aber noch deutliche Korrelationen weisen folgende Variablen auf:
 * Sommer und Winter: -0.337
 * Herbst und Winter: - 0.318.
 
-Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise deutlich ankratzen, muss für das weitere Vorgehen eine Auswahl erfolgen, da bspw. die schrittweise Regression bei Multikollinearität versagt.
+Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise fast ankratzen, muss in Erwägung gezogen werden, auch einge der stark miteinander korrelierten Variablen zu eliminieren, da bspw. die schrittweise Regression bei Multikollinearität versagt.
 
-... HIER WEITERMACHEN.
+**Umgang mit Multikollinearität**
 
-### 6.3.2 Untersuchung der Warengruppe 2
-```{r}
-df_lm %>% 
-  filter(Warengruppe == "2") %>%
-  ggcorr()+
-  ggtitle("Korrelogramm Warengruppe 2")
-```
-
-* Insgesamt scheint der Einfluss einzelner Variablen auf die Warengruppe höher zu sein als bei den beiden vorangegangenen Untersuchungen.
-* Vom Muster her ergibt sich ein ähnliches Bild. Folgende Variablen haben einen Einfluss:
-  + KiWo,
-  + Temperatur,
-  + Monat (schwach),
-  + Wochenende,
-  + sämtliche Ferien-Variablen
-  + der Sommer,
-  + der Winter und in gewissem Maße der Herbst (diese beiden wirken eher in negativer Richtung).
-* Weniger stark als bei Warengruppe 1 wirken der Wochentag, die erweiterte Ostervariable und Silvester.
-
-Betrachten wir noch ein Korrelogramm mit diesen ausgewählten Variablen:
-```{r}
-## reduzierte Variante mit weniger Variablen als Ergenis des ersten Korrelogramms; Ziel: Stärke des jeweiligen Einflusses sichtbarere machen
-df_lm %>% 
-  select(Warengruppe, Umsatz, Jahr, KielerWoche, Temperatur, Monat, Wochenende, SommerferienSH, SommerferienNRW, SommerferienNDS, SommerferienHE, Sommer, Herbst, Winter) %>%
-  filter(Warengruppe == "2") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 2 - reduzierte Version")
-```
-
-
-### 6.3.4 Untersuchung der Warengruppe 3
-```{r}
-df_lm %>% 
-  filter(Warengruppe == "3") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 3")
-```
-
-* Das Muster der Effekte auf Warengruppe 3 ähnelt sehr stark dem von Warengruppe 2 mit - auf den ersten Blick - teilweise schwächerer Ausprägung. Das Jahr scheint überdies nicht mal einen leichten Einfluss zu haben.
-
-Betrachten wir erneut ein weiteres Korrelogramm mit diesen ausgewählten Variablen (s. Warengruppe 2, ohne `Jahr`):
-```{r}
-df_lm %>% 
-  select(Warengruppe, Umsatz, KielerWoche, Temperatur, Monat, Wochenende, SommerferienSH, SommerferienNRW, SommerferienNDS, SommerferienHE, Sommer, Herbst, Winter) %>%
-  filter(Warengruppe == "3") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 3 - reduzierte Version")
-```
-
-
-### 6.3.5 Untersuchung der Warengruppe 4
-```{r}
-df_lm %>%
-  filter(Warengruppe == "4") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 4")
-```
-
-* Die Warengruppe unterscheidet sich deutlich von den vorher betrachteten. Es sind insgesamt nur schwache Effekte spürbar. 
-* Allenfalls die folgenden Variabeln könnten einen spürbaren Einfluss haben:
-  + Wochentag (im negativen Sinne), 
-  + Wochenende, 
-  + ansatzweise Feiertag,
-  + ansatzweise Winter.
-
-Betrachten wir erneut ein weiteres Korrelogramm mit diesen ausgewählten Variablen:
-```{r}
-df_lm %>% 
-  select(Warengruppe, Umsatz, Wochentag, Wochenende, Feiertag, Winter) %>%
-  filter(Warengruppe == "4") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 4 - reduzierte Version")
-```
-
-### 6.3.6 Untersuchung der Warengruppe 5
-```{r}
-df_lm %>%
-  filter(Warengruppe == "5") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 5")
-```
-
-* Bei der Warengruppe 5 scheint der Sivester (+ Silvester_ext) deutlich der einflussstärkste Faktor zu sein. Ein mögliche Erklärung wäre, dass der Verkauf von Berlinern an diesem Tag exorbitant hoch ist. Bei der Modellierung muss die Interkorrelation dieser Variablen beachtet werden.
-* Weiterhin Einfluss zu haben scheinen erneut zu haben:
-  + Temperatur,
-  + das Wochenende,
-  + Sommer,
-  + Herbst (im negativen Sinne),
-  + die Sommerferien sowie
-  + die allgemeine Feiertagsvariable (Überschneidung mit bzw. Effekt von Silvester beachten).
-
-Betrachten wir erneut ein weiteres Korrelogramm mit diesen ausgewählten Variablen:
-```{r}
-df_lm %>% 
-  select(Warengruppe, Umsatz, Wochentag, Wochenende, Feiertag, Winter) %>%
-  filter(Warengruppe == "4") %>%
-  ggcorr() +
-  ggtitle("Korrelogramm Warengruppe 4 - reduzierte Version")
-```
-
-### 6.3.7 Zwischenfazit
-
-Die beeinflussenden Variablen scheinen nicht bei allen Warengruppen die gleichen zu sein. Zwar scheinen in Ansätzen ähnliche Muster bei einzelnen Warengruppen erkennbar, diese gelten dann jedoch sichtbar für eine andere Warengruppe nicht. Daher werden im Folgenden die Warengruppen auf Einzelebene analysiert.
-
-## 6.4 Visualisierung der Zusammenhänge zwischen ausgewählten Variablen auf Warengruppenebene und weitere Untersuchungen
-
-Da eine hohe Korrelation nicht automatisch einhergeht mit einem linearen Zusammenhang, wir aber genau diesen Ansatz bei unseren linearen Modellen verfolgen, werden für die einzelnen Warengruppen einzelne, ausgewählte Variablen - resultierend aus den Ergebnissen / angelehnt an die Ergebnisse in Kapitel 6.3 - genauer untersucht.
-
-### 6.4.1 Betrachtung der Warengruppe 1
-
-**Potentieller Einflussfaktor Kieler Woche**
-Bei der Variable `KielerWoche` handelt es sich um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Kieler Woche) und `0` (keine Kieler Woche) hat. 
-
-Vergleichen wir die Mittelwerte des Umsatzes zwischen den Zeiten, in denen die Kieler Woche stattfindet und denen, in denen sie nicht stattfindet:
-```{r}
-Umsatz_KiWo_WG1 <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, KielerWoche) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(KielerWoche) %>%
-  summarise(avgUmsatzKiWoWG1 = mean(Umsatz))
-Umsatz_KiWo_WG1
-```
-Sehr großen Einfluss auf den Abverkauf von Brot scheint die Kieler Woche nicht zu haben. Die Umsätze liegen zwar im Durchschnitt während des Kieler Woche-Zeitraums höher, jedoch beträgt diese Steiegrung lediglich 9,6%. 
+In diesem Abschnitt, wird das Modell erneut erstellt. Dieses Mal zunächst nur ohne die beiden problematischen Variablen `Datum` und `Jahr`.
 
 ```{r}
-library(broom)
-df_arbeit <- df_lm %>%
-  filter(Warengruppe == "1") 
-lm_Umsatz_KiWo_WG1 <- lm(Umsatz ~ KielerWoche, data = df_arbeit)
-tidy(lm_Umsatz_KiWo_WG1)
-glance(lm_Umsatz_KiWo_WG1)
+df_lm_train <- df_lm_train %>% select(-Datum, -Jahr)
+df_lm_test <- df_lm_test %>% select(-Datum, -Jahr)
+# Modellbildung ohne die beiden Variablen
+model2 <- lm(Umsatz ~., data = df_lm_train)
+# Make predictions
+predictions <- model2 %>% predict(df_lm_test)
+# Model performance
+data.frame(
+  RMSE = RMSE(predictions, df_lm_test$Umsatz),
+  R2 = R2(predictions, df_lm_test$Umsatz)
+)
 ```
 
-**Potentieller Einflussfaktor Monat**
-Die Variable `Monat` hat zwölf Ausprägungen. 
-Vergleichen wir die Mittelwerte des Umsatzes zwischen den verschiedenen Monaten:
-```{r}
-Umsatz_Monat_WG1 <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, Monat) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(Monat) %>%
-  summarise(avgUmsatzMonatWG1 = mean(Umsatz))
-Umsatz_Monat_WG1
-Umsatz_Monat_WG1 %>%
-  summarise(minUmsatz = min(avgUmsatzMonatWG1), 
-            maxUmsatz = max(avgUmsatzMonatWG1), 
-            Differenz = ((maxUmsatz - minUmsatz)/minUmsatz))
-```
-
-Die Variable `Monat` scheint einen Einfluss zu haben. Betrachtet man beispielsweise den höchsten durchschnittlichen Umsatz für Brot, der im August liegt (148.25€) und vergleicht diesen mit dem kleinsten durchschnittlichen Wert (Januar: 107.8427), so bedeutet dies, dass der Umsatz im August 37,4% höher ist. Eine mögliche Interaktion mit den Sommerferienvariablen sollte hier beachtet werden.
-
-```{r}
-lm_Umsatz_Monat_WG1 <- lm(Umsatz ~ Monat_c, data = df_arbeit)
-tidy(lm_Umsatz_Monat_WG1)
-glance(lm_Umsatz_Monat_WG1)
-```
-
-**Potentieller Einflussfaktor Wochenende** 
-Bei der Variable `Wochenende` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Wochenende) und `0` (kein Wochenende) hat. 
-
-Vergleichen wir die Mittelwerte des Umsatzes am Wochenende mit den Nicht-Wochenendtagen:
-```{r}
-Umsatz_WE_WG1 <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, Wochenende) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(Wochenende) %>%
-  summarise(avgUmsatzWEWG1 = mean(Umsatz))
-Umsatz_WE_WG1
-```
-Der Umsatz der Warengruppe 1 ist am Wochenende um 11% geringer als unterhalb der Woche. Eine mögliche Erklärung könnten verkürzte Öffnungszeiten an den Wochenendtagen sein. Genauso wäre es jedoch auch denkbar, dass die Kunden am Wochenende tatsächlich ein anderes Käuferverhalten haben als an den Wochentagen. Was diesem verringerten Umsatz am Wochenende zugrunde liegt, ist für die weiteren Schritte erst einmal unerheblich.
-
-```{r}
-lm_Umsatz_WE_WG1 <- lm(Umsatz ~ Wochenende, data = df_arbeit)
-tidy(lm_Umsatz_WE_WG1)
-glance(lm_Umsatz_WE_WG1)
-```
-
-**Potentieller Einflussfaktor Temperatur**
-```{r}
-df_lm %>%
-  select(Warengruppe, Umsatz, Temperatur) %>%
-  filter(Warengruppe == "1") %>%
-  ggplot(aes(x = Temperatur, y = Umsatz)) +
-  geom_point() +
-  geom_smooth(model = lm) +
-  theme_classic() +
-  ggtitle("Zusammenhang zwischen Temperatur und Umsatz - Warengruppe 1")
-```
-
-**Potentieller Einflussfaktor Sommerferien**
-
-Bei der Variable Sommerferien handelt es sich um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Sommerferien) und `0` (keine Sommeferien) hat. 
-
-Vergleichen wir die Mittelwerte des Umsatzes zwischen den Zeiten Sommerferien und keine Sommerferien:
-
-*Sommerferien in Schleswig-Holstein*
-```{r}
-library(ggplot2)
-
-Umsatz_SommerferienSH <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, SommerferienSH) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(SommerferienSH) %>%
-  summarise(avgUmsatzSH = mean(Umsatz))
-Umsatz_SommerferienSH
-
-#Umsatz_SommerferienSH <- Umsatz_SommerferienSH %>%
- #mutate(SoFeTF = car::recode(.$SommerferienSH, "0 = FALSE; 1 = TRUE", as.factor = TRUE))
-
-## Visualisierung
-df_lm %>%
-  select(Warengruppe, Umsatz, SommerferienSH) %>%
-  filter(Warengruppe == "1") %>%
-  ggplot() +
-  aes(x = SommerferienSH, y = Umsatz) +
-  geom_boxplot(width = .1) +
-  geom_jitter(width = .1, alpha = .1) +
-  geom_point(data = Umsatz_SommerferienSH,
-             color = "red",
-             size = 5, 
-             shape = 17) +
-  geom_line(data = Umsatz_SommerferienSH,
-            group = 1,
-            color = "red")
-```
-
-Die Mittelwerte weichen bei der Variablen `SommerferienSH` deutlich voneinander ab: in den Zeiten, in denen die Schüler in Schleswig-Holstein Sommerferien haben, ist der Umsatz in der Warengruppe *Brot* durchschnittlich 25,7% höher als außerhalb der Sommerferienzeit. 
-
-```{r}
-lm_Umsatz_SoFeSH_WG1 <- lm(Umsatz ~ SommerferienSH, data = df_arbeit)
-tidy(lm_Umsatz_SoFeSH_WG1)
-glance(lm_Umsatz_SoFeSH_WG1)
-```
-
-*Sommerferien in Nordrhein-Westfalen*
-```{r}
-Umsatz_SommerferienNRW <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, SommerferienNRW) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(SommerferienNRW) %>%
-  summarise(avgUmsatzNRW = mean(Umsatz))
-Umsatz_SommerferienNRW
-```
-Für die Sommerferienzeit in NRW ergibt sich ein ähnliches Bild: Während der Sommerferienzeiten in NRW liegen die Umsätze in der Warengruppe 1 22% höher als außerhalb dieser Zeit bzw. dieses Zeitraumes.
-
-```{r}
-lm_Umsatz_SoFeNRW_WG1 <- lm(Umsatz ~ SommerferienNRW, data = df_arbeit)
-tidy(lm_Umsatz_SoFeNRW_WG1)
-glance(lm_Umsatz_SoFeNRW_WG1)
-```
+Man kann sehen, dass das Entfernen der beiden Variablen `Datum` und `Jahr` die Modellleistungsmetriken nicht sehr beeinflusst. Mit anderen Worten, die moellgenauigkeit leidet nicht unter dem Entfernen der beiden Variablen.
 
 
-*Sommerferien in Niedersachsen*
-```{r}
-Umsatz_SommerferienNDS <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, SommerferienNDS) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(SommerferienNDS) %>%
-  summarise(avgUmsatzNDS = mean(Umsatz))
-Umsatz_SommerferienNDS
-```
-Erneut ist ein deutlicher Effekt der Variable Sommerferien auf den Umsatz sichtbar: sind Sommerferien in Niedersachsen geht dies mit einer Steigerung des Umsatzes in Höhe von 20,9% einher.
-
-```{r}
-lm_Umsatz_SoFeNDS_WG1 <- lm(Umsatz ~ SommerferienNDS, data = df_arbeit)
-tidy(lm_Umsatz_SoFeNDS_WG1)
-glance(lm_Umsatz_SoFeNDS_WG1)
-```
-
-*Sommerferien in Hessen*
-```{r}
-Umsatz_SommerferienHE <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, SommerferienHE) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(SommerferienHE) %>%
-  summarise(avgUmsatzHE = mean(Umsatz))
-Umsatz_SommerferienHE
-```
-Die Schulferienzeit in Hessen führt zu dem gleichen Effekt: Es ist eine deutliche Steigerung des Umsatzes beobachtbar. Diese Steigerung ist mit 23,5% höher als bei der Betrachtung der Sommerferienzeiten in NRW und Niedersachsen.
-
-```{r}
-lm_Umsatz_SoFeHE_WG1 <- lm(Umsatz ~ SommerferienHE, data = df_arbeit)
-tidy(lm_Umsatz_SoFeHE_WG1)
-glance(lm_Umsatz_SoFeHE_WG1)
-```
-
-> Da alle betrachteten Sommerferienzeiträume einen vergleichsweise gleich hohen Einfluss haben, sollte eventuell eine Sommerferienvariable erstellen, die die Überschneidungszeiträume aller betrachteten Bundesländer erfasst.
-
-ÜBERARBEITEN!
-```{r}
-library(vcd) # Kontingenzkoeffizient
-# df_voll %>% 
-# assocstats(tally(SommerferienSH ~ Umsatz))
-
-# tally(Umsatz ~ SommerferienSH, data = df_voll, format = "percent")
-
-df_lm %>%
-  select(Warengruppe, Umsatz, SommerferienSH) %>%
-  filter(Warengruppe == "1") %>%
-  ggplot(aes(x = SommerferienSH, y = Umsatz)) +
-  geom_point() +
-  geom_smooth(model = lm) +
-  theme_classic() +
-  ggtitle("Zusammenhang zwischen Sommerferien Schleswig-Holstein und Umsatz - Warengruppe 1")
-
-df_voll %>%
-  select(Warengruppe, Umsatz, SommerferienNRW) %>%
-  filter(Warengruppe == "1") %>%
-  ggplot(aes(x = SommerferienNRW, y = Umsatz)) +
-  geom_point() +
-  geom_smooth(model = lm) +
-  theme_classic() +
-  ggtitle("Zusammenhang zwischen Sommerferien NRW und Umsatz - Warengruppe 1")
-
-df_voll %>%
-  select(Warengruppe, Umsatz, SommerferienNDS) %>%
-  filter(Warengruppe == "1") %>%
-  ggplot(aes(x = SommerferienNDS, y = Umsatz)) +
-  geom_point() +
-  geom_smooth(model = lm) +
-  theme_classic() +
-  ggtitle("Zusammenhang zwischen Sommerferien NDS 
-  und Umsatz - Warengruppe 1")
-
-df_voll %>%
-  select(Warengruppe, Umsatz, SommerferienHE) %>%
-  filter(Warengruppe == "1") %>%
-  ggplot(aes(x = SommerferienHE, y = Umsatz)) +
-  geom_point() +
-  geom_smooth(model = lm) +
-  theme_classic() +
-  ggtitle("Zusammenhang zwischen Sommerferien Hessen 
-  und Umsatz - Warengruppe 1")
-```
-
-**Potentieller Einflusfaktor Sommer**
-Bei der Variable `Sommer` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Sommer) und `0` (kein Sommer) hat. 
-
-Vergleichen wir den Mittelwert des Umsatzes im Sommer mit dem in den Nicht-Sommermonaten:
-```{r}
-Umsatz_Sommer_WG1 <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, Sommer) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(Sommer) %>%
-  summarise(avgUmsatzSommerWG1 = mean(Umsatz))
-Umsatz_Sommer_WG1
-```
-Im Sommer ist der Umsatz in der Warengruppe Brot um 18,1% höher als in den Nicht-Sommermonaten. Dies mag auch verstärkt der Tatsache geschuldet sein, dass in den Sommermonaten viele Touristen im Land sind. Insofern muss die Überschneidung / Interkorrelation dieser beiden Variablen beachtet werden.
-
-```{r}
-lm_Umsatz_Sommer_WG1 <- lm(Umsatz ~ Sommer, data = df_arbeit)
-tidy(lm_Umsatz_Sommer_WG1)
-glance(lm_Umsatz_Sommer_WG1)
-```
-
-**Potentieller Einflussfaktor Herbst**
-Bei der Variable `Herbst` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Herbst) und `0` (kein Herbst) hat. 
-
-Vergleichen wir den Mittelwert des Umsatzes im Herbst mit dem in den Nicht-Herbstmonaten:
-```{r}
-Umsatz_Herbst_WG1 <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, Herbst) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(Herbst) %>%
-  summarise(avgUmsatzHerbstWG1 = mean(Umsatz))
-Umsatz_Herbst_WG1
-```
-Im Herbst werden umsatztechnisch betrachtet 10.6% weniger Brot verkauft verglichen mit den anderen Jahreszeiten.
-
-
-```{r}
-lm_Umsatz_Herbst_WG1 <- lm(Umsatz ~ Herbst, data = df_arbeit)
-tidy(lm_Umsatz_Herbst_WG1)
-glance(lm_Umsatz_Herbst_WG1)
-```
-
-
-**Potentieller Einflusfaktor Winter**
-Bei der Variable `Winter` handelt es sich ebenfalss um einen kategorialen Prädiktor, der nur die Ausprägungen `1` (Winter) und `0` (kein Winter) hat. 
-
-Vergleichen wir den Mittelwert des Umsatzes im Winter mit dem in den Nicht-Wintermonaten:
-```{r}
-Umsatz_Winter_WG1 <- 
-  df_lm %>%
-  select(Warengruppe, Umsatz, Winter) %>%
-  filter(Warengruppe == "1") %>%
-  group_by(Winter) %>%
-  summarise(avgUmsatzWinterWG1 = mean(Umsatz))
-Umsatz_Winter_WG1
-```
-Im Herbst werden umsatztechnisch betrachtet 11,0% weniger Brot verkauft verglichen mit den anderen Jahreszeiten.
-
-
-```{r}
-lm_Umsatz_Winter_WG1 <- lm(Umsatz ~ Winter, data = df_arbeit)
-tidy(lm_Umsatz_Winter_WG1)
-glance(lm_Umsatz_Winter_WG1)
-```
-
-**Einflussfaktor Jahreszeit**
-Zum Vergleich mit den Einzelergebnissen der konkreten Jahreszeiten-Variablen wird noch eine kurze, einfach lineare Regression mit der Variable `Jahreszeit` durchgeführt:
-
-
-```{r}
-lm_Umsatz_Jahreszeit_WG1 <- lm(Umsatz ~ Jahreszeit, data = df_arbeit)
-tidy(lm_Umsatz_Jahreszeit_WG1)
-glance(lm_Umsatz_Jahreszeit_WG1)
-```
-
-## 6.5 Lineare Regressionsmodelle 
-
-### 6.5.1 Warengruppe 1
-Die Vorarbeiten in den Kapiteln 6.3 und 6.4 haben einen ersten, guten Eindruck/Anhalt geliefert, welche Variablen in ein multiples Regressionsmodell aufgenommen werden sollten. 
-
-Da es sich abschließend nur um einen Anhalt und keine abschließende Entscheidungsgrundlage handelt, wird in einem nächsten Schritt zunächst eine schrittweise Regression (stepwise regression) durchgeführt. 
-
-#### 6.5.1.1 Schrittweise Regression
-In der Statistik ist die schrittweise Regression eine Methode zur Anpassung von Regressionsmodellen, bei der die Auswahl der Vorhersagevariablen durch ein automatisches Verfahren erfolgt. In jedem Schritt wird eine Variable zur Addition oder Subtraktion von dem Satz erklärender Variablen auf der Grundlage eines vorgegebenen Kriteriums betrachtet. Normalerweise erfolgt dies in Form einer Folge von F-Tests oder t-Tests. Es sind jedoch auch andere Techniken möglich, z. B. angepasstes R2, Akaike-Informationskriterium, Bayes'sches Informationskriterium, Mallows $C_p$, PRESS oder Falschentdeckungsrate (false discovery rate).
-
-Die Hauptansätze sind:
-
-* Die sog. **Forward selection** (Vorwärtsauswahl), bei der ohne Variablen im Modell begonnen wird, die Addition jeder Variablen anhand eines ausgewählten Modellanpassungskriteriums getestet wird, die Variable (falls vorhanden) hinzugefügt wird, deren Einbeziehung die statistisch signifikanteste Verbesserung der Anpassung ergibt, und dieser Vorgang bis wiederholt wird Keiner verbessert das Modell in einem statistisch signifikanten Ausmaß.
-* Die sog. **Backward elimination** (Rückwärtseliminierung) umfasst das Beginnen mit allen Kandidatenvariablen, das Testen der Löschung jeder Variablen unter Verwendung eines ausgewählten Modellanpassungskriteriums, das Löschen der Variablen (falls vorhanden), deren Verlust die statistisch unbedeutendste Verschlechterung der Modellanpassung ergibt, und das Wiederholen dieses Vorgangs bis Nr Weitere Variablen können ohne statistisch nicht signifikanten Anpassungsverlust gelöscht werden.
-* Die sog. **Birectional elimination** (Bidirektionale Eliminierung), eine Kombination der oben genannten, wobei bei jedem Schritt geprüft wird, ob Variablen eingeschlossen oder ausgeschlossen werden sollen.
-
-*Selektionskriterium*
-
-Ein weit verbreiteter Algorithmus wurde erstmals von Efroymson (1960) vorgeschlagen (Efroymson, MA (1960) "Multiple regression analysis." In Ralston, A. and Wilf, HS, editors, Mathematical Methods for Digital Computers. Wiley.). Dies ist ein automatisches Verfahren für die statistische Modellauswahl in Fällen, in denen es eine große Anzahl potenzieller erklärender Variablen gibt und keine zugrunde liegende Theorie, auf der die Modellauswahl basieren kann. Das Verfahren wird hauptsächlich in der Regressionsanalyse verwendet, obwohl der grundlegende Ansatz in vielen Formen der Modellauswahl anwendbar ist. Dies ist eine Variation der Vorwärtsauswahl. In jeder Phase des Prozesses wird nach dem Hinzufügen einer neuen Variablen geprüft, ob einige Variablen gelöscht werden können, ohne die verbleibende Quadratsumme (RSS) merklich zu erhöhen. Das Verfahren wird beendet, wenn die Maßnahme (lokal) maximiert ist oder wenn die verfügbare Verbesserung einen kritischen Wert unterschreitet.
-
-Eines der Hauptprobleme bei der schrittweisen Regression besteht darin, dass ein großer Bereich möglicher Modelle durchsucht wird. Daher besteht die Gefahr einer Überanpassung der Daten. Mit anderen Worten, die schrittweise Regression passt häufig viel besser in die Stichprobe als bei neuen Daten außerhalb der Stichprobe. Es wurden extreme Fälle festgestellt, in denen Modelle statistische Signifikanz bei der Arbeit mit Zufallszahlen erreicht haben. [11] Dieses Problem kann gemindert werden, wenn das Kriterium zum Hinzufügen (oder Löschen) einer Variablen steif genug ist. Die Schlüssellinie im Sand befindet sich an dem Punkt, der als Bonferroni-Punkt angesehen werden kann: Wie bedeutend die beste Störvariable sein sollte, sollte allein auf dem Zufall beruhen. Auf einer t-statistischen Skala tritt dies bei ungefähr $$\sqrt{2 log*p} $$ auf, wobei p die Anzahl der Prädiktoren ist. Leider bedeutet dies, dass viele Variablen, die tatsächlich ein Signal übertragen, nicht enthalten sind. Dieser Kompromiss stellt sich als der richtige Kompromiss zwischen Überanpassung und fehlendem Signal heraus. Wenn wir das Risiko unterschiedlicher Cutoffs betrachten, liegt die Verwendung dieser Grenze innerhalb eines 2-logp-Faktors des bestmöglichen Risikos. Jeder andere Cutoff wird eine größere solche Risikoinflation haben. [12] [13]
-
-*Modellgenauigkeit*
-
-Eine Möglichkeit zum Testen auf Fehler in Modellen, die durch schrittweise Regression erstellt wurden, besteht darin, sich nicht auf die F-Statistik, Signifikanz oder mehrere R des Modells zu stützen, sondern das Modell anhand eines Datensatzes zu bewerten, der nicht zum Erstellen des Modells verwendet wurde [14] Dies geschieht häufig, indem ein Modell basierend auf einer Stichprobe des verfügbaren Datensatzes (z. B. 70%) - dem „Trainingssatz“ - erstellt und der Rest des Datensatzes (z. B. 30%) als Validierungssatz zur Bewertung der Genauigkeit verwendet wird des Modells. Die Genauigkeit wird dann häufig als tatsächlicher Standardfehler (SE), MAPE (mittlerer absoluter prozentualer Fehler) oder mittlerer Fehler zwischen dem vorhergesagten Wert und dem tatsächlichen Wert in der Hold-out-Stichprobe gemessen. [15] Diese Methode ist besonders wertvoll, wenn Daten in unterschiedlichen Umgebungen (z. B. zu unterschiedlichen Zeiten, in sozialen oder in Einzelsituationen) erfasst werden oder wenn angenommen wird, dass Modelle verallgemeinerbar sind.
-
+## 6.3 Lineare Regressionsmodelle 
 
 **Laden der benötigten Pakete**
 Wir beginnen unsere Analyse mit dem Laden der notwendigen Pakete, die bislang noch nicht geladen wurden:
@@ -3058,101 +2570,200 @@ library(leaps)
 library(MASS)
 ```
 
+### 6.3.1 Warengruppe 1
+
 **Erstellung von Trainings- und Testdatensätzen für Warengruppe 1**
 ```{r}
 df_lm_train_WG1 <- df_lm_train %>%  filter(Warengruppe == "1")
 df_lm_train_WG1 <- na.omit(df_lm_train_WG1)
+df_lm_train_WG1 <- df_lm_train_WG1 %>% dplyr::select(-Warengruppe)
 df_lm_test_WG1 <- df_lm_test %>% filter(Warengruppe == "1")
 df_lm_test_WG1 <- na.omit(df_lm_test_WG1)
+df_lm_test_WG1 <- df_lm_test_WG1 %>% dplyr::select(-Warengruppe)
 ```
 
 
-**Berechnung der schrittweisen Regression**
+**Auswahl der am besten geeigneten Variablen**
 
-Es gibt viele Funktionen und R-Pakete zur Berechnung der schrittweisen Regression. Diese beinhalten:
+**Beste Teilmengenauswahl ("Best subset selection")**
+Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Kombination der p-Prädiktoren eine separate Regression der kleinsten Quadrate an. Das heißt, wir passen alle p-Modelle an, die genau einen Prädiktor enthalten, alle (p2) = p (p - 1) / 2-Modelle, die genau zwei Prädiktoren enthalten, und so weiter. Wir betrachten dann alle resultierenden Modelle mit dem Ziel, das beste zu identifizieren.
 
-* `stepAIC()` [MASS-Paket], das das beste Modell nach dem `AIC` auswählt. Es gibt eine Option namens Richtung `direction`, die die folgenden Werte annehmen kann: i) "both" (für schrittweise Regression sowohl Vorwärts- als auch Rückwärtsauswahl); "backward" (für Rückwärtsauswahl) und "forward" (für Vorwärtsauswahl). Es gibt das beste endgültige Modell zurück.
+Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfasst:
+
+**Schritt 1**: Lasse $M_0$ das Nullmodell bezeichnen, das keine Prädiktoren enthält. Dieses Modell sagt einfach den Stichprobenmittelwert für jede Beobachtung voraus.
+
+**Schritt 2**: Für $k = 1,2,… p$:
+
+* Fit alle (pk) Modelle, die genau $k$ Prädiktoren enthalten.
+* Wähle die besten unter diesen (pk) Modelle, und nenne es $M_k$. Hier wird "beste Modelle" in der Form definiert, dass diese die kleinsten RSS oder äquivalent die größten $R^2$ haben.
+
+**Schritt 3**: Wähle aus $M_0, .. , M_p$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers (cross validated prediction error), $Cp$, $AIC$, $BIC$ oder adjustiertem $R^2$.
+
+Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 20 Variablen.
 
 ```{r}
-# Anpassung des vollständigen Modells
-lm_voll_WG1 <- lm(Umsatz ~., data = df_lm_train_WG1)
-
-# Schrittweises Regressionsmodelle
-# forward
-step_lm_forward_WG1 <- stepAIC(lm_voll_WG1, direction = "forward", 
-                      trace = FALSE)
-summary(step_lm_forward_WG1)
-
-# forward
-step_lm_backward_WG1 <- stepAIC(lm_voll_WG1, direction = "backward", 
-                      trace = FALSE)
-summary(step_lm_backward_WG1)
-
+best_subset_WG1 <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20)
 ```
 
-* `regsubsets()` [leaps package], dessen Optimierungsparameter `nvmax` die maximale Anzahl von Prädiktoren angibt, die in das Modell aufgenommen werden sollen). Es werden mehrere Modelle mit unterschiedlicher Größe bis zu nvmax zurückgegeben. Die Performance der verschiedenen Modelle muss sodann verglichen werden, um das beste auszuwählen. `regsubsets()` verfügt über die Option `method`, die die Werte "backward", "forward" und "seqrep" (seqrep = sequentielles Ersetzen, Kombination von Vorwärts- und Rückwärtsauswahl) annehmen kann.
+Die `regsubsets`-Funktion gibt ein Listenobjekt mit vielen Informationen zurück. Zunächst kann der Befehl `summary` verwendet, um den besten Satz von Variablen für jede Modellgröße zu ermitteln.
 
 ```{r}
-lm_regsub <- regsubsets(Umsatz~., data = df_lm_train_WG1, nvmax = 5,
-                     method = "forward")
-summary(lm_regsub)
+summary(best_subset_WG1)
 ```
 
-Die schrittweise Regression führt in dieser Form zu einer Fehlermeldung, die offensichtlich einer Interkorreliertheit beeinflussender Variablen geschuldet ist. Insofern werden (vermeintlich) interkorrelierte Variablen entfernt und die Analyse erneut durchgeführt:
+Für ein Modell mit einer Variablen kann beobachtet werden, dass die erzeugte Dummy-Variable `Wochentag_cSonntag` ein Sternchen hat, was signalisiert, dass ein Regressionsmodell mit Umsatz ~ Wochentag das beste Einzelvariablenmodell ist.  Das beste 2-Variablen-Modell ist `Umsatz` ~ `Wochentag_cSonntag` + `SommerferienSH`. Das beste 3-Variablen-Modell ist `Umsatz` ~ `Wochentag_cSonntag` + `SommerferienSH` + `Ostern_ext`. Und so weiter.
+
+Man kann auch $RSS$, $R^2$, adjustiertes $R^2$, $C_p$ und $BIC$ aus den Ergebnissen abrufen, um das beste Gesamtmodell zu bewerten.
+Dies wird jedoch im Abschnitt zum Vergleichen von Modellen veranschaulicht. Schauen wir uns zunächst an, wie die schrittweise Auswahl durchgeführt wird.
+
+**Schrittweise Auswahl ("Stepwise selection")**
+
+Aus rechnerischen Gründen kann die beste Teilmengenauswahl nicht angewendet werden, wenn die Anzahl der $p$ Prädiktorvariablen groß ist. Die Auswahl der besten Teilmenge kann auch unter statistischen Problemen leiden, wenn $p$ groß ist. Je größer der Suchraum ist, desto höher ist die Wahrscheinlichkeit, Modelle zu finden, die in den Trainingsdaten gut aussehen, auch wenn sie möglicherweise keine Vorhersagekraft für zukünftige Daten haben. Ein enormer Suchraum kann daher zu einer Überanpassung und einer hohen Varianz der Koeffizientenschätzungen führen. Aus diesen beiden Gründen sind schrittweise Methoden, die einen weitaus eingeschränkteren Satz von Modellen untersuchen, attraktive Alternativen zur Auswahl der besten Teilmenge.
+
+*Vorwärtsauswahl*
+Die *schrittweise Vorwärtsauswahl* beginnt mit einem Modell, das keine Prädiktoren enthält und fügt dem Modell dann nacheinander Prädiktoren hinzu, bis alle Prädiktoren im Modell enthalten sind. Insbesondere wird bei jedem Schritt die Variable zum Modell hinzugefügt, die die größte zusätzliche Verbesserung der Anpassung bewirkt.
+
+Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
+
+**Schritt 1**: Bezeichne $M_0$ das Nullmodell, das keine Prädiktoren enthält. Dieses Modell sagt einfach den Stichprobenmittelwert für jede Beobachtung voraus.
+
+**Schritt 2**: Für $k = 0,…, p - 1$:
+
+* Betrachte alle $p - k$- Modelle, die die Prädiktoren in $M_k$ mit einem zusätzlichen Prädiktor erweitern. 
+* Wähle das beste unter diesen $p - k$-Modellen aus und nenne es $M_[_k_+_1]$. Hier wird das beste Modell als das mit dem kleinsten $RSS$ oder dem höchstes $R^2$ definiert.
+
+*+Schritt 3**: Wähle aus $M_0,..., M_p$ unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_p$, $AIC$, $BIC$ oder dem adjustierten $R^2$ ein einzelnes bestes Modell aus.
+
+Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
 ```{r}
-df_lm_WG1_TEST <- df_lm_train_WG1 %>% 
-  dplyr::select(-Datum, -Warengruppe, -Jahr, -Wochentag, -Fruehling, -Sommer, -Herbst, -Winter, -SommerferienNRW, -SommerferienNDS, -SommerferienHE, -Ostern_ext, -Silvester, -Pfingsten, -ChristiHimmelfahrt_ext, -Feiertag, -Monat, -Temperatur, -TDE, -Bewoelkung)
-
-df_lm_WG1_TEST %>% 
-  ggcorr()
-lm_regsub <- regsubsets(Umsatz~., data = df_lm_WG1_TEST, nvmax = 5,
-                     method = "forward")
-summary(lm_regsub)
+forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "forward")
 ```
 
-* Einen einfachen Workflow für die schrittweise Auswahl bietet die Funktion `train()` [Caret-Paket] mithilfe der `leaps`- und der `MASS`-Pakete. Es gibt auch ier eine Option namens `method`, die folgende Werte annehmen kann:
 
-  + "leapBackward", um die lineare Regression an die Rückwärtsauswahl anzupassen
-  + "leapForward", um die lineare Regression an die Vorwärtsauswahl anzupassen
-  + "leapSeq", um die lineare Regression mit schrittweiser Auswahl anzupassen.
+*Schrittweise rückwärts (Backward stepwise)*
 
-Auch der Optimierungsparameter `nvmax` muss angegeben werden. `nvmax` entspricht dabei wiederum der maximalen Anzahl von Prädiktoren, die in das Modell aufgenommen werden sollen.
+Die *schrittweise Rückwärtsauswahl* bietet eine effiziente Alternative zur Auswahl der besten Teilmenge. Im Gegensatz zur schrittweisen Vorwärtsauswahl beginnt sie jedoch mit dem vollständigen Modell der kleinsten Quadrate, das alle $p$ Prädiktoren enthält und entfernt dann iterativ den am wenigsten nützlichen Prädiktor nacheinander.
 
-Beispielsweise kann `nvmax` von 1 bis 5 variiert werden. In diesem Fall beginnt die Funktion mit der Suche nach verschiedenen besten Modellen unterschiedlicher Größe bis zum besten 5-Variablen-Modell. Das heißt, es wird nach dem besten 1-Variablen-Modell, dem besten 2-Variablen-Modell,…, den besten 5-Variablen-Modellen gesucht.
+Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
 
-Im Folgenden wird anhand des Datensatzes `df_lm_train_WG1` eine Rückwärtsauswahl (Methode = "leapBackward") durchgeführt, um das beste Modell für die Vorhersage des Umsatzes auf der Grundlage der vorliegenden potentiellen Indikaoren zu ermitteln.
+*Schritt 1**: Bezeichne $M_p$ das vollständige Modell, das alle p Prädiktoren enthält.
 
-Da der Datensatz xy Prädiktoren enthält, variieren wir nvmax von 1 bis 5, 
+*Schritt 2:** Für $k = p, p - 1,..., 1$
 
-Wir variieren `nvmax` von 1 bis 10, was zur Identifizierung der 10 besten Modelle mit unterschiedlichen Größen führt: das beste 1-Variablen-Modell, das beste 2-Variablen-Modell,…, die besten 10-Variablen Modell.
+* Betrachte alle $k$ Modelle, die alle bis auf einen der Prädiktoren in $M_k$ enthalten für insgesamt $k - 1$ Prädiktoren.
 
-Wir verwenden die 10-fache Kreuzvalidierung, um den durchschnittlichen Vorhersagefehler (RMSE) jedes der 5 Modelle zu schätzen. Die statistische RMSE-Metrik wird verwendet, um die 10 Modelle zu vergleichen und automatisch das beste auszuwählen, wobei best als das Modell definiert ist, das den RMSE minimiert.
+* Wähle das beste unter den $k$ Modellen aus und nenne es $M_k_1$. Hier wird das beste Modell als das mit den kleinsten $RSS$ oder den höchsten $R^2$ definiert.
+
+*Schritt 3**: Wähle aus $M_0,…, Mp$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_p$, $AIC$, $BIC$ oder adjustiertem $R^2$.
+
+Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "backward"` gesetzt wird:
 
 ```{r}
-# Set up repeated k-fold cross-validation
-train.control <- trainControl(method = "cv", number = 10)
-
-# Trainieren des Modells
-step.model <- train(Umsatz ~., data = df_lm_train_WG1,
-                    method = "leapBackward", 
-                    tuneGrid = data.frame(nvmax = 1:10),
-                    trControl = trainControl
-                    )
-step.model$results
+backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "backward")
 ```
 
-+++ Neuer Versuch +++
 
+**Modellauswahl**
+Bisher wurde gezeigt, wie die besten Teilmengen (Best Subset Selection) und schrittweisen Verfahren ausgeführt werden. In einem nächsten Schritt wird nun betrachtet, wie alle Modelle verglichen werden können, um das beste Modell zu ermitteln. 
+
+Um das beste Modell in Bezug auf den Testfehler auszuwählen, müssen wir diesen Testfehler schätzen. Es gibt zwei gängige Ansätze:
+
+* Der Testfehler kann indirekt geschätzt werden, indem der Trainingsfehler angepasst wird, um die Verzerrung aufgrund von Überanpassung (Overfitting) zu berücksichtigen.
+* Der Testfehler kann direkt abgeschätzt werden, indem entweder ein Validierungssatzansatz oder einen Kreuzvalidierungsansatz verwendet wird.
+
+Wir betrachten im Folgenden beide Ansätze.
+
+
+### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
+
+Bei der Durchführung der Ansätze "beste Teilmenge" oder schrittweisen Annäherung werden die ausgewählten Modelle $M_0,…, M_p$ basierend auf der Tatsache ausgewählt, dass sie den mittleren quadratischen Fehler (MSE) des Trainingssatzes minimieren. Aus diesem Grund und aufgrund der Tatsache, dass die Verwendung der Trainings-$MSE$ und $R^2$ unsere Ergebnisse beeinflusst, sollten wir diese Statistiken nicht verwenden, um zu bestimmen, welche der $M0,…, Mp$ Modelle "das Beste" ist.
+
+Es stehen jedoch eine Reihe von Techniken zum Anpassen des Trainingsfehlers an die Modellgröße zur Verfügung. Diese Ansätze können verwendet werden, um aus einer Reihe von Modellen mit unterschiedlicher Anzahl von Variablen auszuwählen. Diese beinhalten:
+
+image: ![](Guetekriterien_lm.png)
+
+Dabei ist $d$ die Anzahl der Prädiktoren und $σ2$ eine Schätzung der Varianz des Fehlers ($ϵ$)) mit jeder Antwortmessung in einem Regressionsmodell verbunden. Jede dieser Statistiken fügt dem Trainings-$RSS$ eine Strafe hinzu, um die Tatsache auszugleichen, dass der Trainingsfehler dazu neigt, den Testfehler zu unterschätzen. Die Strafe steigt eindeutig mit zunehmender Anzahl von Prädiktoren im Modell.
+
+Daher liefern diese Statistiken eine unvoreingenommene Schätzung der Test-MSE. Wenn wir unser Modell unter Verwendung eines Trainings- / Testvalidierungsansatzes durchführen, können wir diese Statistiken verwenden, um das bevorzugte Modell zu bestimmen. Diese Statistiken sind in der Ausgabe der Funktion `regsubsets` enthalten. 
+
+Im Folgenden werden diese Informationen extrahiert und aufgezeichnet.
 
 ```{r}
-best_subset <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 15)
+results <- summary(best_subset_WG1)
+
+# extract and plot results
+tibble(predictors = 1:20,
+       adj_R2 = results$adjr2,
+       Cp = results$cp,
+       BIC = results$bic) %>%
+  gather(statistic, value, -predictors) %>%
+  ggplot(aes(predictors, value, color = statistic)) +
+  geom_line(show.legend = F) +
+  geom_point(show.legend = F) +
+  facet_wrap(~ statistic, scales = "free")
 ```
 
+```{r}
+which.max(results$adjr2)
+## [1] 20
+which.min(results$bic)
+## [1] 19
+which.min(results$cp)
+## [1] 20
+```
+Es ist erkennbar, dass die Ergebnisse keine bzw. nur marginal unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 20-Variablen-Modell bevorzugt wird, genau wie der $C_p$. Die $BIC$-Statistik schlägt das 19-Variablen-Modell vor.
+
+Auch wenn die Ergebnisse nur schwach voneinander abweichen, können die Variablen und Koeffizienten, die diese Modelle enthalten, mit der `coef`-Funktion verglichen werden:
+
+```{r}
+coef(best_subset_WG1, 20)
+
+coef(best_subset_WG1, 20)
+```
+
+Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden und noch mehr Optionen für optimale Modelle liefern:
+```{r}
+forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "forward")
+backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "backward")
+
+# which models minimize Cp?
+which.min(summary(forward)$cp)
+# [1] 20
+which.min(summary(backward)$cp)
+# [1] 20
+```
+
+Wenn das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet wird, ist erkennbar, wir, dass beide vorschlagen, dass ein 20-Variablen-Modell die $C_p$-Statistik minimiert, ähnlich dem oben beschriebenen besten Teilmengenansatz.
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!
-Da die schrittweise Methode vorläufig noch nihct funktioniert, wird auf Basis der Voruntersuchungen in Kap. 6.3 und 6.4 ein erstes lm-Modell erstellt, damit der Code für die anderen Dinge wie Modellgüte / Modellbewertung schon einmal (vor)programmiert werden können.
+### Direkte Schätzung des Testfehlers
+
+Nun wird der Validierungssatzfehler für das beste Modell jeder Modellgröße berechnet. Zuerst wird eine Modellmatrix aus den Testdaten erstellt. Die Funktion `model.matrix` wird in vielen Regressionspaketen zum Erstellen einer X-Matrix aus Daten verwendet.
+
+```{r}
+test_m <- model.matrix(Umsatz ~ ., data = df_lm_test_WG1)
+```
+
+Jetzt kann jede Modellgröße (d.h. 1 Variable, 2 Variablen,..., 20 Variablen) durchlaufen werden und die Koeffizienten für das beste Modell dieser Größe extrahiert werden. Diese Werte werden sodann in die entsprechenden Spalten der Testmodellmatrix multipliziert, um die Vorhersagen zu bilden. Dann werden die Test-MSE berechnet.
+
+```{r}
+# create empty vector to fill with error values
+validation_errors <- vector("double", length = 20)
+
+for(i in 1:20) {
+  coef_x <- coef(best_subset_WG1, id = i)                     # extract coefficients for model size i
+  pred_x <- test_m[ , names(coef_x)] %*% coef_x           # predict salary using matrix algebra
+  validation_errors[i] <- mean((df_lm_test_WG1$Umsatz - pred_x)^2)  # compute test error btwn actual & predicted salary
+}
+
+# plot validation errors
+plot(validation_errors, type = "b")
+```
+
+Es ist erkennbar, dass eher das 17-Variablen-Modell, das durch den besten Teilmengenansatz erzeugt wird, den niedrigsten Test-MSE erzeugt. 
+
+
 
 # 7 Anwendung von Machine Learning Verfahren
 
