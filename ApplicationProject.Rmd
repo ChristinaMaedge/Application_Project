@@ -2499,7 +2499,73 @@ df_lm <- df_voll %>%
   filter(Umsatz_NA == FALSE) %>%
   select(-Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag)
 df_lm_train <- df_lm %>% filter(Jahr >= 2014 & Jahr <= 2017) 
+df_lm_train <- na.omit(df_lm_train)
 df_lm_test <- df_lm %>% filter(Jahr == 2018)
+df_lm_test <-  na.omit(df_lm_test)
+```
+
+### 6.2.1 Überprüfung auf lineare Abhängigkeiten der Variablen
+
+Für die Erstellung linearer Modelle dürfen keine linearen Abhängigkeiten zwischen den einzelnen Variablen bestehen. Zunächst ist also zu prüfen, zwischen welchen Variablen lineare Abhängigkeiten bestehen:
+
+```{r}
+alias(lm(Umsatz ~., data = df_lm_train))
+```
+
+Um die linearen Abhängigkeiten zu eliminieren, werden Variablen entfernt:
+```{r}
+df_lm_train <- df_lm_train %>% 
+  select(-Wochentag, -Monat, -Fruehling, -Sommer, -Herbst, -Winter, - Wochenende, -Silvester)
+df_lm_test <- df_lm_test %>% 
+  select(-Wochentag, -Monat, -Fruehling, -Sommer, -Herbst, -Winter, -Wochenende, -Silvester)
+```
+
+Erneute Überprüfung:
+```{r}
+alias(lm(Umsatz ~., data = df_lm_train))
+```
+
+### 6.2.3 Eliminierung von Multikollinearität
+
+**Erstellung eines ersten Regressionsmodells**
+
+Das folgende Regressionsmodell enthält alle unabhängigen Variablen:
+
+```{r}
+# Erstellung des Modells
+model1 <- lm(Umsatz ~., data = df_lm_train)
+# Vorhersagen
+predictions <- model1 %>% predict(df_lm_test)
+# Modellperformance
+data.frame(
+  RMSE = RMSE(predictions, df_lm_test$Umsatz),
+  R2 = R2(predictions, df_lm_test$Umsatz)
+)
+```
+
+**Überprüfung auf Multikollinearität**
+Die R-Funktion `vif()` [`car package`] kann genutzt werden um Multikollinearität zu erkennen:
+```{r}
+car::vif(model1)
+```
+
+Der VIF-Wert für die Variablen `Datum` und `Jahr` sind sehr hoch (VIF = 50.184566 respektive 48.757019). Dies könnte problematisch sein. Die Variablen werden insofern ebenfalls entfernt.
+
+
+**Umgang mit Multikollinearität**
+In diesem Abschnitt, wird das Modell erneut erstellt. Dieses Mal ohne die beiden problematischen Variablen.
+
+```{r}
+df_lm_train <- df_lm_train %>% select(-Datum, -Jahr)
+# Modellbildung ohne die beiden Variablen
+model2 <- lm(Umsatz ~., data = df_lm_train)
+# Make predictions
+predictions <- model2 %>% predict(df_lm_test)
+# Model performance
+data.frame(
+  RMSE = RMSE(predictions, df_lm_test$Umsatz),
+  R2 = R2(predictions, df_lm_test$Umsatz)
+)
 ```
 
 ## 6.3 Zusammenhangsanalysen
@@ -3077,7 +3143,9 @@ library(MASS)
 **Erstellung von Trainings- und Testdatensätzen für Warengruppe 1**
 ```{r}
 df_lm_train_WG1 <- df_lm_train %>%  filter(Warengruppe == "1")
+df_lm_train_WG1 <- na.omit(df_lm_train_WG1)
 df_lm_test_WG1 <- df_lm_test %>% filter(Warengruppe == "1")
+df_lm_test_WG1 <- na.omit(df_lm_test_WG1)
 ```
 
 
@@ -3155,6 +3223,14 @@ step.model <- train(Umsatz ~., data = df_lm_train_WG1,
                     )
 step.model$results
 ```
+
++++ Neuer Versuch +++
+
+
+```{r}
+best_subset <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 15)
+```
+
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!
