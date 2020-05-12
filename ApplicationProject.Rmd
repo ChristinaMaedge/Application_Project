@@ -2488,7 +2488,7 @@ In einem nächsten Schritt wird mit der linearen Regression ein traditionelles s
 
 Im Allgemeinen ist bei der linearen Regression zwischen der einfachen und der multiplen Regression zu unterscheiden. Während im ersten Fall nur eine einzelne Variable als Vorhersageparameter für die abhängige Variable betrachtet wird, werden bei der multiplen linearen Regression mehrere Input-Variablen in das Modell einbezogen. Da hinsichtlich der beeinflussenden Variablen Unterschiede bei den einzelnen Warengruppen zu erwarten sind, werden die Warengruppen isoliert betrachtet. Das heißt, für jede Warengruppe werden unterschiedliche Modelle angwendet und verglichen.  
 
-Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt werden mittels best sog. *subset selection* und *stepwise selection* die in das Modell aufzunehmenden Variablen bestimmt und auf dieser Grundlage dann ein Regressionsmodell erstellt.
+Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt werden mittels sog. *best subset selection* und *stepwise selection* die in das Modell aufzunehmenden Variablen bestimmt und auf dieser Grundlage dann ein Regressionsmodell erstellt.
 
 ## 6.2 Datenaufbereitung
 
@@ -2535,7 +2535,8 @@ Bei Vorhandensein von Multikollinearität wird die Lösung des Regressionsmodell
 
 Multikollinearität kann auf zwei verschiedene Arten überprüft werden:
 
-Zum einen kann die Multikollinearität für einen gegebenen Prädiktor (p) bewertet werden, indem ein Score berechnet wird, der als Varianzinflationsfaktor (oder VIF) bezeichnet wird und misst, wie stark die Varianz eines Regressionskoeffizienten aufgrund der Multikollinearität im Modell aufgeblasen wird; zum anderen durch die Korrelation der Variablen untereinander
+* Zum einen kann die Multikollinearität für einen gegebenen Prädiktor (p) bewertet werden, indem ein Score berechnet wird, der als Varianzinflationsfaktor (oder VIF) bezeichnet wird und misst, wie stark die Varianz eines Regressionskoeffizienten aufgrund der Multikollinearität im Modell aufgeblasen wird,
+* zum anderen anhand der Korrelationen der Variablen untereinander.
 
 Der kleinstmögliche Wert von VIF ist eins (Fehlen von Multikollinearität). Als Faustregel gilt, dass ein VIF-Wert, der 5 oder 10 überschreitet, ein problematisches Maß an Kollinearität anzeigt (James et al. 2014).
 
@@ -2597,25 +2598,7 @@ Einige der unabhängigen Variablen weisen starke bis mittelstarke Korrelationen 
 * Pfingsten und Pfingsten_ext: 0.690
 * Silvester und Silvester_ext: 0.706
 
-Schwache, aber noch deutliche Korrelationen weisen folgende Variablen auf:
-
-* Feiertag und ChristiHimmelfahrt: 0.379
-* ChristiHimmelfahrt und ChristiHimmelfahrt_ext: 0.445
-* Feiertag und TDE: 0.379
-* Feiertag und Silvester: 0.379
-* Feiertag und Silvester_ext: 0.264
-* Feiertag und Ostern_ext: 0.376
-* Feiertag und Pfingsten_ext: 0.349
-* Fruehling und Monat: -0.316
-* Fruehling und sämtliche SommerferienVariablen: ~ 0.220
-* Fruehling und Sommer: -0.349
-* Fruehling und Herbst: -0.329
-* Fruehling und Winter: - 0.321
-* Sommer und Herbst: -0.346
-* Sommer und Winter: -0.337
-* Herbst und Winter: - 0.318.
-
-Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise fast ankratzen, muss in Erwägung gezogen werden, auch einge der stark miteinander korrelierten Variablen zu eliminieren, da bspw. die schrittweise Regression bei Multikollinearität versagt.
+Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise fast ankratzen, muss in Erwägung gezogen werden, auch einge der stark miteinander korrelierten Variablen zu eliminieren, da bspw. die schrittweise Regression bei Multikollinearität versagt. Zunächst werden die Tatsache, dass einzelne Variablen stark untereinander korrelieren, jedoch ignoriert. Eine sich doch als notwendig abzeichnende Eliminierung weiterer Variablen erfolgt ggf. zu einem späteren Zeitpunkt.
 
 **Umgang mit Multikollinearität**
 
@@ -2635,12 +2618,13 @@ data.frame(
 )
 ```
 
-Man kann sehen, dass das Entfernen der beiden Variablen `Datum` und `Jahr` die Modellleistungsmetriken nicht sehr beeinflusst. Mit anderen Worten, die moellgenauigkeit leidet nicht unter dem Entfernen der beiden Variablen.
+Man kann sehen, dass das Entfernen der beiden Variablen `Datum` und `Jahr` die Modellleistungsmetriken nicht sehr beeinflusst. Mit anderen Worten, die Modellgenauigkeit leidet nicht unter dem Entfernen der beiden Variablen.
 
 
 ## 6.3 Erstellung linearer Regressionsmodelle für die einzelnen Warengruppen
 
 **Laden der benötigten Pakete**
+
 Wir beginnen unsere Analyse mit dem Laden der notwendigen Pakete, die bislang noch nicht geladen wurden:
 
 * `caret` für einen einfachen Machine Learning workflow
@@ -2672,7 +2656,7 @@ Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Ko
 
 Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfasst:
 
-**Schritt 1**: Lasse $M_0$ das Nullmodell bezeichnen, das keine Prädiktoren enthält. Dieses Modell sagt einfach den Stichprobenmittelwert für jede Beobachtung voraus.
+**Schritt 1**: Bezeichne $M_0$ das Nullmodell, das keine Prädiktoren enthält. Dieses Modell sagt einfach den Stichprobenmittelwert für jede Beobachtung voraus.
 
 **Schritt 2**: Für $k = 1,2,… p$:
 
@@ -2681,7 +2665,7 @@ Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfas
 
 **Schritt 3**: Wähle aus $M_0, .. , M_p$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers (cross validated prediction error), $Cp$, $AIC$, $BIC$ oder adjustiertem $R^2$.
 
-Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 20 Variablen.
+Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 36 Variablen.
 
 ```{r}
 best_subset_WG1 <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36)
@@ -2765,7 +2749,7 @@ Bei der Durchführung der Ansätze "beste Teilmenge" oder schrittweisen Annäher
 
 Es stehen jedoch eine Reihe von Techniken zum Anpassen des Trainingsfehlers an die Modellgröße zur Verfügung. Diese Ansätze können verwendet werden, um aus einer Reihe von Modellen mit unterschiedlicher Anzahl von Variablen auszuwählen. Diese beinhalten:
 
-image: ![](Guetekriterien_lm.png)
+![](Guetekriterien_lm.png)
 
 Dabei ist $d$ die Anzahl der Prädiktoren und $σ2$ eine Schätzung der Varianz des Fehlers ($ϵ$)) mit jeder Antwortmessung in einem Regressionsmodell verbunden. Jede dieser Statistiken fügt dem Trainings-$RSS$ eine Strafe hinzu, um die Tatsache auszugleichen, dass der Trainingsfehler dazu neigt, den Testfehler zu unterschätzen. Die Strafe steigt eindeutig mit zunehmender Anzahl von Prädiktoren im Modell.
 
@@ -2776,7 +2760,7 @@ Im Folgenden werden diese Informationen extrahiert und aufgezeichnet.
 ```{r}
 results <- summary(best_subset_WG1)
 
-# extract and plot results
+# Extrahieren und plotten der Ergebnisse
 tibble(predictors = 1:36,
        adj_R2 = results$adjr2,
        Cp = results$cp,
@@ -2793,7 +2777,6 @@ which.max(results$adjr2)
 which.min(results$bic)
 which.min(results$cp)
 ```
-Hier sehen wir, dass unsere Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die angepasste R2-Statistik legt nahe, dass das 10-Variablen-Modell bevorzugt wird, die BIC-Statistik schlägt das 4-Variablen-Modell vor und die Cp schlägt das 8-Variablen-Modell vor.
 
 Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 29-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 21-Variablenmodell vor und der $C_p$ das 28-Variablen-Modell vor.
 
@@ -2816,7 +2799,7 @@ Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl du
 forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "forward")
 backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "backward")
 
-# which models minimize Cp?
+# Welches Modell minimiert den Cp?
 which.min(summary(forward)$cp)
 which.min(summary(backward)$cp)
 ```
@@ -2844,7 +2827,7 @@ test_m <- model.matrix(Umsatz ~ ., data = df_lm_test_WG1)
 Jetzt kann jede Modellgröße (d.h. 1 Variable, 2 Variablen,..., 20 Variablen) durchlaufen werden und die Koeffizienten für das beste Modell dieser Größe extrahiert werden. Diese Werte werden sodann in die entsprechenden Spalten der Testmodellmatrix multipliziert, um die Vorhersagen zu bilden. Dann werden die Test-MSE berechnet.
 
 ```{r}
-# create empty vector to fill with error values
+# Erstellen eines leeren Vektors, um diesen nachfolgend mit den Fehlerwerten zu füllen
 validation_errors <- vector("double", length = 36)
 
 for(i in 1:36) {
@@ -2855,30 +2838,30 @@ for(i in 1:36) {
 
 as.matrix(validation_errors)
 
-# plot validation errors
+# Plotten der validation errors
 plot(validation_errors, type = "b")
 
 #############################
 # Alternative: http://www.science.smith.edu/~jcrouser/SDS293/labs/lab9-r.html
 val_errors = rep(NA,36)
 
-# Iterates over each size i
+# Iterationen über jede Größe i
 for(i in 1:36){
     
-    # Extract the vector of predictors in the best fit model on i predictors
+    # Extrahieren des Vektors der Prädiktoren im Best-Fit-Modell für i-Prädiktoren
     coefi = coef(best_subset_WG1, id = i)
     
-    # Make predictions using matrix multiplication of the test matirx and the coefficients vector
+    # Vorhersagen unter Verwendung der Matrixmultiplikation der Testmatrix und des Koeffizientenvektors erstellen
     pred = test_m[,names(coefi)]%*%coefi
     
-    # Calculate the MSE
+    # Berechnung des MSE
     val_errors[i] = mean((df_lm_test_WG1$Umsatz-pred)^2)
 }
 
-# Find the model with the smallest error
+# Auffinden des Modells mit dem kleinsten Fehler
 min = which.min(val_errors)
 
-# Plot the errors for each model size
+# Plotten des Fehlers für jede Modellgröße
 plot(val_errors, type = 'b')
 points(min, val_errors[min][1], col = "red", cex = 2, pch = 20)
 
