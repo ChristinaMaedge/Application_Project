@@ -2481,19 +2481,19 @@ Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Bas
 Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsätze für Feiertage auf Basis der Vorjahreswerte schätzen. Das funktioniert naiv aber nur für Feiertage, die an festen Daten liegen, wie bspw. Silvester. Für Ostern funktioniert dieses naive Vorgehen nicht. Wir verzichten auf diese Modellerweiterung und widmen uns stattdessen im Folgenden statistischen Modellen und betrachten Machine Learning und Deep Learning Modelle.
 
 
-# 6 Anwendung statistischer Modelle
+# 6 Anwendung statistischer Modelle - Lineare Regression
 
+## 6.1 Vorhaben
 In einem nächsten Schritt wird mit der linearen Regression ein traditionelles statistisches Modell zur Prognose der Bäckereiumsätze eingesetzt. Die lineare Regression ist ein sehr einfacher Ansatz für das sog. "überwachte Lernen" (supervised learning). Lineare Regressionsmodelle sind insbesondere ein nützliches Werkzeug zur Vorhersage einer quantitativen Output-Variable, die in diesem Fall dem Umsatz pro Tag entspricht. Auch wenn die lineare Regression im Vergleich modernen statistischen Lernmethoden ein vergleichsweise einfaches Modell ist, ist sie immer noch weit verbreitet. Überdies dient sie als guter Ausgangspunkt für neuere Ansätze: viele neuere statistische Lernansätze können als Generalisierung oder Erweiterung der linearen Regression betrachtet werden.
-
-## 6.1 Lineare Regression
 
 Im Allgemeinen ist bei der linearen Regression zwischen der einfachen und der multiplen Regression zu unterscheiden. Während im ersten Fall nur eine einzelne Variable als Vorhersageparameter für die abhängige Variable betrachtet wird, werden bei der multiplen linearen Regression mehrere Input-Variablen in das Modell einbezogen. Da hinsichtlich der beeinflussenden Variablen Unterschiede bei den einzelnen Warengruppen zu erwarten sind, werden die Warengruppen isoliert betrachtet. Das heißt, für jede Warengruppe werden unterschiedliche Modelle angwendet und verglichen.  
 
-Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt soll im Rahmen von Korrelationsanalysen bzw. auf Basis von Korrelogrammen ein erster Eindruck über potentielle Zusammenhänge zwischen dem Umsatz und potentiell beeinflussenden Variablen gewonnen werden, um zu ermessen/prüfen, welche Variablen für die Aufnahme in ein Regressionsmodell geeignet erscheinen. Da einfache statistische Maßzahlen zur Beschreibung der Daten nicht immer ausreichen und ein und demselben Wert des Korrelationskoeffizienten unterschiedliche Zusammenhänge (neben dem linearen) zugrunde liegen können, werden für die potentiell beeinflussenden Variablen in einem weiteren Schritt Streudiagramme erstellt (vgl. hierzu auch Anscombes Quartett aus dem Jahr 1973) sowie die eine odere andere weitere Maßzahl berechnet. 
+Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt werden mittels best sog. *subset selection* und *stepwise selection* die in das Modell aufzunehmenden Variablen bestimmt und auf dieser Grundlage dann ein Regressionsmodell erstellt.
 
-Diese Voruntersuchungen legen eine gute Basis zur Auswahl der relevanten Variablen. Bevor die linearen Modelle schließlich angewendet werden, wird eine schrittweise Regression durchgeführt. 
+## 6.2 Datenaufbereitung
 
-## 6.2 Erstellung des Arbeitsdatensatzes für die Anwendung der linearen Modelle
+Zunächst wird ein Arbeitsdatensatzes für die Anwendung der linearen Modelle erstellt.
+
 ```{r}
 df_lm <- df_voll %>%
   filter(Umsatz_NA == FALSE) %>%
@@ -2525,11 +2525,25 @@ Erneute Überprüfung:
 alias(lm(Umsatz ~., data = df_lm_train))
 ```
 
-### 6.2.3 Eliminierung von Multikollinearität
+### 6.2.3 Überprüfung auf Multikollinearität
+
+Bei der multiplen Regression können zwei oder mehr Prädiktorvariablen miteinander korreliert sein. Diese Situation wird als Kollinearität bezeichnet.
+
+Es gibt eine extreme Situation, die als Multikollinearität bezeichnet wird und in der Kollinearität zwischen drei oder mehr Variablen besteht, selbst wenn kein Variablenpaar eine besonders hohe Korrelation aufweist. Dies bedeutet, dass zwischen Prädiktorvariablen Redundanz besteht.
+
+Bei Vorhandensein von Multikollinearität wird die Lösung des Regressionsmodells instabil.
+
+Multikollinearität kann auf zwei verschiedene Arten überprüft werden:
+
+Zum einen kann die Multikollinearität für einen gegebenen Prädiktor (p) bewertet werden, indem ein Score berechnet wird, der als Varianzinflationsfaktor (oder VIF) bezeichnet wird und misst, wie stark die Varianz eines Regressionskoeffizienten aufgrund der Multikollinearität im Modell aufgeblasen wird; zum anderen durch die Korrelation der Variablen untereinander
+
+Der kleinstmögliche Wert von VIF ist eins (Fehlen von Multikollinearität). Als Faustregel gilt, dass ein VIF-Wert, der 5 oder 10 überschreitet, ein problematisches Maß an Kollinearität anzeigt (James et al. 2014).
+
+Bei Multikollinearität sollten die betroffenen Variablen entfernt werden, da das Vorhandensein von Multikollinearität impliziert, dass die Informationen, die diese Variable über die Antwort liefert, bei Vorhandensein der anderen Variablen redundant sind (James et al. 2014, P. Bruce und Bruce (2017)).
 
 **Erstellung eines ersten Regressionsmodells**
 
-Das folgende Regressionsmodell enthält alle unabhängigen Variablen:
+Um eine Überprüfung auf Multikollinearität durchzuführen, wird ein Regressionsmodell erstellt, das alle unabhängigen Variablen enthält:
 
 ```{r}
 library(caret)
@@ -2546,19 +2560,7 @@ data.frame(
 
 **Überprüfung auf Multikollinearität**
 
-Bei der multiplen Regression können zwei oder mehr Prädiktorvariablen miteinander korreliert sein. Diese Situation wird als Kollinearität bezeichnet.
-
-Es gibt eine extreme Situation, die als Multikollinearität bezeichnet wird und in der Kollinearität zwischen drei oder mehr Variablen besteht, selbst wenn kein Variablenpaar eine besonders hohe Korrelation aufweist. Dies bedeutet, dass zwischen Prädiktorvariablen Redundanz besteht.
-
-Bei Vorhandensein von Multikollinearität wird die Lösung des Regressionsmodells instabil.
-
-Multikollinearität kann auf zwei verschiedene Arten überprüft werden:
-
-Zum einen kann die Multikollinearität für einen gegebenen Prädiktor (p) bewertet werden, indem ein Score berechnet wird, der als Varianzinflationsfaktor (oder VIF) bezeichnet wird und misst, wie stark die Varianz eines Regressionskoeffizienten aufgrund der Multikollinearität im Modell aufgeblasen wird; zum anderen durch die Korrelation der Variablen untereinander
-
-Der kleinstmögliche Wert von VIF ist eins (Fehlen von Multikollinearität). Als Faustregel gilt, dass ein VIF-Wert, der 5 oder 10 überschreitet, ein problematisches Maß an Kollinearität anzeigt (James et al. 2014).
-
-Bei Multikollinearität sollten die betroffenen Variablen entfernt werden, da das Vorhandensein von Multikollinearität impliziert, dass die Informationen, die diese Variable über die Antwort liefert, bei Vorhandensein der anderen Variablen redundant sind (James et al. 2014, P. Bruce und Bruce (2017)).
+*Überprüfung mittels VIF*
 
 Die R-Funktion `vif()` [`car package`] kann genutzt werden um Multikollinearität zu erkennen:
 ```{r}
@@ -2636,7 +2638,7 @@ data.frame(
 Man kann sehen, dass das Entfernen der beiden Variablen `Datum` und `Jahr` die Modellleistungsmetriken nicht sehr beeinflusst. Mit anderen Worten, die moellgenauigkeit leidet nicht unter dem Entfernen der beiden Variablen.
 
 
-## 6.3 Lineare Regressionsmodelle 
+## 6.3 Erstellung linearer Regressionsmodelle für die einzelnen Warengruppen
 
 **Laden der benötigten Pakete**
 Wir beginnen unsere Analyse mit dem Laden der notwendigen Pakete, die bislang noch nicht geladen wurden:
@@ -2647,7 +2649,6 @@ Wir beginnen unsere Analyse mit dem Laden der notwendigen Pakete, die bislang no
 ```{r}
 library(caret)
 library(leaps)
-library(MASS)
 ```
 
 ### 6.3.1 Warengruppe 1
@@ -2666,6 +2667,7 @@ df_lm_test_WG1 <- df_lm_test_WG1 %>% dplyr::select(-Warengruppe)
 **Auswahl der am besten geeigneten Variablen**
 
 **Beste Teilmengenauswahl ("Best subset selection")**
+
 Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Kombination der p-Prädiktoren eine separate Regression der kleinsten Quadrate an. Das heißt, wir passen alle p-Modelle an, die genau einen Prädiktor enthalten, alle (p2) = p (p - 1) / 2-Modelle, die genau zwei Prädiktoren enthalten, und so weiter. Wir betrachten dann alle resultierenden Modelle mit dem Ziel, das beste zu identifizieren.
 
 Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfasst:
@@ -2701,6 +2703,7 @@ Dies wird jedoch im Abschnitt zum Vergleichen von Modellen veranschaulicht. Scha
 Aus rechnerischen Gründen kann die beste Teilmengenauswahl nicht angewendet werden, wenn die Anzahl der $p$ Prädiktorvariablen groß ist. Die Auswahl der besten Teilmenge kann auch unter statistischen Problemen leiden, wenn $p$ groß ist. Je größer der Suchraum ist, desto höher ist die Wahrscheinlichkeit, Modelle zu finden, die in den Trainingsdaten gut aussehen, auch wenn sie möglicherweise keine Vorhersagekraft für zukünftige Daten haben. Ein enormer Suchraum kann daher zu einer Überanpassung und einer hohen Varianz der Koeffizientenschätzungen führen. Aus diesen beiden Gründen sind schrittweise Methoden, die einen weitaus eingeschränkteren Satz von Modellen untersuchen, attraktive Alternativen zur Auswahl der besten Teilmenge.
 
 *Vorwärtsauswahl*
+
 Die *schrittweise Vorwärtsauswahl* beginnt mit einem Modell, das keine Prädiktoren enthält und fügt dem Modell dann nacheinander Prädiktoren hinzu, bis alle Prädiktoren im Modell enthalten sind. Insbesondere wird bei jedem Schritt die Variable zum Modell hinzugefügt, die die größte zusätzliche Verbesserung der Anpassung bewirkt.
 
 Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
@@ -2787,11 +2790,8 @@ tibble(predictors = 1:36,
 
 ```{r}
 which.max(results$adjr2)
-## [1] 29
 which.min(results$bic)
-## [1] 21
 which.min(results$cp)
-## [1] 28
 ```
 Hier sehen wir, dass unsere Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die angepasste R2-Statistik legt nahe, dass das 10-Variablen-Modell bevorzugt wird, die BIC-Statistik schlägt das 4-Variablen-Modell vor und die Cp schlägt das 8-Variablen-Modell vor.
 
@@ -2818,9 +2818,7 @@ backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "backwa
 
 # which models minimize Cp?
 which.min(summary(forward)$cp)
-# [1] 35
 which.min(summary(backward)$cp)
-# [1] 28
 ```
 
 Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 35-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 28-Variablen-Modell vor, ähnlich dem oben beschriebenen besten Teilmengenansatz.
@@ -2989,7 +2987,6 @@ df_lm_test_WG128 <- df_lm_test_WG1 %>%
 ```
 
 
-
 Für das 28-Variablenmodell wird nun ein Regressionsmodell erstellt:
 ```{r}
 lm1_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Dezember + Februar + Januar + Mai + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + ChristiHimmelfahrt_ext + Pfingsten_ext + Herbst + Sommer, data = df_lm_train_WG128)
@@ -3008,8 +3005,6 @@ Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples
 ```{r}
 caret::postResample(pred = lm1_predict, obs = df_lm_test_WG128$Umsatz)
 ```
-
-
 
 Dieses Modell wird nun verglichen mit dem 36-Variablen-Modell:
 ```{r}
