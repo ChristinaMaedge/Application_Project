@@ -371,7 +371,7 @@ density(Beispieldaten$Umsatz)
 
 # Visualisierung
 Beispieldaten %>% 
-  select(Umsatz) %>% 
+  dplyr::select(Umsatz) %>% 
   ggplot(aes(Umsatz)) +
   geom_density()
 ```
@@ -2682,7 +2682,7 @@ Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfas
 Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 20 Variablen.
 
 ```{r}
-best_subset_WG1 <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20)
+best_subset_WG1 <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36)
 ```
 
 Die `regsubsets`-Funktion gibt ein Listenobjekt mit vielen Informationen zurück. Zunächst kann der Befehl `summary` verwendet, um den besten Satz von Variablen für jede Modellgröße zu ermitteln.
@@ -2717,7 +2717,7 @@ Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
 ```{r}
-forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "forward")
+forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "forward")
 ```
 
 
@@ -2740,11 +2740,12 @@ Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "backward"` gesetzt wird:
 
 ```{r}
-backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "backward")
+backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "backward")
 ```
 
 
 **Modellauswahl**
+
 Bisher wurde gezeigt, wie die besten Teilmengen (Best Subset Selection) und schrittweisen Verfahren ausgeführt werden. In einem nächsten Schritt wird nun betrachtet, wie alle Modelle verglichen werden können, um das beste Modell zu ermitteln. 
 
 Um das beste Modell in Bezug auf den Testfehler auszuwählen, müssen wir diesen Testfehler schätzen. Es gibt zwei gängige Ansätze:
@@ -2773,7 +2774,7 @@ Im Folgenden werden diese Informationen extrahiert und aufgezeichnet.
 results <- summary(best_subset_WG1)
 
 # extract and plot results
-tibble(predictors = 1:20,
+tibble(predictors = 1:36,
        adj_R2 = results$adjr2,
        Cp = results$cp,
        BIC = results$bic) %>%
@@ -2786,40 +2787,57 @@ tibble(predictors = 1:20,
 
 ```{r}
 which.max(results$adjr2)
-## [1] 20
+## [1] 29
 which.min(results$bic)
-## [1] 19
+## [1] 21
 which.min(results$cp)
-## [1] 20
+## [1] 28
 ```
-Es ist erkennbar, dass die Ergebnisse keine bzw. nur marginal unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 20-Variablen-Modell bevorzugt wird, genau wie der $C_p$. Die $BIC$-Statistik schlägt das 19-Variablen-Modell vor.
+Hier sehen wir, dass unsere Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die angepasste R2-Statistik legt nahe, dass das 10-Variablen-Modell bevorzugt wird, die BIC-Statistik schlägt das 4-Variablen-Modell vor und die Cp schlägt das 8-Variablen-Modell vor.
 
-Auch wenn die Ergebnisse nur schwach voneinander abweichen, können die Variablen und Koeffizienten, die diese Modelle enthalten, mit der `coef`-Funktion verglichen werden:
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 29-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 21-Variablenmodell vor und der $C_p$ das 28-Variablen-Modell vor.
 
+Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
 ```{r}
-coef(best_subset_WG1, 20)
-
-coef(best_subset_WG1, 20)
+# 21-Variablen-Modell
+coef(best_subset_WG1, 21)
+```
+```{r}
+# 28-Variablen-Modell
+coef(best_subset_WG1, 28)
+```
+```{r}
+# 29-Variablen-Modell
+coef(best_subset_WG1, 29)
 ```
 
-Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden und noch mehr Optionen für optimale Modelle liefern:
+Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
-forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "forward")
-backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 20, method = "backward")
+forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "forward")
+backward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 36, method = "backward")
 
 # which models minimize Cp?
 which.min(summary(forward)$cp)
-# [1] 20
+# [1] 35
 which.min(summary(backward)$cp)
-# [1] 20
+# [1] 28
 ```
 
-Wenn das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet wird, ist erkennbar, wir, dass beide vorschlagen, dass ein 20-Variablen-Modell die $C_p$-Statistik minimiert, ähnlich dem oben beschriebenen besten Teilmengenansatz.
+Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 35-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 28-Variablen-Modell vor, ähnlich dem oben beschriebenen besten Teilmengenansatz.
+
+Wenn wir diese Modelle bewerten, sehen wir, dass die 28-Variablen Modelle die gleichen Prädiktoren enthalten. 
+```{r}
+coef(best_subset_WG1, 28)
+```
+
+```{r}
+coef(backward, 28)
+```
 
 
 ### Direkte Schätzung des Testfehlers
 
-Nun wird der Validierungssatzfehler für das beste Modell jeder Modellgröße berechnet. Zuerst wird eine Modellmatrix aus den Testdaten erstellt. Die Funktion `model.matrix` wird in vielen Regressionspaketen zum Erstellen einer X-Matrix aus Daten verwendet.
+Nun wird der Fehler der Testdaten für das beste Modell jeder Modellgröße berechnet. Zuerst wird eine Modellmatrix aus den Testdaten erstellt. Die Funktion `model.matrix` wird in vielen Regressionspaketen zum Erstellen einer X-Matrix aus Daten verwendet.
 
 ```{r}
 test_m <- model.matrix(Umsatz ~ ., data = df_lm_test_WG1)
@@ -2829,19 +2847,188 @@ Jetzt kann jede Modellgröße (d.h. 1 Variable, 2 Variablen,..., 20 Variablen) d
 
 ```{r}
 # create empty vector to fill with error values
-validation_errors <- vector("double", length = 20)
+validation_errors <- vector("double", length = 36)
 
-for(i in 1:20) {
+for(i in 1:36) {
   coef_x <- coef(best_subset_WG1, id = i)                     # extract coefficients for model size i
   pred_x <- test_m[ , names(coef_x)] %*% coef_x           # predict salary using matrix algebra
   validation_errors[i] <- mean((df_lm_test_WG1$Umsatz - pred_x)^2)  # compute test error btwn actual & predicted salary
 }
 
+as.matrix(validation_errors)
+
 # plot validation errors
 plot(validation_errors, type = "b")
+
+#############################
+# Alternative: http://www.science.smith.edu/~jcrouser/SDS293/labs/lab9-r.html
+val_errors = rep(NA,36)
+
+# Iterates over each size i
+for(i in 1:36){
+    
+    # Extract the vector of predictors in the best fit model on i predictors
+    coefi = coef(best_subset_WG1, id = i)
+    
+    # Make predictions using matrix multiplication of the test matirx and the coefficients vector
+    pred = test_m[,names(coefi)]%*%coefi
+    
+    # Calculate the MSE
+    val_errors[i] = mean((df_lm_test_WG1$Umsatz-pred)^2)
+}
+
+# Find the model with the smallest error
+min = which.min(val_errors)
+
+# Plot the errors for each model size
+plot(val_errors, type = 'b')
+points(min, val_errors[min][1], col = "red", cex = 2, pch = 20)
+
 ```
 
-Es ist erkennbar, dass eher das 17-Variablen-Modell, das durch den besten Teilmengenansatz erzeugt wird, den niedrigsten Test-MSE erzeugt. 
+Es ist erkennbar, dass ein 36-Variablen-Modell, das durch den besten Teilmengenansatz erzeugt wird, den niedrigsten Test-MSE erzeugt. 
+Auch ein 22- sowie 28-Variablen-Modell scheinen vergleichweichsweise gut zu performen.
+
+Wir können jetzt die beste Teilmengenauswahl für den gesamten Datensatz durchführen, um zum einen das 28-Variblen-Modell zu erhalten.
+Dieses Modell wird mit dem 36-Variablen-Modell verglichen.
+
+**Teilmengenauswahl für das 28-Variablen-Modell**
+
+```{r}
+final_best28 <- regsubsets(Umsatz ~ ., data = df_lm_train_WG1, nvmax = 36)
+coef(final_best28, 28)
+```
+
+Die 28 Variablen sind die folgenden:
+
+* KielerWoche
+* Wochentag_cDonnerstag
+* Wochentag_cFreitag
+* Wochentag_cMontag
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cDezember       
+* Monat_cFebruar
+* Monat_cJanuar 
+* Monat_cMai
+* Monat_cMärz
+* Monat_cNovember
+* Monat_cOktober
+* Monat_cSeptember 
+* SommerferienSH 
+* SommerferienNRW 
+* SommerferienNDS
+* SommerferienHE
+* Feiertag
+* Ostern
+* ChristiHimmelfahrt
+* Pfingsten    
+* TDE 
+* Ostern_ext
+* ChristiHimmelfahrt_ext
+* Pfingsten_ext
+* JahreszeitHerbst
+* JahreszeitSommer
+
+
+Insbesondere für das 28-Variablen-Modell müssen die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+
+```{r}
+# Dummyfizierung der Variablen im Trainigsdatensatz:
+df_lm_train_WG128 <- df_lm_train_WG1 %>%
+  mutate(Montag=as.integer(df_lm_train_WG1$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_train_WG1$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_train_WG1$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_train_WG1$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_train_WG1$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_train_WG1$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_train_WG1$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_train_WG1$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_train_WG1$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_train_WG1$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_train_WG1$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_train_WG1$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_train_WG1$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_train_WG1$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_train_WG1$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_train_WG1$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_train_WG1$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_train_WG1$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_train_WG1$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_train_WG1$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_train_WG1$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_train_WG1$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_train_WG1$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, Jahreszeit)
+
+df_lm_test_WG128 <- df_lm_test_WG1 %>%
+  mutate(Montag=as.integer(df_lm_test_WG1$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_test_WG1$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_test_WG1$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_test_WG1$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_test_WG1$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_test_WG1$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_test_WG1$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_test_WG1$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_test_WG1$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_test_WG1$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_test_WG1$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_test_WG1$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_test_WG1$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_test_WG1$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_test_WG1$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_test_WG1$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_test_WG1$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_test_WG1$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_test_WG1$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_test_WG1$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_test_WG1$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_test_WG1$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_test_WG1$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, Jahreszeit)
+```
+
+
+
+Für das 28-Variablenmodell wird nun ein Regressionsmodell erstellt:
+```{r}
+lm1_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Dezember + Februar + Januar + Mai + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + ChristiHimmelfahrt_ext + Pfingsten_ext + Herbst + Sommer, data = df_lm_train_WG128)
+
+library(broom)
+glance(lm1_train)
+```
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm1_predict <- predict(lm1_train, newdata = df_lm_test_WG128)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm1_predict, obs = df_lm_test_WG128$Umsatz)
+```
+
+
+
+Dieses Modell wird nun verglichen mit dem 36-Variablen-Modell:
+```{r}
+lm2_train <- lm(Umsatz ~ ., data = df_lm_train_WG1)
+glance(lm2_train)
+```
+
+```{r}
+lm2_predict <- predict(lm2_train, newdata = df_lm_test_WG1)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm2_predict, obs = df_lm_test_WG1$Umsatz)
+```
+
+### 6.3.2 Warengruppe 2
+
+Folgt.
 
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
