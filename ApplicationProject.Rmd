@@ -2870,6 +2870,10 @@ df_MLP <- df_MLP %>%
 # behalte nur die Spalten, die wir für unser MLP verwenden wollen
 df_MLP <- df_MLP %>%
   dplyr::select(Datum, Warengruppe, Umsatz, Jahr, KielerWoche, Temperatur, Wochentag_c, SommerferienSH, Feiertag, Silvester_ext, Fruehling, Sommer, Herbst, Winter)
+
+# Problem: Wir haben fehlende Temperatur-Werte. Filtere diese zunächst raus.
+sum(is.na(df_MLP$Temperatur))
+df_MLP <- df_MLP %>% filter(!is.na(Temperatur))
 ```
 
 Im ersten Schritt verzichten wir auf die Variablen Windgeschwindigkeit und Bewölkung: Wir hatten nämlich in unserer Korrelationsanalyse gesehen, dass die Windgeschwindigkeit allenfalls einen sehr geringen Einfluss hat. Und die Bewölkung würde weitere 8 Dummyvariablen erfordern als Eingabe für unser MLP, daher verzichten wir darauf, um unser Modell nicht zu sehr aufzublähen.
@@ -2891,6 +2895,6 @@ df_MLP <- df_MLP %>%
 Das MLP wird in Python aufgebaut, daher exportieren wir den Datansatz `df_MLP` als .csv.
 
 ```{r}
-write_csv(df_MLP, path="data/df_MLP.csv")
+write_csv(df_MLP, path="data/df_MLP.csv", col_names=FALSE)
 ```
 
