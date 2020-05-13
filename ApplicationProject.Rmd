@@ -2054,8 +2054,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Relative Abweichung") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  xlab("Modell") + 
+  ylab("rel. Abweichung (%)") +
   ylim(-100, 200)
 
 # Jahr 2018, nur Montage, alle Warengruppen
@@ -2064,9 +2064,9 @@ prog_naiv_vgl_relAbw %>%
 #   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
 #   geom_boxplot() + coord_flip() +
 #   ggtitle("2018 / Montag - Vergleich der naiven Modelle: Relative Abweichung") +
-#   xlab("rel. Abweichung (%)") + 
-#   ylab("Dichte") +
-#  ylim(-100, 200)
+#   xlab("Modell") + 
+#   ylab("rel. Abweichung (%)") +
+#   ylim(-100, 200)
 
 # Jahr 2018, nur Sonntage, alle Warengruppen
 #prog_naiv_vgl_relAbw %>%
@@ -2074,8 +2074,8 @@ prog_naiv_vgl_relAbw %>%
 #  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
 #  geom_boxplot() + coord_flip() +
 #  ggtitle("2018 / Sonntag - Vergleich der naiven Modelle: Relative Abweichung") +
-#  xlab("rel. Abweichung (%)") + 
-#  ylab("Dichte") +
+#  xlab("Modell") + 
+#  ylab("rel. Abweichung (%)") +
 #  ylim(-100, 200)
 
 # Jahr 2018, nach Wochentag, alle Warengruppen
@@ -2086,8 +2086,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Wochentag") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  xlab("Modell") + 
+  ylab("rel. Abweichung (%)") +
   ylim(-100, 200) +
   facet_wrap(vars(Wochentag_ord))
 
@@ -2097,8 +2097,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 - Vergleich der naiven Modelle: Rel. Abweichung nach Warengruppe") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  xlab("Modell") + 
+  ylab("rel. Abweichung (%)") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
 
@@ -2108,8 +2108,8 @@ prog_naiv_vgl_relAbw %>%
   ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
   geom_boxplot() + coord_flip() +
   ggtitle("2018 OHNE SoFerien u. Feiertage - Vgl. der naiven Modelle: Rel. Abw. nach Warengruppe") +
-  xlab("rel. Abweichung (%)") + 
-  ylab("Dichte") +
+  xlab("Modell") + 
+  ylab("rel. Abweichung (%)") +
   ylim(-100, 200) +
   facet_wrap(vars(Warengruppe))
 ```
@@ -2135,6 +2135,7 @@ Wir möchten nun folgende Güte-Kennzahlen für die Umsatzschätzung vergleichen
 - mittlere Absolutwert der relativen Abweichung (MAPE)
 - gewichtetes Mittel des Absolutwerts der relativen Abweichung (WAPE)
 - mittlere quadratische Abweichung (MSE)
+- Wurzel der mittleren quadratischen Abweichung (RMSE)
 
 Die mittlere absulute Abweichung (MAE = mean absolute error) gibt uns ein Gefühl, wie start der Schätzer vom tatsächlichen Umsatz abweicht.
 
@@ -2145,6 +2146,8 @@ Der mittlere Absolutwert der relativen Abweichung (MAPE = mean absolute percenta
 Das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE = weighted absolute percentage error) bezieht den Umsatz des Schätzers zusätzlich als Gewicht mit ein. Das Ergebnis ist ebenfalls ein Prozentwert.
 
 Die mittlere quadratische Abweichung (MSE = mean squared error) bestraft größere Abweichungen stärker als die übrigen Kennzahlen.
+
+Üblicherweise vergleicht man jedoch die Wurzel der mittleren quadratischen Abweichung (RMSE = root mean squared error).
 
 Wir haben in diesem Kapitel bisher die folgenden Analysedatensätze verwendet und gefüllt:
 
@@ -2174,7 +2177,7 @@ prog_naiv_lag_1W <-  prog_naiv_lag_1W %>%
 temp <- prog_naiv_lag_1W %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "lag_1W")
@@ -2190,7 +2193,7 @@ prog_naiv_glDS_3T <-  prog_naiv_glDS_3T %>%
 temp <- prog_naiv_glDS_3T %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "glDS_3T")
@@ -2206,7 +2209,7 @@ prog_naiv_glDS_3T_erw <-  prog_naiv_glDS_3T_erw %>%
 temp <- prog_naiv_glDS_3T_erw %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "glDS_3T_erw")
@@ -2222,7 +2225,7 @@ prog_naiv_glDS_4T_erw <-  prog_naiv_glDS_4T_erw %>%
 temp <- prog_naiv_glDS_4T_erw %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "glDS_4T_erw")
@@ -2238,7 +2241,7 @@ prog_naiv_gewMW_4W <-  prog_naiv_gewMW_4W %>%
 temp <- prog_naiv_gewMW_4W %>%
   group_by() %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "gewMW_4W")
@@ -2255,7 +2258,7 @@ Im Vergleich der Gütekennzahlen fällt auf, dass alle Modelle den Umsatz im Sch
 temp <- prog_naiv_glDS_4T_erw %>%
   group_by(Warengruppe) %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 temp
 ```
@@ -2270,7 +2273,7 @@ Zuletzt gucken wir uns die Gütekennzahlen für dieses Modell je Wochentag an.
 temp <- prog_naiv_glDS_4T_erw %>%
   group_by(Wochentag_c) %>%
   filter(Jahr==2018) %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 temp
 ```
@@ -3427,15 +3430,13 @@ library(broom)
 glance(lm1_train)
 ```
 
-\
-
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
 # 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
 ## 8.1 Vorhaben
 
-Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen.
+Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Wir verwenden dafür ein Python-Skript (MLP.py).
 
 ## 8.2 Datenaufbereitung
 
@@ -3455,16 +3456,16 @@ df_MLP <- df_MLP %>%
 
 # behalte nur die Spalten, die wir für unser MLP verwenden wollen
 df_MLP <- df_MLP %>%
-  dplyr::select(Datum, Warengruppe, Umsatz, Jahr, KielerWoche, Temperatur, Wochentag_c, SommerferienSH, Feiertag, Silvester_ext, Fruehling, Sommer, Herbst, Winter)
+  dplyr::select(Datum, Jahr, Warengruppe, Umsatz, KielerWoche, Temperatur, Wochentag_c, SommerferienSH, Feiertag, Silvester_ext, Monat_c)
 
 # Problem: Wir haben fehlende Temperatur-Werte. Filtere diese zunächst raus.
-sum(is.na(df_MLP$Temperatur))
+# sum(is.na(df_MLP$Temperatur))
 df_MLP <- df_MLP %>% filter(!is.na(Temperatur))
 ```
 
 Im ersten Schritt verzichten wir auf die Variablen Windgeschwindigkeit und Bewölkung: Wir hatten nämlich in unserer Korrelationsanalyse gesehen, dass die Windgeschwindigkeit allenfalls einen sehr geringen Einfluss hat. Und die Bewölkung würde weitere 8 Dummyvariablen erfordern als Eingabe für unser MLP, daher verzichten wir darauf, um unser Modell nicht zu sehr aufzublähen.
 
-Die Variable Wochentag_c muss nun noch dummyfiziert werden: Wir bilden für jeden Wochentag eine Variable mit Ausprägung 0/1. Und entfernen danach die alte Variable Wochentag_c.
+Die Variablen Wochentag_c und Monat_c müssen nun noch dummyfiziert werden: Wir bilden für jeden Wochentag eine Variable mit Ausprägung 0/1. Und entfernen danach die alten Variablen Wochentag_c und Monat_c.
 
 ```{r}
 df_MLP <- df_MLP %>%
@@ -3476,11 +3477,530 @@ df_MLP <- df_MLP %>%
   mutate(Samstag=as.integer(df_MLP$Wochentag_c=="Samstag")) %>%
   mutate(Sonntag=as.integer(df_MLP$Wochentag_c=="Sonntag")) %>%
   dplyr::select(-Wochentag_c)
+
+df_MLP <- df_MLP %>%
+  mutate(Januar=as.integer(df_MLP$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_MLP$Monat_c=="Februar")) %>%
+  mutate(März=as.integer(df_MLP$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_MLP$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_MLP$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_MLP$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_MLP$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_MLP$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_MLP$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_MLP$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_MLP$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_MLP$Monat_c=="Dezember")) %>%
+  dplyr::select(-Monat_c)
 ```
 
-Das MLP wird in Python aufgebaut, daher exportieren wir den Datansatz `df_MLP` als .csv.
+Als nächstes wollen wir noch die Temperatur-Variable dummyfizieren, indem wir sie in eine Binärvariable für 4 Intervallbereiche umwandeln. Hintergrund ist, dass die übrigen Input-Variablen bereits Binärvariablen sind und wir damit ein einheitliches Vorgehen für die Befütterung unseres kNN erreichen. Wir wählen die Intervalle und Bezeichnungen wie folgt:
+
+- Temp_eis: < 0 Grad
+- Temp_kalt: [0 bis 10 Grad)
+- Temp_warm: [10 bis 20 Grad)
+- Temp_heiss: >= 20 Grad
 
 ```{r}
-write_csv(df_MLP, path="data/df_MLP.csv", col_names=FALSE)
+df_MLP <- df_MLP %>%
+  mutate(Temp_eis = as.integer(Temperatur<0)) %>%
+  mutate(Temp_kalt = as.integer(Temperatur>=0 & Temperatur<10)) %>%
+  mutate(Temp_warm = as.integer(Temperatur>=10 & Temperatur<20)) %>%
+  mutate(Temp_heiss = as.integer(Temperatur>=20)) %>%
+  dplyr::select(-Temperatur)
 ```
 
+Wir wandeln noch das Datum in eine Integerzahl um, weil wir sonst Probleme beim Import nach Python bekommen.
+
+```{r}
+df_MLP <- df_MLP %>%
+  mutate(Datum = as.integer(Datum))
+```
+
+Für die Trainingsdaten verwenden wir den Zeitraum 2015 bis 2017 und für die Testdaten das Jahr 2018. Die Modellierung erfolgt je Warengruppe, daher teilen wir den Datensatz `df_MLP` auf.
+
+```{r}
+df_MLP_train <- df_MLP %>% filter(Jahr < 2018)
+df_MLP_test <- df_MLP %>% filter(Jahr == 2018)
+
+df_MLP_train_WG1 <- df_MLP_train %>% filter(Warengruppe==1)
+df_MLP_train_WG2 <- df_MLP_train %>% filter(Warengruppe==2)
+df_MLP_train_WG3 <- df_MLP_train %>% filter(Warengruppe==3)
+df_MLP_train_WG4 <- df_MLP_train %>% filter(Warengruppe==4)
+df_MLP_train_WG5 <- df_MLP_train %>% filter(Warengruppe==5)
+
+df_MLP_test_WG1 <- df_MLP_test %>% filter(Warengruppe==1)
+df_MLP_test_WG2 <- df_MLP_test %>% filter(Warengruppe==2)
+df_MLP_test_WG3 <- df_MLP_test %>% filter(Warengruppe==3)
+df_MLP_test_WG4 <- df_MLP_test %>% filter(Warengruppe==4)
+df_MLP_test_WG5 <- df_MLP_test %>% filter(Warengruppe==5)
+```
+
+Das MLP wird in Python aufgebaut, daher exportieren wir die Trainings- und Testdatensätze für die verschiedenen Warengruppen als .csv. Wir verzichten beim Export auf die Zeilenüberschriften.
+
+```{r}
+write_csv(df_MLP_train_WG1, path="data/df_MLP_train_WG1.csv", col_names=FALSE)
+write_csv(df_MLP_train_WG2, path="data/df_MLP_train_WG2.csv", col_names=FALSE)
+write_csv(df_MLP_train_WG3, path="data/df_MLP_train_WG3.csv", col_names=FALSE)
+write_csv(df_MLP_train_WG4, path="data/df_MLP_train_WG4.csv", col_names=FALSE)
+write_csv(df_MLP_train_WG5, path="data/df_MLP_train_WG5.csv", col_names=FALSE)
+
+write_csv(df_MLP_test_WG1, path="data/df_MLP_test_WG1.csv", col_names=FALSE)
+write_csv(df_MLP_test_WG2, path="data/df_MLP_test_WG2.csv", col_names=FALSE)
+write_csv(df_MLP_test_WG3, path="data/df_MLP_test_WG3.csv", col_names=FALSE)
+write_csv(df_MLP_test_WG4, path="data/df_MLP_test_WG4.csv", col_names=FALSE)
+write_csv(df_MLP_test_WG5, path="data/df_MLP_test_WG5.csv", col_names=FALSE)
+```
+
+## 8.3 Modellparameter
+
+### Modell 1 (MLP_mod1)
+Im ersten Versuch bauen wir ein vergleichsweise kleines Modell und behalten nur die Variablen für SommerferienSH, Feiertag und Wochentage (Mo - So) als binäre Inputvariablen. Anders als bei der linearen Regression verwenden wir alle Wochentage. Wir haben also insgesamt 9 binäre Inputvariablen. Als output wollen wir den Umsatzschätzer erhalten und brauchen dafür im output layer nur eine Unit mit linearer Aktivierungsfunktion. Der Umsatz soll jedoch positiv sein, also verwenden wir eine "rectified linear unit" (relu).
+
+Dazwischen liegt noch ein hidden layer mit 20 Units, hier verwenden wir die sigmoide Aktivierungsfunktion (sigmoid). Die Verwendung von mehr Einheiten im hidden layer brachte keine besseren Ergebnisse.
+
+Als loss-Funktion verwenden wir standardmäßig den mean squared error (mse). Daneben verwenden wir stochastic gradient descent (SGD) als iterativen Lernalgorithmus mit einer Lernrate von 0.01. Auch hier brachte eine höhere Lernrate keine besseren Ergebnisse.
+
+Die Gewichte und Schwellwerte werden mit kleinen zufälligen Werten initialisiert unter Anwendung der Standard-Normalverteilung. Wir trainieren das einfache Modell über 50 Epochen, weil wir festgestellt haben, dass nach etwa 40 Epochen die loss-Parameter stabil bleiben. Und die batch-Größe setzen wir auf 10.
+
+### Modell 2 (MLP_mod2)
+
+Im zweiten Schritt erweitern wir unser Modell und verwenden noch KielerWoche, Temperatur, Silvester_ext und Monat als Inputvariablen. Monat_c wurde dafür dummyfiziert. Und die Temperatur ist in 4 Bereiche und damit 4 Binärvariablen umgewandelt worden, damit wir einheitlich nur Binär-Inputs verwenden. 
+
+Insgesamt haben wir 27 Inputvariablen und erhöhen die Anzahl der Neuronen im hidden layer von 20 auf 50. Eine weitere Erhöhung liefert keine signifikant besseren Ergebnisse. 
+
+Im Training verwenden wir diesmal 100 Epochen, weil das komplexere Modell erst nach ca. 80 Epochen stabile loss-Werte zeigt.
+
+## 8.4 Ergebnisse
+
+### Modell 1 (MLP_mod1)
+
+Wir haben je ein Modell pro Warengruppe trainiert. Python liefert uns folgende finalen Parameter als train error:
+
+| Modell | MSE | MAE |
+|--------|-----|-----|
+|mod1_WG1| 916 | 21.8|
+|mod1_WG2| 6489| 64.0|
+|mod1_WG3| 2012| 35.5|
+|mod1_WG4| 845 | 20.2|
+|mod1_WG5| 6891| 44.8|
+
+Wenn wir in Python die trainierten Modelle auf die Testdaten anwenden, erhalten wir Umsatzschätzer je Warengruppe, die wir als csv hier einladen.
+
+```{r message=FALSE, warning=FALSE}
+df_MLP_test_mod1_WG1_pred <- read_csv("data/df_MLP_test_mod1_WG1_pred.csv", col_names = FALSE)
+df_MLP_test_mod1_WG2_pred <- read_csv("data/df_MLP_test_mod1_WG2_pred.csv", col_names = FALSE)
+df_MLP_test_mod1_WG3_pred <- read_csv("data/df_MLP_test_mod1_WG3_pred.csv", col_names = FALSE)
+df_MLP_test_mod1_WG4_pred <- read_csv("data/df_MLP_test_mod1_WG4_pred.csv", col_names = FALSE)
+df_MLP_test_mod1_WG5_pred <- read_csv("data/df_MLP_test_mod1_WG5_pred.csv", col_names = FALSE)
+colnames(df_MLP_test_mod1_WG1_pred) <- "Umsatz_mod1_WG1"
+colnames(df_MLP_test_mod1_WG2_pred) <- "Umsatz_mod1_WG2"
+colnames(df_MLP_test_mod1_WG3_pred) <- "Umsatz_mod1_WG3"
+colnames(df_MLP_test_mod1_WG4_pred) <- "Umsatz_mod1_WG4"
+colnames(df_MLP_test_mod1_WG5_pred) <- "Umsatz_mod1_WG5"
+```
+
+Füge die Ergebnisse an die Test-Daten (für jede Warengruppe) und erstelle dann eine gemeinsame Übersichtstabelle für die Gütekennzahlen `prog_MLP_vgl_kennz`:
+
+```{r}
+# mod1_WG1
+df_MLP_test_mod1_WG1 <- cbind(df_MLP_test_WG1, df_MLP_test_mod1_WG1_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod1_WG1 <- df_MLP_test_mod1_WG1 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod1_WG1 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod1_WG1 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod1_WG1 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod1_WG1 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod1_WG1 <-  df_MLP_test_mod1_WG1 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod1_WG1 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod1_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz <- temp
+
+
+# mod1_WG2
+df_MLP_test_mod1_WG2 <- cbind(df_MLP_test_WG2, df_MLP_test_mod1_WG2_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod1_WG2 <- df_MLP_test_mod1_WG2 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod1_WG2 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod1_WG2 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod1_WG2 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod1_WG2 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod1_WG2 <-  df_MLP_test_mod1_WG2 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod1_WG2 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod1_WG2")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz <- rbind(prog_MLP_vgl_kennz, temp)
+
+
+# mod1_WG3
+df_MLP_test_mod1_WG3 <- cbind(df_MLP_test_WG3, df_MLP_test_mod1_WG3_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod1_WG3 <- df_MLP_test_mod1_WG3 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod1_WG3 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod1_WG3 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod1_WG3 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod1_WG3 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod1_WG3 <-  df_MLP_test_mod1_WG3 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod1_WG3 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod1_WG3")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz <- rbind(prog_MLP_vgl_kennz, temp)
+
+
+# mod1_WG4
+df_MLP_test_mod1_WG4 <- cbind(df_MLP_test_WG4, df_MLP_test_mod1_WG4_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod1_WG4 <- df_MLP_test_mod1_WG4 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod1_WG4 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod1_WG4 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod1_WG4 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod1_WG4 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod1_WG4 <-  df_MLP_test_mod1_WG4 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod1_WG4 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod1_WG4")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz <- rbind(prog_MLP_vgl_kennz, temp)
+
+
+# mod1_WG5
+df_MLP_test_mod1_WG5 <- cbind(df_MLP_test_WG5, df_MLP_test_mod1_WG5_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod1_WG5 <- df_MLP_test_mod1_WG5 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod1_WG5 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod1_WG5 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod1_WG5 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod1_WG5 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod1_WG5 <-  df_MLP_test_mod1_WG5 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod1_WG5 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod1_WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz <- rbind(prog_MLP_vgl_kennz, temp)
+
+prog_MLP_vgl_kennz
+```
+
+Das einfache Modell (mod1), das für die Umsatzschätzung nur SommerferienSH, Feiertag und Wochentage (Mo - So) als Inputvariablen einbezieht, liefert unterschiedliche Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) für die Warengruppen 1, 2 und 3 nahe Null ist, während wir für die beiden Warengruppen 4 und 5 offenbar den Umsatz systematisch zu hoch schätzen. 
+
+Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch bspw. für das beste naive Schätzmodell (glDS_4T_erw) einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11).
+
+Trotzdem wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+
+```{r}
+# füge die relativen Abweichungen für WG1 an und benenne die Spalte um
+prog_MLP_vgl_relAbw <- df_MLP_test_mod1_WG1 %>% dplyr::select(Datum, Abweichung_rel)
+colnames(prog_MLP_vgl_relAbw)[2]="mod1_WG1"
+
+# füge die relativen Abweichungen für WG2 an und benenne die Spalte um
+prog_MLP_vgl_relAbw <- left_join(prog_MLP_vgl_relAbw, df_MLP_test_mod1_WG2 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw)[3]="mod1_WG2"
+
+# füge die relativen Abweichungen für WG3 an und benenne die Spalte um
+prog_MLP_vgl_relAbw <- left_join(prog_MLP_vgl_relAbw, df_MLP_test_mod1_WG3 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw)[4]="mod1_WG3"
+
+# füge die relativen Abweichungen für WG4 an und benenne die Spalte um
+prog_MLP_vgl_relAbw <- left_join(prog_MLP_vgl_relAbw, df_MLP_test_mod1_WG4 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw)[5]="mod1_WG4"
+
+# füge die relativen Abweichungen für WG5 an und benenne die Spalte um
+prog_MLP_vgl_relAbw <- left_join(prog_MLP_vgl_relAbw, df_MLP_test_mod1_WG5 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw)[6]="mod1_WG5"
+
+# pivotieren
+prog_MLP_vgl_relAbw <- prog_MLP_vgl_relAbw %>% 
+  pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
+
+# Boxplot
+prog_MLP_vgl_relAbw %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - Vergleich MLP Modell 1: Relative Abweichung") +
+  xlab("Modell_Warengruppe") + 
+  ylab("rel. Abweichung (%)") +
+  ylim(-100, 200)
+```
+
+### Modell 2 (MLP_mod2)
+
+Im zweiten Schritt erweitern wir unser Modell und verwenden noch KielerWoche, Temperatur, Silvester_ext und Monat als Inputvariablen. Monat_c wurde dafür dummyfiziert. Und die Temperatur ist in 4 Bereiche und damit 4 Binärvariablen umgewandelt worden, damit wir einheitlich nur Binär-Inputs verwenden. 
+
+Wir haben je ein Modell pro Warengruppe trainiert. Python liefert uns folgende finalen Parameter als train error:
+
+| Modell | MSE | MAE |
+|--------|-----|-----|
+|mod1_WG1| 683 | 18.9|
+|mod1_WG2| 2731| 38.7|
+|mod1_WG3| 851 | 21.6|
+|mod1_WG4| 528 | 16.7|
+|mod1_WG5| 1588| 30.2|
+
+Wenn wir in Python die trainierten Modelle auf die Testdaten anwenden, erhalten wir Umsatzschätzer je Warengruppe, die wir als csv hier einladen.
+
+```{r message=FALSE, warning=FALSE}
+df_MLP_test_mod2_WG1_pred <- read_csv("data/df_MLP_test_mod2_WG1_pred.csv", col_names = FALSE)
+df_MLP_test_mod2_WG2_pred <- read_csv("data/df_MLP_test_mod2_WG2_pred.csv", col_names = FALSE)
+df_MLP_test_mod2_WG3_pred <- read_csv("data/df_MLP_test_mod2_WG3_pred.csv", col_names = FALSE)
+df_MLP_test_mod2_WG4_pred <- read_csv("data/df_MLP_test_mod2_WG4_pred.csv", col_names = FALSE)
+df_MLP_test_mod2_WG5_pred <- read_csv("data/df_MLP_test_mod2_WG5_pred.csv", col_names = FALSE)
+colnames(df_MLP_test_mod2_WG1_pred) <- "Umsatz_mod2_WG1"
+colnames(df_MLP_test_mod2_WG2_pred) <- "Umsatz_mod2_WG2"
+colnames(df_MLP_test_mod2_WG3_pred) <- "Umsatz_mod2_WG3"
+colnames(df_MLP_test_mod2_WG4_pred) <- "Umsatz_mod2_WG4"
+colnames(df_MLP_test_mod2_WG5_pred) <- "Umsatz_mod2_WG5"
+```
+
+Füge die Ergebnisse an die Test-Daten (für jede Warengruppe) und erstelle dann eine gemeinsame Übersichtstabelle für die Gütekennzahlen `prog_MLP_vgl_kennz_mod2`:
+
+```{r}
+# mod2_WG1
+df_MLP_test_mod2_WG1 <- cbind(df_MLP_test_WG1, df_MLP_test_mod2_WG1_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod2_WG1 <- df_MLP_test_mod2_WG1 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod2_WG1 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod2_WG1 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod2_WG1 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod2_WG1 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod2_WG1 <-  df_MLP_test_mod2_WG1 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod2_WG1 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod2_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz_mod2 <- temp
+
+
+# mod2_WG2
+df_MLP_test_mod2_WG2 <- cbind(df_MLP_test_WG2, df_MLP_test_mod2_WG2_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod2_WG2 <- df_MLP_test_mod2_WG2 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod2_WG2 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod2_WG2 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod2_WG2 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod2_WG2 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod2_WG2 <-  df_MLP_test_mod2_WG2 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod2_WG2 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod2_WG2")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
+
+
+# mod2_WG3
+df_MLP_test_mod2_WG3 <- cbind(df_MLP_test_WG3, df_MLP_test_mod2_WG3_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod2_WG3 <- df_MLP_test_mod2_WG3 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod2_WG3 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod2_WG3 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod2_WG3 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod2_WG3 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod2_WG3 <-  df_MLP_test_mod2_WG3 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod2_WG3 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod2_WG3")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
+
+
+# mod2_WG4
+df_MLP_test_mod2_WG4 <- cbind(df_MLP_test_WG4, df_MLP_test_mod2_WG4_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod2_WG4 <- df_MLP_test_mod2_WG4 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod2_WG4 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod2_WG4 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod2_WG4 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod2_WG4 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod2_WG4 <-  df_MLP_test_mod2_WG4 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod2_WG4 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod2_WG4")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
+
+
+# mod2_WG5
+df_MLP_test_mod2_WG5 <- cbind(df_MLP_test_WG5, df_MLP_test_mod2_WG5_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod2_WG5 <- df_MLP_test_mod2_WG5 %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod2_WG5 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod2_WG5 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod2_WG5 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod2_WG5 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod2_WG5 <-  df_MLP_test_mod2_WG5 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_MLP_test_mod2_WG5 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "mod2_WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
+
+prog_MLP_vgl_kennz_mod2
+```
+
+Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun auch für die beiden Warengruppen 4 und 5 nahe Null liegt.
+
+Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt wieder für die Warengruppe 2 den niedrigsten Fehler und liegt jetzt auf einem vergleichbaren Niveau zum besten naiven Schätzmodell (glDS_4T_erw), für Warengruppe 2 hatten wir dort einen WAPE = 11 gesehen.
+
+Als nächstes wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw_mod2`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+
+```{r}
+# füge die relativen Abweichungen für WG1 an und benenne die Spalte um
+prog_MLP_vgl_relAbw_mod2 <- df_MLP_test_mod2_WG1 %>% dplyr::select(Datum, Abweichung_rel)
+colnames(prog_MLP_vgl_relAbw_mod2)[2]="mod2_WG1"
+
+# füge die relativen Abweichungen für WG2 an und benenne die Spalte um
+prog_MLP_vgl_relAbw_mod2 <- left_join(prog_MLP_vgl_relAbw_mod2, df_MLP_test_mod2_WG2 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw_mod2)[3]="mod2_WG2"
+
+# füge die relativen Abweichungen für WG3 an und benenne die Spalte um
+prog_MLP_vgl_relAbw_mod2 <- left_join(prog_MLP_vgl_relAbw_mod2, df_MLP_test_mod2_WG3 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw_mod2)[4]="mod2_WG3"
+
+# füge die relativen Abweichungen für WG4 an und benenne die Spalte um
+prog_MLP_vgl_relAbw_mod2 <- left_join(prog_MLP_vgl_relAbw_mod2, df_MLP_test_mod2_WG4 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw_mod2)[5]="mod2_WG4"
+
+# füge die relativen Abweichungen für WG5 an und benenne die Spalte um
+prog_MLP_vgl_relAbw_mod2 <- left_join(prog_MLP_vgl_relAbw_mod2, df_MLP_test_mod2_WG5 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_MLP_vgl_relAbw_mod2)[6]="mod2_WG5"
+
+# pivotieren
+prog_MLP_vgl_relAbw_mod2 <- prog_MLP_vgl_relAbw_mod2 %>% 
+  pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
+
+# Boxplot
+prog_MLP_vgl_relAbw_mod2 %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - Vergleich MLP Modell 2: Relative Abweichung") +
+  xlab("rel. Abweichung (%)") + 
+  ylab("Dichte") +
+  ylim(-100, 200)
+```
+
+Die Umsatzschätzung gelingt offenbar für die Warengruppe 2 (= Brötchen) ab besten.
+
+## 8.5 Vergleich der MLP Modelle
+
+!!! Hier fehlt noch eine ausführliche Vergleichsbetrachtung.
+
+### Fazit naive Modelle
+
+Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt. Die Ergebnisse sind brauchbar aber nicht umwerfend. In beiden Modellen haben wir stochastic gradiend descent einen iterativen Lernalgorithmus verwendet, der keine Garantie gibt, das globale Optimum für die Gewichte und Schwellwerte zu finden. Das kann ein Grund für die mangelnde Ergebnis-Qualität sein.
+
+Die Parameter - wie bspw. die Lernrate, die Anzahl der hidden layers und der Anzahl der Neuronen im hidden layer - haben wir empirisch festgelegt. Hierfür gibt es keine "optimalen Werte".
+
+Insgesamt stellen wir fest, dass die so gebauten MLP Modelle dem Problem nicht gerecht werden. Vermutlich würde man mit rekursiven Netzen und/oder dem Einsatz von long-short-term-memory (LSTM) Einheiten deutlich bessere Ergebnisse erzielen. Das sprengt jedoch den Umfang dieser Projektarbeit und wird daher nicht weiter betrachtet. Hier ging es eher darum, Erfahrungswerte in der praktischen Anwendung von DL-Verfahren zu sammeln und das ist in der Tat sehr gut gelungen.
