@@ -3277,8 +3277,12 @@ df_lm_test_WG2_30 <- df_lm_test_WG2 %>%
 
 
 Für das 30-Variablenmodell wird nun ein Regressionsmodell erstellt:
+
+* JahreszeitHerbst
+* JahreszeitSommer
+* JahreszeitWinter
 ```{r}
-lm3_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Dezember + Februar + Januar + Mai + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + ChristiHimmelfahrt_ext + Pfingsten_ext + Herbst + Sommer, data = df_lm_train_WG128)
+lm3_train <- lm(Umsatz ~ KielerWoche + Bewoelkung + Temperatur + Windgeschwindigkeit + Freitag + Mittwoch + Samstag + Sonntag + August +  Dezember + Januar + Juli + Juni + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + Ostern_ext + ChristiHimmelfahrt_ext + Silvester_ext + Herbst + Sommer + Winter, data = df_lm_train_WG2_30)
 
 glance(lm3_train)
 ```
@@ -3293,11 +3297,6 @@ Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples
 ```{r}
 caret::postResample(pred = lm3_predict, obs = df_lm_test_WG2_30$Umsatz)
 ```
-
-
-
-
-
 
 
 
