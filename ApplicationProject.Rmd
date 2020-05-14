@@ -3299,9 +3299,38 @@ lm3_predict <- predict(lm3_train, newdata = df_lm_test_WG2_30)
 Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
 ```{r}
 caret::postResample(pred = lm3_predict, obs = df_lm_test_WG2_30$Umsatz)
+lm3_predict
+
+df_lm_test_WG2_30 <- df_lm_test_WG2_30 %>%
+  mutate(predicted = lm3_predict)
 ```
 
 
+```{r}
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG2_30 <- df_lm_test_WG2_30 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG2_30 <-  df_lm_test_WG2_30 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG2_30 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+#temp <- temp %>% mutate(Modell = "mod2_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_MLP_vgl_kennz_mod2 <- temp
+
+```
 
 
 **Teilmengenauswahl für das 29-Variablen-Modell**
