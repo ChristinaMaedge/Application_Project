@@ -2483,7 +2483,6 @@ Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Bas
 
 Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsätze für Feiertage auf Basis der Vorjahreswerte schätzen. Das funktioniert naiv aber nur für Feiertage, die an festen Daten liegen, wie bspw. Silvester. Für Ostern funktioniert dieses naive Vorgehen nicht. Wir verzichten auf diese Modellerweiterung und widmen uns stattdessen im Folgenden statistischen Modellen und betrachten Machine Learning und Deep Learning Modelle.
 
-
 # 6 Anwendung statistischer Modelle - Lineare Regression
 
 ## 6.1 Vorhaben
@@ -2754,7 +2753,7 @@ Es stehen jedoch eine Reihe von Techniken zum Anpassen des Trainingsfehlers an d
 
 ![](Guetekriterien_lm.png)
 
-Dabei ist $d$ die Anzahl der Prädiktoren und $σ2$ eine Schätzung der Varianz des Fehlers ($ϵ$)) mit jeder Antwortmessung in einem Regressionsmodell verbunden. Jede dieser Statistiken fügt dem Trainings-$RSS$ eine Strafe hinzu, um die Tatsache auszugleichen, dass der Trainingsfehler dazu neigt, den Testfehler zu unterschätzen. Die Strafe steigt eindeutig mit zunehmender Anzahl von Prädiktoren im Modell.
+Dabei ist $d$ die Anzahl der Prädiktoren und $s2$ eine Schätzung der Varianz des Fehlers ($?$)) mit jeder Antwortmessung in einem Regressionsmodell verbunden. Jede dieser Statistiken fügt dem Trainings-$RSS$ eine Strafe hinzu, um die Tatsache auszugleichen, dass der Trainingsfehler dazu neigt, den Testfehler zu unterschätzen. Die Strafe steigt eindeutig mit zunehmender Anzahl von Prädiktoren im Modell.
 
 Daher liefern diese Statistiken eine unvoreingenommene Schätzung der Test-MSE. Wenn wir unser Modell unter Verwendung eines Trainings- / Testvalidierungsansatzes durchführen, können wir diese Statistiken verwenden, um das bevorzugte Modell zu bestimmen. Diese Statistiken sind in der Ausgabe der Funktion `regsubsets` enthalten. 
 
@@ -2975,37 +2974,104 @@ df_lm_test_WG1_28 <- df_lm_test_WG1 %>%
 
 Für das 28-Variablenmodell wird nun ein Regressionsmodell erstellt:
 ```{r}
-lm1_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Dezember + Februar + Januar + Mai + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + ChristiHimmelfahrt_ext + Pfingsten_ext + Herbst + Sommer, data = df_lm_train_WG1_28)
+lm_WG1_28_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Dezember + Februar + Januar + Mai + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + ChristiHimmelfahrt_ext + Pfingsten_ext + Herbst + Sommer, data = df_lm_train_WG1_28)
 
 library(broom)
-glance(lm1_train)
+glance(lm_WG1_28_train)
 ```
 
 Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
 
 ```{r}
-lm1_predict <- predict(lm1_train, newdata = df_lm_test_WG1_28)
+lm_WG1_28_predict <- predict(lm_WG1_28_train, newdata = df_lm_test_WG1_28)
 ```
 
 Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
 ```{r}
-caret::postResample(pred = lm1_predict, obs = df_lm_test_WG1_28$Umsatz)
+caret::postResample(pred = lm_WG1_28_predict, obs = df_lm_test_WG1_28$Umsatz)
 ```
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `prog_MLP_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG1_28 <- df_lm_test_WG1_28 %>%
+  mutate(predicted = lm_WG1_28_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG1_28 <- df_lm_test_WG1_28 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG1_28 <-df_lm_test_WG1_28 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG1_28 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best28_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- temp
+lm_vgl_kennz
+```
+
+**36-Variablen-Modell**
 
 Dieses Modell wird nun verglichen mit dem 36-Variablen-Modell:
 ```{r}
-lm2_train <- lm(Umsatz ~ ., data = df_lm_train_WG1)
-glance(lm2_train)
+lm_WG1_36_train <- lm(Umsatz ~ ., data = df_lm_train_WG1)
+glance(lm_WG1_36_train)
 ```
 
 ```{r}
-lm2_predict <- predict(lm2_train, newdata = df_lm_test_WG1)
+lm_WG1_36_predict <- predict(lm_WG1_36_train, newdata = df_lm_test_WG1)
 ```
 
 Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
 ```{r}
-caret::postResample(pred = lm2_predict, obs = df_lm_test_WG1$Umsatz)
+caret::postResample(pred = lm_WG1_36_predict, obs = df_lm_test_WG1$Umsatz)
 ```
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `prog_MLP_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+```{r}
+df_lm_test_WG1_36 <- df_lm_test_WG1
+
+# Hinzufügen der Ergebnisse
+df_lm_test_WG1_36 <- df_lm_test_WG1_36 %>%
+  mutate(predicted = lm_WG1_36_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG1_36 <- df_lm_test_WG1_36 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG1_36 <-df_lm_test_WG1_36 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG1_36 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best36_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
+```
+
 
 
 \
@@ -3178,8 +3244,8 @@ points(min, val_errors[min][1], col = "red", cex = 2, pch = 20)
 Es ist erkennbar, dass das 30-Variablen-Modell, das durch den besten Teilmengenansatz erzeugt wird, den niedrigsten Test-MSE erzeugt. 
 Auch ein 29- sowie 36-Variablen-Modell scheinen vergleichweichsweise gut zu performen.
 
-Wir können jetzt die beste Teilmengenauswahl für den gesamten Datensatz durchführen, um zum einen das 30-Variblen-Modell zu erhalten.
-Dieses Modell wird mit dem 29- und 36-Variablen-Modell verglichen.
+Wir können jetzt die beste Teilmengenauswahl für den gesamten Datensatz durchführen, um zum einen das 30-Variablen-Modell zu erhalten.
+Dieses Modell wird mit dem 19-und dem 29-Variablen-Modell verglichen.
 
 **Teilmengenauswahl für das 30-Variablen-Modell**
 
@@ -3281,32 +3347,30 @@ df_lm_test_WG2_30 <- df_lm_test_WG2 %>%
 
 Für das 30-Variablenmodell wird nun ein Regressionsmodell erstellt:
 
-* JahreszeitHerbst
-* JahreszeitSommer
-* JahreszeitWinter
 ```{r}
-lm3_train <- lm(Umsatz ~ KielerWoche + Bewoelkung + Temperatur + Windgeschwindigkeit + Freitag + Mittwoch + Samstag + Sonntag + August +  Dezember + Januar + Juli + Juni + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + Ostern_ext + ChristiHimmelfahrt_ext + Silvester_ext + Herbst + Sommer + Winter, data = df_lm_train_WG2_30)
+lm_WG2_30_train <- lm(Umsatz ~ KielerWoche + Bewoelkung + Temperatur + Windgeschwindigkeit + Freitag + Mittwoch + Samstag + Sonntag + August +  Dezember + Januar + Juli + Juni + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + Ostern_ext + ChristiHimmelfahrt_ext + Silvester_ext + Herbst + Sommer + Winter, data = df_lm_train_WG2_30)
 
-glance(lm3_train)
+glance(lm_WG2_30_train)
 ```
 
 Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
 
 ```{r}
-lm3_predict <- predict(lm3_train, newdata = df_lm_test_WG2_30)
+lm_WG2_30_predict <- predict(lm_WG2_30_train, newdata = df_lm_test_WG2_30)
 ```
 
 Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
 ```{r}
-caret::postResample(pred = lm3_predict, obs = df_lm_test_WG2_30$Umsatz)
-lm3_predict
-
-df_lm_test_WG2_30 <- df_lm_test_WG2_30 %>%
-  mutate(predicted = lm3_predict)
+caret::postResample(pred = lm_WG2_30_predict, obs = df_lm_test_WG2_30$Umsatz)
 ```
 
 
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt, sodann die Gütekennzahlen berechnet, die wiederum der gemeinsamen Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` hinzugefügt werden:
 ```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG2_30 <- df_lm_test_WG2_30 %>%
+  mutate(predicted = lm_WG2_30_predict)
+
 # ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
 df_lm_test_WG2_30 <- df_lm_test_WG2_30 %>%
   mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
@@ -3316,7 +3380,7 @@ df_lm_test_WG2_30 <- df_lm_test_WG2_30 %>%
   mutate(Abweichung_quad = Abweichung^2)
 
 # Ergänze die benötigten Hilfsgrößen
-df_lm_test_WG2_30 <-  df_lm_test_WG2_30 %>%
+df_lm_test_WG2_30 <-df_lm_test_WG2_30 %>%
   mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
 
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
@@ -3325,12 +3389,14 @@ temp <- df_lm_test_WG2_30 %>%
   summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 
 # füge das Modell hinzu
-#temp <- temp %>% mutate(Modell = "mod2_WG1")
+temp <- temp %>% mutate(Modell = "best30_WG2")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
-prog_MLP_vgl_kennz_mod2 <- temp
-
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
 ```
+
+
 
 
 **Teilmengenauswahl für das 29-Variablen-Modell**
@@ -3374,13 +3440,11 @@ Die 29 Variablen sind die folgenden:
 
 Es fehlen: Sommer, Winter; es kommt hinzu Februar (= -2+1 ==> 29)
 
-!!!!!!!!!!!!!!!!!!!!!!!! AB HIER WEITER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
-df_lm_train_WG2_30 <- df_lm_train_WG2 %>%
+df_lm_train_WG2_29 <- df_lm_train_WG2 %>%
   mutate(Montag=as.integer(df_lm_train_WG2$Wochentag_c=="Montag")) %>%
   mutate(Dienstag=as.integer(df_lm_train_WG2$Wochentag_c=="Dienstag")) %>%
   mutate(Mittwoch=as.integer(df_lm_train_WG2$Wochentag_c=="Mittwoch")) %>%
@@ -3406,7 +3470,7 @@ df_lm_train_WG2_30 <- df_lm_train_WG2 %>%
   mutate(Winter=as.integer(df_lm_train_WG2$Jahreszeit=="Winter")) %>%
   dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
 
-df_lm_test_WG2_30 <- df_lm_test_WG2 %>%
+df_lm_test_WG2_29 <- df_lm_test_WG2 %>%
   mutate(Montag=as.integer(df_lm_test_WG2$Wochentag_c=="Montag")) %>%
   mutate(Dienstag=as.integer(df_lm_test_WG2$Wochentag_c=="Dienstag")) %>%
   mutate(Mittwoch=as.integer(df_lm_test_WG2$Wochentag_c=="Mittwoch")) %>%
@@ -3434,15 +3498,812 @@ df_lm_test_WG2_30 <- df_lm_test_WG2 %>%
 ```
 
 
-Für das 30-Variablenmodell wird nun ein Regressionsmodell erstellt:
+Für das 29-Variablenmodell wird nun ein Regressionsmodell erstellt:
 
+```{r}
+lm_WG2_29_train <- lm(Umsatz ~ KielerWoche + Bewoelkung + Temperatur + Windgeschwindigkeit + Freitag + Mittwoch + Samstag + Sonntag + August +  Dezember + Januar + Februar + Juli + Juni + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + Ostern_ext + ChristiHimmelfahrt_ext + Silvester_ext + Herbst, data = df_lm_train_WG2_29)
+
+glance(lm_WG2_29_train)
+```
+
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm_WG2_29_predict <- predict(lm_WG2_29_train, newdata = df_lm_test_WG2_29)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm_WG2_29_predict, obs = df_lm_test_WG2_29$Umsatz)
+```
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt, sodann die Gütekennzahlen berechnet, die wiederum der gemeinsamen Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` hinzugefügt werden:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG2_29 <- df_lm_test_WG2_29 %>%
+  mutate(predicted = lm_WG2_29_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG2_29 <- df_lm_test_WG2_29 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG2_29 <-df_lm_test_WG2_29 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG2_29 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best29_WG2")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
+```
+
+
+**Teilmengenauswahl für das 19-Variablen-Modell**
+
+```{r}
+final_best_WG2_19 <- regsubsets(Umsatz ~ ., data = df_lm_train_WG2, nvmax = 36)
+coef(final_best_WG2_19, 19)
+```
+
+Die 19 Variablen sind die folgenden:
+
+* KielerWoche
+* Temperatur
+* Wochentag_cFreitag
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cFebruar
+* Monat_cJanuar
+* Monat_cMärz
+* Monat_cOktober
+* SommerferienSH 
+* SommerferienNRW 
+* SommerferienNDS
+* SommerferienHE
+* Feiertag
+* Ostern_ext
+* ChristiHimmelfahrt_ext
+* Pfingsten_ext    
+* Silvester_ext
+* JahreszeitHerbst
+
+Die Variablen Wochentag_c, Monat_c und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+
+```{r}
+# Dummyfizierung der Variablen im Trainigsdatensatz:
+df_lm_train_WG2_19 <- df_lm_train_WG2 %>%
+  mutate(Montag=as.integer(df_lm_train_WG2$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_train_WG2$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_train_WG2$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_train_WG2$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_train_WG2$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_train_WG2$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_train_WG2$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_train_WG2$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_train_WG2$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_train_WG2$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_train_WG2$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_train_WG2$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_train_WG2$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_train_WG2$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_train_WG2$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_train_WG2$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_train_WG2$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_train_WG2$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_train_WG2$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_train_WG2$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_train_WG2$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_train_WG2$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_train_WG2$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+
+df_lm_test_WG2_19 <- df_lm_test_WG2 %>%
+  mutate(Montag=as.integer(df_lm_test_WG2$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_test_WG2$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_test_WG2$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_test_WG2$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_test_WG2$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_test_WG2$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_test_WG2$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_test_WG2$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_test_WG2$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_test_WG2$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_test_WG2$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_test_WG2$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_test_WG2$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_test_WG2$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_test_WG2$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_test_WG2$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_test_WG2$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_test_WG2$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_test_WG2$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_test_WG2$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_test_WG2$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_test_WG2$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_test_WG2$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+```
+
+
+* KielerWoche
+* Temperatur
+* Wochentag_cFreitag
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cFebruar
+* Monat_cJanuar
+* Monat_cMärz
+* Monat_cOktober
+* SommerferienSH 
+* SommerferienNRW 
+* SommerferienNDS
+* SommerferienHE
+* Feiertag
+* Ostern_ext
+* ChristiHimmelfahrt_ext
+* Pfingsten_ext    
+* Silvester_ext
+* JahreszeitHerbst
+
+
+Für das 19-Variablenmodell wird nun ein Regressionsmodell erstellt:
+
+```{r}
+lm_WG2_19_train <- lm(Umsatz ~ KielerWoche + Temperatur + Freitag + Samstag + Sonntag + Januar + Februar + Maerz + Oktober + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern_ext + ChristiHimmelfahrt_ext + Pfingsten_ext + Silvester_ext + Herbst, data = df_lm_train_WG2_29)
+
+glance(lm_WG2_19_train)
+```
+
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm_WG2_19_predict <- predict(lm_WG2_19_train, newdata = df_lm_test_WG2_19)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm_WG2_19_predict, obs = df_lm_test_WG2_19$Umsatz)
+```
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt, sodann die Gütekennzahlen berechnet, die wiederum der gemeinsamen Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` hinzugefügt werden:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG2_19 <- df_lm_test_WG2_19 %>%
+  mutate(predicted = lm_WG2_19_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG2_19 <- df_lm_test_WG2_19 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG2_19 <-df_lm_test_WG2_19 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG2_19 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best19_WG2")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
+```
+
+
+\
+
+
+### 6.3.3 Warengruppe 5
+
+**Erstellung von Trainings- und Testdatensätzen für Warengruppe 5**
+```{r}
+df_lm_train_WG5 <- df_lm_train %>%  filter(Warengruppe == "5")
+df_lm_train_WG5 <- na.omit(df_lm_train_WG5)
+df_lm_train_WG5 <- df_lm_train_WG5 %>% dplyr::select(-Warengruppe)
+df_lm_test_WG5 <- df_lm_test %>% filter(Warengruppe == "5")
+df_lm_test_WG5 <- na.omit(df_lm_test_WG5)
+df_lm_test_WG5 <- df_lm_test_WG5 %>% dplyr::select(-Warengruppe)
+```
+
+**Auswahl der am besten geeigneten Variablen**
+Was die Vorgehensweise und die enstsprechenden Erläuterungen anbelangt, siehe 6.3.1.
+
+**Beste Teilmengenauswahl ("Best subset selection")**
+vgl. Abschnitt
+
+```{r}
+best_subset_WG5 <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36)
+```
+
+Die `regsubsets`-Funktion gibt ein Listenobjekt mit vielen Informationen zurück. Zunächst kann der Befehl `summary` verwendet, um den besten Satz von Variablen für jede Modellgröße zu ermitteln.
+
+```{r}
+summary(best_subset_WG5)
+```
+
+Für ein Modell mit einer Variablen kann beobachtet werden, dass die Variable `Silvester_ext` ein Sternchen hat, was signalisiert, dass ein Regressionsmodell mit `Umsatz ~ Silvester_ext` das beste Einzelvariablenmodell ist. Das beste 2-Variablen-Modell ist `Umsatz` ~ `Silvester_ext  + Feiertag`. Das beste 3-Variablen-Modell ist `Umsatz` ~ `Silvester_ext  + Feiertag + JahreszeitSommer`. Und so weiter.
+
+**Schrittweise Auswahl ("Stepwise selection")**
+
+Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
+
+```{r}
+forward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36, method = "forward")
+```
+
+
+*Schrittweise rückwärts (Backward stepwise)*
+
+Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "backward"` gesetzt wird:
+
+```{r}
+backward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36, method = "backward")
+```
+
+
+**Modellauswahl**
+
+### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
+
+```{r}
+results <- summary(best_subset_WG5)
+
+# Extrahieren und plotten der Ergebnisse
+tibble(predictors = 1:36,
+       adj_R2 = results$adjr2,
+       Cp = results$cp,
+       BIC = results$bic) %>%
+  gather(statistic, value, -predictors) %>%
+  ggplot(aes(predictors, value, color = statistic)) +
+  geom_line(show.legend = F) +
+  geom_point(show.legend = F) +
+  facet_wrap(~ statistic, scales = "free")
+```
+
+```{r}
+which.max(results$adjr2)
+which.min(results$bic)
+which.min(results$cp)
+```
+
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 31-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 23-Variablenmodell vor und der $C_p$ ein 27-Variablen-Modell vor.
+
+Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
+```{r}
+
+```
+
+Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
+```{r}
+forward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36, method = "forward")
+backward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36, method = "backward")
+
+# Welches Modell minimiert den Cp?
+which.min(summary(forward)$cp)
+which.min(summary(backward)$cp)
+```
+
+Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 28-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 26-Variablen-Modell vor.
+
+Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren-Stes folgendes Bild:. 
+```{r}
+# 23-Variablen-Modell
+coef(best_subset_WG2, 23)
+
+# 26-Variablen-Modell
+coef(best_subset_WG2, 26)
+
+# 27-Variablen-Modell
+coef(best_subset_WG2, 27)
+
+# 28-Variablen-Modell
+coef(best_subset_WG2, 28)
+
+# 31-Variablen-Modell
+coef(best_subset_WG2, 31)
+```
+
+
+
+### Direkte Schätzung des Testfehlers
+
+Nun wird der Fehler der Testdaten für das beste Modell jeder Modellgröße berechnet. Zuerst wird eine Modellmatrix aus den Testdaten erstellt. Die Funktion `model.matrix` wird in vielen Regressionspaketen zum Erstellen einer X-Matrix aus Daten verwendet.
+
+```{r}
+test_m <- model.matrix(Umsatz ~ ., data = df_lm_test_WG5)
+```
+
+Jetzt kann jede Modellgröße (d.h. 1 Variable, 2 Variablen,..., 20 Variablen) durchlaufen werden und die Koeffizienten für das beste Modell dieser Größe extrahiert werden. Diese Werte werden sodann in die entsprechenden Spalten der Testmodellmatrix multipliziert, um die Vorhersagen zu bilden. Dann werden die Test-MSE berechnet.
+
+```{r}
+# Erstellen eines leeren Vektors, um diesen nachfolgend mit den Fehlerwerten zu füllen
+validation_errors <- vector("double", length = 36)
+
+for(i in 1:36) {
+  coef_x <- coef(best_subset_WG5, id = i)                     # extract coefficients for model size i
+  pred_x <- test_m[ , names(coef_x)] %*% coef_x           # predict salary using matrix algebra
+  validation_errors[i] <- mean((df_lm_test_WG5$Umsatz - pred_x)^2)  # compute test error btwn actual & predicted salary
+}
+
+as.matrix(validation_errors)
+
+# Plotten der validation errors
+plot(validation_errors, type = "b")
+
+#############################
+# Alternative: http://www.science.smith.edu/~jcrouser/SDS293/labs/lab9-r.html
+val_errors = rep(NA,36)
+
+# Iterationen über jede Größe i
+for(i in 1:36){
+    
+    # Extrahieren des Vektors der Prädiktoren im Best-Fit-Modell für i-Prädiktoren
+    coefi = coef(best_subset_WG5, id = i)
+    
+    # Vorhersagen unter Verwendung der Matrixmultiplikation der Testmatrix und des Koeffizientenvektors erstellen
+    pred = test_m[,names(coefi)]%*%coefi
+    
+    # Berechnung des MSE
+    val_errors[i] = mean((df_lm_test_WG5$Umsatz-pred)^2)
+}
+
+# Auffinden des Modells mit dem kleinsten Fehler
+min = which.min(val_errors)
+
+# Plotten des Fehlers für jede Modellgröße
+plot(val_errors, type = 'b')
+points(min, val_errors[min][1], col = "red", cex = 2, pch = 20)
+
+```
+
+Es ist erkennbar, dass das 16-Variablen-Modell, das durch den besten Teilmengenansatz erzeugt wird, den niedrigsten Test-MSE erzeugt. 
+Auch ein 27/28- sowie 10-Variablen-Modell scheinen vergleichweichsweise gut zu performen.
+
+Wir können jetzt die beste Teilmengenauswahl für den gesamten Datensatz durchführen, um zum einen das 16-Variablen-Modell zu erhalten.
+Dieses Modell wird mit dem 10-und dem 28-Variablen-Modell verglichen.
+
+**Teilmengenauswahl für das 16-Variablen-Modell**
+
+```{r}
+final_best_WG5_16 <- regsubsets(Umsatz ~ ., data = df_lm_train_WG5, nvmax = 36)
+coef(final_best_WG5_16, 16)
+```
+
+Die 16 Variablen sind die folgenden:
+
+* Wochentag_cFreitag
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cAugust
+* Monat_cDezember
+* Monat_cFebruar
+* Monat_cNovember
+* Feiertag
+* Ostern
+* ChristiHimmelfahrt
+* Pfingsten
+* TDE
+* Ostern_ext
+* Silvester_ext
+* JahreszeitSommer
+* JahreszeitWinter
+
+Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+
+```{r}
+# Dummyfizierung der Variablen im Trainigsdatensatz:
+df_lm_train_WG5_16 <- df_lm_train_WG5 %>%
+  mutate(Montag=as.integer(df_lm_train_WG5$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_train_WG5$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_train_WG5$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_train_WG5$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_train_WG5$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_train_WG5$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_train_WG5$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_train_WG5$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_train_WG5$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_train_WG5$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_train_WG5$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_train_WG5$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_train_WG5$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_train_WG5$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_train_WG5$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_train_WG5$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_train_WG5$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_train_WG5$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_train_WG5$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_train_WG5$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_train_WG5$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_train_WG5$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_train_WG5$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+
+df_lm_test_WG5_16 <- df_lm_test_WG5 %>%
+  mutate(Montag=as.integer(df_lm_test_WG5$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_test_WG5$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_test_WG5$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_test_WG5$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_test_WG5$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_test_WG5$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_test_WG5$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_test_WG5$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_test_WG5$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_test_WG5$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_test_WG5$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_test_WG5$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_test_WG5$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_test_WG5$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_test_WG5$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_test_WG5$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_test_WG5$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_test_WG5$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_test_WG5$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_test_WG5$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_test_WG5$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_test_WG5$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_test_WG5$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+```
+
+
+Für das 16-Variablenmodell wird nun ein Regressionsmodell erstellt:
+
+```{r}
+lm_WG5_16_train <- lm(Umsatz ~ Freitag + Samstag + Sonntag + August +  Dezember + Februar + November + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + Silvester_ext + Sommer + Winter, data = df_lm_train_WG5_16)
+
+glance(lm_WG5_16_train)
+```
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm_WG5_16_predict <- predict(lm_WG5_16_train, newdata = df_lm_test_WG5_16)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm_WG5_16_predict, obs = df_lm_test_WG5_16$Umsatz)
+```
+
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt, sodann die Gütekennzahlen berechnet, die wiederum der gemeinsamen Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` hinzugefügt werden:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG5_16 <- df_lm_test_WG5_16 %>%
+  mutate(predicted = lm_WG5_16_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG5_16 <-df_lm_test_WG5_16 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG5_16 <- df_lm_test_WG5_16 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG5_16 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best16_WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
+```
+
+**Teilmengenauswahl für das 10-Variablen-Modell**
+
+```{r}
+final_best_WG5_10 <- regsubsets(Umsatz ~ ., data = df_lm_train_WG5, nvmax = 36)
+coef(final_best_WG5_10, 10)
+```
+
+Die 10 Variablen sind die folgenden:
+
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cDezember
+* Feiertag
+* Ostern
+* ChristiHimmelfahrt
+* Pfingsten
+* TDE
+* Silvester_ext
+* JahreszeitSommer
+
+
+Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+
+```{r}
+# Dummyfizierung der Variablen im Trainigsdatensatz:
+df_lm_train_WG5_10 <- df_lm_train_WG5 %>%
+  mutate(Montag=as.integer(df_lm_train_WG5$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_train_WG5$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_train_WG5$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_train_WG5$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_train_WG5$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_train_WG5$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_train_WG5$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_train_WG5$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_train_WG5$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_train_WG5$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_train_WG5$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_train_WG5$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_train_WG5$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_train_WG5$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_train_WG5$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_train_WG5$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_train_WG5$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_train_WG5$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_train_WG5$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_train_WG5$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_train_WG5$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_train_WG5$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_train_WG5$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+
+df_lm_test_WG5_10 <- df_lm_test_WG5 %>%
+  mutate(Montag=as.integer(df_lm_test_WG5$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_test_WG5$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_test_WG5$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_test_WG5$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_test_WG5$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_test_WG5$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_test_WG5$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_test_WG5$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_test_WG5$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_test_WG5$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_test_WG5$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_test_WG5$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_test_WG5$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_test_WG5$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_test_WG5$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_test_WG5$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_test_WG5$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_test_WG5$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_test_WG5$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_test_WG5$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_test_WG5$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_test_WG5$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_test_WG5$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+```
+
+
+Für das 10-Variablenmodell wird nun ein Regressionsmodell erstellt:
+
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cDezember
+* Feiertag
+* Ostern
+* ChristiHimmelfahrt
+* Pfingsten
+* TDE
+* Silvester_ext
+* JahreszeitSommer
+
+
+```{r}
+lm_WG5_10_train <- lm(Umsatz ~ Samstag + Sonntag + Dezember + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Silvester_ext + Sommer, data = df_lm_train_WG5_16)
+
+glance(lm_WG5_16_train)
+```
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm_WG5_10_predict <- predict(lm_WG5_10_train, newdata = df_lm_test_WG5_10)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm_WG5_10_predict, obs = df_lm_test_WG5_10$Umsatz)
+```
+
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt, sodann die Gütekennzahlen berechnet, die wiederum der gemeinsamen Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` hinzugefügt werden:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG5_10 <- df_lm_test_WG5_10 %>%
+  mutate(predicted = lm_WG5_10_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG5_10 <-df_lm_test_WG5_10 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG5_10 <- df_lm_test_WG5_10 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG5_10 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best10_WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
+```
+
+**Teilmengenauswahl für das 28-Variablen-Modell**
+
+```{r}
+final_best_WG5_28 <- regsubsets(Umsatz ~ ., data = df_lm_train_WG5, nvmax = 36)
+coef(final_best_WG5_28, 28)
+```
+
+Die 28 Variablen sind die folgenden:
+
+* KielerWoche
+* Bewoelkung
+* Temperatur
+* Wochentag_cFreitag
+* Wochentag_cMontag
+* Wochentag_cSamstag
+* Wochentag_cSonntag
+* Monat_cAugust
+* Monat_cDezember
+* Monat_cFebruar
+* Monat_cJuli
+* Monat_cJuni
+* Monat_cMai
+* Monat_cOktober
+* Monat_cSeptember
+* SommerferienSH
+* SommerferienNRW
+* SommerferienHE
+* Feiertag
+* Ostern
+* ChristiHimmelfahrt
+* Pfingsten
+* TDE
+* Ostern_ext
+* Silvester_ext
 * JahreszeitHerbst
 * JahreszeitSommer
 * JahreszeitWinter
-```{r}
-lm3_train <- lm(Umsatz ~ KielerWoche + Bewoelkung + Temperatur + Windgeschwindigkeit + Freitag + Mittwoch + Samstag + Sonntag + August +  Dezember + Januar + Juli + Juni + Maerz + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern + Ostern_ext + ChristiHimmelfahrt_ext + Silvester_ext + Herbst + Sommer + Winter, data = df_lm_train_WG2_30)
 
-glance(lm3_train)
+Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+
+```{r}
+# Dummyfizierung der Variablen im Trainigsdatensatz:
+df_lm_train_WG5_28 <- df_lm_train_WG5 %>%
+  mutate(Montag=as.integer(df_lm_train_WG5$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_train_WG5$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_train_WG5$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_train_WG5$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_train_WG5$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_train_WG5$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_train_WG5$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_train_WG5$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_train_WG5$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_train_WG5$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_train_WG5$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_train_WG5$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_train_WG5$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_train_WG5$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_train_WG5$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_train_WG5$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_train_WG5$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_train_WG5$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_train_WG5$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_train_WG5$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_train_WG5$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_train_WG5$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_train_WG5$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+
+df_lm_test_WG5_28 <- df_lm_test_WG5 %>%
+  mutate(Montag=as.integer(df_lm_test_WG5$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_lm_test_WG5$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_lm_test_WG5$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_lm_test_WG5$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_lm_test_WG5$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_lm_test_WG5$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_lm_test_WG5$Wochentag_c=="Sonntag")) %>%
+  mutate(Januar=as.integer(df_lm_test_WG5$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_lm_test_WG5$Monat_c=="Februar")) %>%
+  mutate(Maerz=as.integer(df_lm_test_WG5$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_lm_test_WG5$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_lm_test_WG5$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_lm_test_WG5$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_lm_test_WG5$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_lm_test_WG5$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_lm_test_WG5$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_lm_test_WG5$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_lm_test_WG5$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_lm_test_WG5$Monat_c=="Dezember")) %>%
+  mutate(Fruehling=as.integer(df_lm_test_WG5$Jahreszeit=="Fruehling")) %>%
+  mutate(Sommer=as.integer(df_lm_test_WG5$Jahreszeit=="Sommer")) %>%
+  mutate(Herbst=as.integer(df_lm_test_WG5$Jahreszeit=="Herbst")) %>%
+  mutate(Winter=as.integer(df_lm_test_WG5$Jahreszeit=="Winter")) %>%
+  dplyr::select(-Wochentag_c, -Monat_c, -Jahreszeit)
+```
+
+
+Für das 28-Variablenmodell wird nun ein Regressionsmodell erstellt:
+
+```{r}
+lm_WG5_28_train <- lm(Umsatz ~ KielerWoche + Bewoelkung + Temperatur + Freitag + Montag + Samstag + Sonntag + August +  Dezember + Februar + Juli + Juni + Mai + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienHE + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + Silvester_ext + Herbst + Sommer + Winter, data = df_lm_train_WG5_16)
+
+glance(lm_WG5_28_train)
+```
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm_WG5_28_predict <- predict(lm_WG5_28_train, newdata = df_lm_test_WG5_28)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm_WG5_28_predict, obs = df_lm_test_WG5_28$Umsatz)
+```
+
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt, sodann die Gütekennzahlen berechnet, die wiederum der gemeinsamen Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` hinzugefügt werden:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG5_28 <- df_lm_test_WG5_28 %>%
+  mutate(predicted = lm_WG5_28_predict)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG5_28 <-df_lm_test_WG5_28 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG5_28 <- df_lm_test_WG5_28 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG5_28 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best28_WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
 ```
 
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
@@ -4019,3 +4880,11 @@ Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt. Die
 Die Parameter - wie bspw. die Lernrate, die Anzahl der hidden layers und der Anzahl der Neuronen im hidden layer - haben wir empirisch festgelegt. Hierfür gibt es keine "optimalen Werte".
 
 Insgesamt stellen wir fest, dass die so gebauten MLP Modelle dem Problem nicht gerecht werden. Vermutlich würde man mit rekursiven Netzen und/oder dem Einsatz von long-short-term-memory (LSTM) Einheiten deutlich bessere Ergebnisse erzielen. Das sprengt jedoch den Umfang dieser Projektarbeit und wird daher nicht weiter betrachtet. Hier ging es eher darum, Erfahrungswerte in der praktischen Anwendung von DL-Verfahren zu sammeln und das ist in der Tat sehr gut gelungen.
+
+# 9. Modellvergleich über alle verwendeten Verfahren
+```{r}
+Modellvergleich_total <- rbind(prog_MLP_vgl_kennz_mod2, lm_vgl_kennz)
+
+Modellvergleich_total
+```
+
