@@ -4308,6 +4308,119 @@ lm_vgl_kennz
 
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
+## 7.1 Vorhaben
+
+Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM).
+
+## 7.2 Datenaufbereitung
+
+Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable Umsatz_NA (= TRUE).
+
+Für unser Vorhaben beschränken wir uns auf die in den Rohdaten vorhandenen Umsätze (Umsatz_NA = FALSE). Und wir schränken die Trainingsdaten später auf den Zeitraum 2015 bis 2017 ein, weil wir oben gesehen hatten, dass die Umsätze in 2014 systematisch höher liegen als in den folgenden Jahren. Die Umsätze des Jahres 2018 dienen uns dann als Testdaten.
+
+Wir erstellen für diesen Abschnitt einen Analysedatensatz `df_SVM` auf Basis von `df_voll`.
+Redundante Spalten nehmen wir raus (Wochentag, Monat, Jahreszeit) und entfernen die nicht benötigten Umsatz-Spalten (Umsatz_NA sowie die Umsatz_lag Variablen).
+
+```{r}
+df_SVM <- df_voll
+
+# verwende nur originäre Umsatzdaten und grenze den Zeitraum auf 2015 bis 2018 ein
+df_SVM <- df_SVM %>% 
+  filter(Umsatz_NA == FALSE) %>%
+  filter(Jahr >= 2015 & Jahr <= 2018)
+
+# behalte nur die Spalten, die wir für unsere SVM verwenden wollen
+df_SVM <- df_SVM %>%
+  dplyr::select(-Wochentag, -Monat, -Jahreszeit, -Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag)
+```
+
+Wir eleminieren nun fehlende Werte, dummyfizieren Wochentag_c und Monat_c (wobei wir im Gegensatz zur linearen Regression alle Wochentage und alle Monate behalten) und skalieren die Variablen Umsatz, Temperatur, Bewoelkung und Windgeschwindigkeit auf Werte im Bereich zwischen 0 und 1. Danach werden die alten Variablen Wochentag_c und Monat_c entfernt.
+
+```{r}
+# eliminiere fehlende Werte
+df_SVM <- na.omit(df_SVM)
+
+# dummyfiziere Wochentag_c und Monat_c
+df_SVM <- df_SVM %>%
+  mutate(Montag=as.integer(df_SVM$Wochentag_c=="Montag")) %>%
+  mutate(Dienstag=as.integer(df_SVM$Wochentag_c=="Dienstag")) %>%
+  mutate(Mittwoch=as.integer(df_SVM$Wochentag_c=="Mittwoch")) %>%
+  mutate(Donnerstag=as.integer(df_SVM$Wochentag_c=="Donnerstag")) %>%
+  mutate(Freitag=as.integer(df_SVM$Wochentag_c=="Freitag")) %>%
+  mutate(Samstag=as.integer(df_SVM$Wochentag_c=="Samstag")) %>%
+  mutate(Sonntag=as.integer(df_SVM$Wochentag_c=="Sonntag")) %>%
+  dplyr::select(-Wochentag_c)
+
+df_SVM <- df_SVM %>%
+  mutate(Januar=as.integer(df_SVM$Monat_c=="Januar")) %>%
+  mutate(Februar=as.integer(df_SVM$Monat_c=="Februar")) %>%
+  mutate(März=as.integer(df_SVM$Monat_c=="März")) %>%
+  mutate(April=as.integer(df_SVM$Monat_c=="April")) %>%
+  mutate(Mai=as.integer(df_SVM$Monat_c=="Mai")) %>%
+  mutate(Juni=as.integer(df_SVM$Monat_c=="Juni")) %>%
+  mutate(Juli=as.integer(df_SVM$Monat_c=="Juli")) %>%
+  mutate(August=as.integer(df_SVM$Monat_c=="August")) %>%
+  mutate(September=as.integer(df_SVM$Monat_c=="September")) %>%
+  mutate(Oktober=as.integer(df_SVM$Monat_c=="Oktober")) %>%
+  mutate(November=as.integer(df_SVM$Monat_c=="November")) %>%
+  mutate(Dezember=as.integer(df_SVM$Monat_c=="Dezember")) %>%
+  dplyr::select(-Monat_c)
+
+# skaliere die Variablen Umsatz, Temperatur, Bewoelkung und Windgeschwindigkeit auf [0,1].
+# ermittle vorher die Spannweite der Variablenausprägungen
+range(df_SVM$Umsatz) # 23..1870
+range(df_SVM$Temperatur) # -6..33
+range(df_SVM$Bewoelkung) # 0..8
+range(df_SVM$Windgeschwindigkeit) # 3..35
+
+df_SVM <- df_SVM %>%
+  mutate(Umsatz = Umsatz / 2000) %>%
+  mutate(Temperatur = (Temperatur + 10) / 50) %>%
+  mutate(Bewoelkung = Bewoelkung / 10) %>%
+  mutate(Windgeschwindigkeit = Windgeschwindigkeit / 50)
+```
+
+Wir wandeln noch das Datum in eine Integerzahl um, weil wir sonst Probleme beim Import nach Python bekommen.
+
+```{r}
+df_SVM <- df_SVM %>%
+  mutate(Datum = as.integer(Datum))
+```
+
+Für die Trainingsdaten verwenden wir den Zeitraum 2015 bis 2017 und für die Testdaten das Jahr 2018. Die Modellierung erfolgt je Warengruppe, daher teilen wir den Datensatz `df_SVM` auf.
+
+```{r}
+df_SVM_train <- df_SVM %>% filter(Jahr < 2018)
+df_SVM_test <- df_SVM %>% filter(Jahr == 2018)
+
+df_SVM_train_WG1 <- df_SVM_train %>% filter(Warengruppe==1)
+df_SVM_train_WG2 <- df_SVM_train %>% filter(Warengruppe==2)
+df_SVM_train_WG3 <- df_SVM_train %>% filter(Warengruppe==3)
+df_SVM_train_WG4 <- df_SVM_train %>% filter(Warengruppe==4)
+df_SVM_train_WG5 <- df_SVM_train %>% filter(Warengruppe==5)
+
+df_SVM_test_WG1 <- df_SVM_test %>% filter(Warengruppe==1)
+df_SVM_test_WG2 <- df_SVM_test %>% filter(Warengruppe==2)
+df_SVM_test_WG3 <- df_SVM_test %>% filter(Warengruppe==3)
+df_SVM_test_WG4 <- df_SVM_test %>% filter(Warengruppe==4)
+df_SVM_test_WG5 <- df_SVM_test %>% filter(Warengruppe==5)
+```
+
+```{r}
+write_csv(df_SVM_train_WG1, path="data/df_SVM_train_WG1.csv", col_names=FALSE)
+write_csv(df_SVM_train_WG2, path="data/df_SVM_train_WG2.csv", col_names=FALSE)
+write_csv(df_SVM_train_WG3, path="data/df_SVM_train_WG3.csv", col_names=FALSE)
+write_csv(df_SVM_train_WG4, path="data/df_SVM_train_WG4.csv", col_names=FALSE)
+write_csv(df_SVM_train_WG5, path="data/df_SVM_train_WG5.csv", col_names=FALSE)
+
+write_csv(df_SVM_test_WG1, path="data/df_SVM_test_WG1.csv", col_names=FALSE)
+write_csv(df_SVM_test_WG2, path="data/df_SVM_test_WG2.csv", col_names=FALSE)
+write_csv(df_SVM_test_WG3, path="data/df_SVM_test_WG3.csv", col_names=FALSE)
+write_csv(df_SVM_test_WG4, path="data/df_SVM_test_WG4.csv", col_names=FALSE)
+write_csv(df_SVM_test_WG5, path="data/df_SVM_test_WG5.csv", col_names=FALSE)
+```
+
+
 # 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
 ## 8.1 Vorhaben
@@ -4435,7 +4548,7 @@ Im ersten Versuch bauen wir ein vergleichsweise kleines Modell und behalten nur 
 
 Dazwischen liegt noch ein hidden layer mit 20 Units, hier verwenden wir die sigmoide Aktivierungsfunktion (sigmoid). Die Verwendung von mehr Einheiten im hidden layer brachte keine besseren Ergebnisse.
 
-Als loss-Funktion verwenden wir standardmäßig den mean squared error (mse). Daneben verwenden wir stochastic gradient descent (SGD) als iterativen Lernalgorithmus mit einer Lernrate von 0.01. Auch hier brachte eine höhere Lernrate keine besseren Ergebnisse.
+Als loss-Funktion verwenden wir standardmäßig den mean squared error (mse). Daneben verwenden wir stochastic gradient descent (SGD) als iterativen Lernalgorithmus mit einer Lernrate von 0.01. Auch hier brachte eine höhere oder niedrigere Lernrate keine besseren Ergebnisse.
 
 Die Gewichte und Schwellwerte werden mit kleinen zufälligen Werten initialisiert unter Anwendung der Standard-Normalverteilung. Wir trainieren das einfache Modell über 50 Epochen, weil wir festgestellt haben, dass nach etwa 40 Epochen die loss-Parameter stabil bleiben. Und die batch-Größe setzen wir auf 10.
 
@@ -4826,7 +4939,7 @@ prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
 prog_MLP_vgl_kennz_mod2
 ```
 
-Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun auch für die beiden Warengruppen 4 und 5 nahe Null liegt.
+Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun für die beiden Warengruppen 4 und 5 nahe Null liegt und sich unser Schätzer für die Warengruppen 2 und 3 von Null entfernt haben. 
 
 Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt wieder für die Warengruppe 2 den niedrigsten Fehler und liegt jetzt auf einem vergleichbaren Niveau zum besten naiven Schätzmodell (glDS_4T_erw), für Warengruppe 2 hatten wir dort einen WAPE = 11 gesehen.
 
@@ -4873,13 +4986,100 @@ Die Umsatzschätzung gelingt offenbar für die Warengruppe 2 (= Brötchen) ab be
 
 !!! Hier fehlt noch eine ausführliche Vergleichsbetrachtung.
 
-### Fazit naive Modelle
+### Fazit DL Modelle
 
-Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt. Die Ergebnisse sind brauchbar aber nicht umwerfend. In beiden Modellen haben wir stochastic gradiend descent einen iterativen Lernalgorithmus verwendet, der keine Garantie gibt, das globale Optimum für die Gewichte und Schwellwerte zu finden. Das kann ein Grund für die mangelnde Ergebnis-Qualität sein.
+Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt und genauer untersucht. Die Ergebnisse sind brauchbar aber nicht umwerfend. In beiden Modellen haben wir stochastic gradiend descent einen iterativen Lernalgorithmus verwendet, der keine Garantie gibt, das globale Optimum für die Gewichte und Schwellwerte zu finden. Das kann ein Grund für die mangelnde Ergebnis-Qualität sein.
 
 Die Parameter - wie bspw. die Lernrate, die Anzahl der hidden layers und der Anzahl der Neuronen im hidden layer - haben wir empirisch festgelegt. Hierfür gibt es keine "optimalen Werte".
 
-Insgesamt stellen wir fest, dass die so gebauten MLP Modelle dem Problem nicht gerecht werden. Vermutlich würde man mit rekursiven Netzen und/oder dem Einsatz von long-short-term-memory (LSTM) Einheiten deutlich bessere Ergebnisse erzielen. Das sprengt jedoch den Umfang dieser Projektarbeit und wird daher nicht weiter betrachtet. Hier ging es eher darum, Erfahrungswerte in der praktischen Anwendung von DL-Verfahren zu sammeln und das ist in der Tat sehr gut gelungen.
+Insgesamt stellen wir fest, dass die so gebauten MLP Modelle dem Problem nicht gerecht werden. Vermutlich würde man mit rekursiven Netzen und/oder dem Einsatz von long-short-term-memory (LSTM) Einheiten deutlich bessere Ergebnisse erzielen. Das sprengt jedoch den Umfang dieser Projektarbeit und wird daher nicht weiter betrachtet. 
+
+Wir hatten gesehen, dass das komplexe Modell (mod2) für die Warengruppe 2 in Bezug auf den WAPE gute Ergebnisse liefert. Ein Ansatz ist, das Modell gezielt für diese Warengruppe noch zu erweitern. Hier haben wir versucht, einen zweiten hidden layer mit 20 Einheiten in das Modell zu integrieren. Allerdings verschlechterten sich dadurch die Prognose-Ergebnisse, so dass wir den Ansatz nicht weiter verfolgt haben. Alternativ haben wir ein Kompromiss-Modell (mod3) getestet, das nur die Variablen SommerferienSH, Feiertag, Silvester_ext, Samstag, Sonntag, Juli und August enthält. Und dieses Modell haben wir versucht, für Warengruppe 2 zu optimieren durch Variation der Units im hidden layer, Anwendung anderer Lernalgorithmen (Adam) oder Hinzunahme eines weiteren hidden layers - ohne Erfolg.
+
+Auch könnte man das Modell gezielt auf die Feiertags-Effekte trainieren, um dafür bessere Ergebnisse zu erzielen. Diese Idee stellt eine Ausbaustufe dar, die wir hier nicht umgesetzt haben.
+
+Insgesamt ging es hier eher darum, Erfahrungswerte in der praktischen Anwendung von DL-Verfahren zu sammeln und das ist in der Tat sehr gut gelungen.
+
+## 8.6 Zugabe
+
+Weil wir uns vom MLP bessere Ergebnisse erhofft hatten, haben wir noch einen drauf gesetzt und noch ein viertes MLP (mod4) getestet. Dafür haben wir den vollständigen SVM-Datensatz verwendet mit allen Inputvariablen und skalierten Wettervariablen sowie skaliertem Umsatz.
+
+Getestet haben wir wieder sequentielle MLP-Modelle, diesmal aber gezielt mit mehreren hidden layers. Die besten Ergebnisse lieferte ein MOdell mit zwei hidden layers, bestehend aus 100 bzw. 50 Einheiten, jeweils mit 'relu' Aktivierungsfunktionen. Als Lernalgorithmus haben wir dabei 'Adam' angewendet mit einer Lernrate von 0.001, gleichzeitig haben wir online learning (batch_size = 1) angewendet und das Modell über 20 Epochen trainiert.
+
+Diese Parametereinstellungen lieferten die besten Ergebnisse (df_MLP_test_mod4_WG2_pred.csv). Verlängert man die Trainingsphase um weitere 20 Epochen (df_MLP_test_mod4_WG2_pred2.csv), verschlechtert sich die Prognosegüte bei Anwendung des Modells auf die Testdaten. Ein dritter hidden layer mit 25 Einheiten (df_MLP_test_mod4_WG2_pred3.csv) bringt keinen Mehrwert. Und auch wenn man die Anzahl der Einheiten im ersten hidden layer verdoppelt (df_MLP_test_mod4_WG2_pred4.csv), erzielt man keine genaueren Schätzwerte.
+
+Hier die Testergebnisse - exemplarisch für Warengruppe 2:
+
+```{r message=FALSE, warning=FALSE}
+df_MLP_test_mod4_WG2_pred <- read_csv("data/df_MLP_test_mod4_WG2_pred.csv", col_names = FALSE)
+
+colnames(df_MLP_test_mod4_WG2_pred) <- "Umsatz_mod4_WG2"
+```
+
+Füge die Ergebnisse an die Test-Daten und bilde die Gütekennzahlen. Vorher müssen wir den Umsatz wieder zurück skalieren:
+
+```{r}
+# mod1_WG1
+df_MLP_test_mod4_WG2 <- cbind(df_SVM_test_WG2, df_MLP_test_mod4_WG2_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod4_WG2 <- df_MLP_test_mod4_WG2 %>%
+  mutate(Umsatz = Umsatz * 2000) %>%
+  mutate(Umsatz_mod4_WG2 = Umsatz_mod4_WG2 * 2000) %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod4_WG2 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod4_WG2 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod4_WG2 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod4_WG2 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod4_WG2 <-  df_MLP_test_mod4_WG2 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+df_MLP_test_mod4_WG2 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+```
+
+Der WAPE liegt bei 10 und damit knapp unterhalb des besten naiven Modells. Das hat uns ermutigt, Modell 4 auf eine andere Warengruppe anzuwenden.
+
+Hier die Ergebnisse für Warengruppe 4:
+
+```{r message=FALSE, warning=FALSE}
+df_MLP_test_mod4_WG4_pred <- read_csv("data/df_MLP_test_mod4_WG4_pred.csv", col_names = FALSE)
+
+colnames(df_MLP_test_mod4_WG4_pred) <- "Umsatz_mod4_WG4"
+```
+
+Füge die Ergebnisse an die Test-Daten und bilde die Gütekennzahlen. VORHER den Umsatz wieder zurück skalieren:
+
+```{r}
+# mod1_WG1
+df_MLP_test_mod4_WG4 <- cbind(df_SVM_test_WG4, df_MLP_test_mod4_WG4_pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_MLP_test_mod4_WG4 <- df_MLP_test_mod4_WG4 %>%
+  mutate(Umsatz = Umsatz * 2000) %>%
+  mutate(Umsatz_mod4_WG4 = Umsatz_mod4_WG4 * 2000) %>%
+  mutate(Prognose_zuhoch = (Umsatz_mod4_WG4 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_mod4_WG4 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_mod4_WG4 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_mod4_WG4 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_MLP_test_mod4_WG4 <-  df_MLP_test_mod4_WG4 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+df_MLP_test_mod4_WG4 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+```
+
+Unsere Hoffnung hat sich jedoch nicht erfüllt: Der WAPE ist schlechter als für das einfachere Modell 2 (mod2) für die Warengruppe 4.
+
 
 # 9. Modellvergleich über alle verwendeten Verfahren
 ```{r}
