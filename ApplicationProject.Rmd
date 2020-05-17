@@ -10,6 +10,7 @@ rm(list=ls()) # Lösche alle Variablen
 library(tidyverse) # Datenaufbereitung und ggplot
 library(lubridate) # Umgang mit Datum und Zeit
 library(GGally) # Wird benötigt für die Erstellung des correlograms
+library(e1071) # Wird für Support Vector Machines benötigt
 ```
 
 # 1. Allgemeine Projektinformationen
@@ -4312,8 +4313,6 @@ lm_vgl_kennz
 
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
-svm regression with radial basis kernel, input mit Temperaturvariablen skaliert, Umsatz braucht nicht skaliert zu werden.
-
 ## 7.1 Vorhaben
 
 Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM).
@@ -4340,7 +4339,7 @@ df_SVM <- df_SVM %>%
   dplyr::select(-Wochentag, -Monat, -Jahreszeit, -Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag)
 ```
 
-Wir eleminieren nun fehlende Werte, dummyfizieren Wochentag_c und Monat_c (wobei wir im Gegensatz zur linearen Regression alle Wochentage und alle Monate behalten) und skalieren die Variablen Umsatz, Temperatur, Bewoelkung und Windgeschwindigkeit auf Werte im Bereich zwischen 0 und 1. Danach werden die alten Variablen Wochentag_c und Monat_c entfernt.
+Wir eleminieren nun fehlende Werte, dummyfizieren Wochentag_c und Monat_c (wobei wir im Gegensatz zur linearen Regression alle Wochentage und alle Monate behalten) und skalieren die Variablen Temperatur, Bewoelkung und Windgeschwindigkeit auf Werte im Bereich zwischen 0 und 1. Danach werden die alten Variablen Wochentag_c und Monat_c entfernt.
 
 ```{r}
 # eliminiere fehlende Werte
@@ -4372,7 +4371,7 @@ df_SVM <- df_SVM %>%
   mutate(Dezember=as.integer(df_SVM$Monat_c=="Dezember")) %>%
   dplyr::select(-Monat_c)
 
-# skaliere die Variablen Umsatz, Temperatur, Bewoelkung und Windgeschwindigkeit auf [0,1].
+# skaliere die Variablen Temperatur, Bewoelkung und Windgeschwindigkeit auf [0,1].
 # ermittle vorher die Spannweite der Variablenausprägungen
 range(df_SVM$Umsatz) # 23..1870
 range(df_SVM$Temperatur) # -6..33
@@ -4380,17 +4379,10 @@ range(df_SVM$Bewoelkung) # 0..8
 range(df_SVM$Windgeschwindigkeit) # 3..35
 
 df_SVM <- df_SVM %>%
-  mutate(Umsatz = Umsatz / 2000) %>%
+#  mutate(Umsatz = Umsatz / 2000) %>%
   mutate(Temperatur = (Temperatur + 10) / 50) %>%
   mutate(Bewoelkung = Bewoelkung / 10) %>%
   mutate(Windgeschwindigkeit = Windgeschwindigkeit / 50)
-```
-
-Wir wandeln noch das Datum in eine Integerzahl um, weil wir sonst Probleme beim Import nach Python bekommen.
-
-```{r}
-df_SVM <- df_SVM %>%
-  mutate(Datum = as.integer(Datum))
 ```
 
 Für die Trainingsdaten verwenden wir den Zeitraum 2015 bis 2017 und für die Testdaten das Jahr 2018. Die Modellierung erfolgt je Warengruppe, daher teilen wir den Datensatz `df_SVM` auf.
@@ -4412,20 +4404,380 @@ df_SVM_test_WG4 <- df_SVM_test %>% filter(Warengruppe==4)
 df_SVM_test_WG5 <- df_SVM_test %>% filter(Warengruppe==5)
 ```
 
-```{r}
-write_csv(df_SVM_train_WG1, path="data/df_SVM_train_WG1.csv", col_names=FALSE)
-write_csv(df_SVM_train_WG2, path="data/df_SVM_train_WG2.csv", col_names=FALSE)
-write_csv(df_SVM_train_WG3, path="data/df_SVM_train_WG3.csv", col_names=FALSE)
-write_csv(df_SVM_train_WG4, path="data/df_SVM_train_WG4.csv", col_names=FALSE)
-write_csv(df_SVM_train_WG5, path="data/df_SVM_train_WG5.csv", col_names=FALSE)
+Wir müssen dann noch die Trainings- und Testdaten aufteilen: Für die Erstellung der Inputdaten eliminieren wir die ersten vier Spalten, also Datum, Umsatz, Warengruppe und Jahr. Und die Targetvariable ist stets der Umsatz. Zunächst arbeiten wir mit ALLEN Inputvariablen.
 
-write_csv(df_SVM_test_WG1, path="data/df_SVM_test_WG1.csv", col_names=FALSE)
-write_csv(df_SVM_test_WG2, path="data/df_SVM_test_WG2.csv", col_names=FALSE)
-write_csv(df_SVM_test_WG3, path="data/df_SVM_test_WG3.csv", col_names=FALSE)
-write_csv(df_SVM_test_WG4, path="data/df_SVM_test_WG4.csv", col_names=FALSE)
-write_csv(df_SVM_test_WG5, path="data/df_SVM_test_WG5.csv", col_names=FALSE)
+```{r}
+# Warengruppe 1
+df_SVM_train_WG1_input <- df_SVM_train_WG1 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_train_WG2_input <- df_SVM_train_WG2 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_train_WG3_input <- df_SVM_train_WG3 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_train_WG4_input <- df_SVM_train_WG4 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_train_WG5_input <- df_SVM_train_WG5 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+
+df_SVM_train_WG1_target <- df_SVM_train_WG1$Umsatz
+df_SVM_train_WG2_target <- df_SVM_train_WG2$Umsatz
+df_SVM_train_WG3_target <- df_SVM_train_WG3$Umsatz
+df_SVM_train_WG4_target <- df_SVM_train_WG4$Umsatz
+df_SVM_train_WG5_target <- df_SVM_train_WG5$Umsatz
+
+df_SVM_test_WG1_input <- df_SVM_test_WG1 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_test_WG2_input <- df_SVM_test_WG2 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_test_WG3_input <- df_SVM_test_WG3 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_test_WG4_input <- df_SVM_test_WG4 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+df_SVM_test_WG5_input <- df_SVM_test_WG5 %>% dplyr::select(-Datum, -Umsatz, -Warengruppe, -Jahr)
+
+df_SVM_test_WG1_target <- df_SVM_test_WG1$Umsatz
+df_SVM_test_WG2_target <- df_SVM_test_WG2$Umsatz
+df_SVM_test_WG3_target <- df_SVM_test_WG3$Umsatz
+df_SVM_test_WG4_target <- df_SVM_test_WG4$Umsatz
+df_SVM_test_WG5_target <- df_SVM_test_WG5$Umsatz
 ```
 
+## 7.3 Modelparameter
+
+Wir wollen im folgenden eine Regression mithilfe von SVM durchführen und verwenden dafür einen radial basis kernel. Die einzelnen Schritte führen wir zunächst für Warengruppe 1 im Detail durch und anschließend für die übrigen Warengruppen.
+
+### Warengruppe 1
+
+```{r}
+# Modellierung auf Basis der Trainings-Inputs
+model_SVM_WG1 <- svm(df_SVM_train_WG1_input, df_SVM_train_WG1_target)
+summary(model_SVM_WG1)
+
+# Anwendung des Modells auf die Trainings-Inputs
+SVM_train_WG1_pred <- predict(model_SVM_WG1, df_SVM_train_WG1_input)
+
+# Anwendung des Modells auf die Test-Inputs
+SVM_test_WG1_pred <- predict(model_SVM_WG1, df_SVM_test_WG1_input)
+```
+
+Zeige die echten Umsätze (schwarze Punkte) zusammen mit den prognostizierten Umsätzen (blaue Kreuze) für die Trainingsdaten:
+
+```{r}
+plot(df_SVM_train_WG1_target, df_SVM_train_WG1_target, pch=16)
+points(df_SVM_train_WG1_target, SVM_train_WG1_pred, col = "blue", pch=4)
+```
+
+Zeige die echten Umsätze (schwarze Punkte) zusammen mit den prognostizierten Umsätzen (blaue Kreuze) für die Testdaten:
+
+```{r}
+plot(df_SVM_test_WG1_target, df_SVM_test_WG1_target, pch=16)
+points(df_SVM_test_WG1_target, SVM_test_WG1_pred, col = "blue", pch=4)
+```
+
+Die Modellparameter sind vorbelegt mit epsilon=0.1 und Cost=1 (C). Gamma erhält als Startwert den Kehrwert der Anzahl der Inputparameter. Wir wollen nun epsilon und C optimieren, um die Modellergebnisse zu verbessern. Dafür verwenden wir eine Rasteranalyse und variieren beide Parameter (grid search). Anschließend verwenden wir das gefundene Optimum:
+
+```{r}
+# Die Rastersuche nach dem Optimum dauert einige Minuten, daher auskommentiert.
+# model_SVM_WG1_tuned_grid <- tune(svm, df_SVM_train_WG1_input, df_SVM_train_WG1_target, ranges = list(epsilon = seq(0,1,0.1), cost = 2^(2:9)))
+
+# Verwende das beste Modell (auskommentiert)
+# model_SVM_WG1_tuned <- model_SVM_WG1_tuned_grid$best.model
+# summary(model_SVM_WG1_tuned)
+
+# Zur Zeitersparnis verwende nur die gefundenen optimalen Parameter: cost = 4, epsilon = 0.5
+model_SVM_WG1_tuned <- svm(df_SVM_train_WG1_input, df_SVM_train_WG1_target, cost=4, epsilon=0.5)
+```
+
+Jetzt wenden wir das optimierte Modell nochmal auf die Trainings- und Testinputs an:
+
+```{r}
+# Anwendung des Modells auf die Trainings-Inputs
+SVM_train_WG1_pred_tuned <- predict(model_SVM_WG1_tuned, df_SVM_train_WG1_input)
+
+# Anwendung des Modells auf die Test-Inputs
+SVM_test_WG1_pred_tuned <- predict(model_SVM_WG1_tuned, df_SVM_test_WG1_input)
+```
+
+Zeige die echten Umsätze (schwarze Punkte) zusammen mit den einfach prognostizierten Umsätzen (blaue Kreuze) und zusätzlich die Umsatzschätzung auf Basis des optimierten Modells (rote Kreuze) für die Trainingsdaten:
+
+```{r}
+plot(df_SVM_train_WG1_target, df_SVM_train_WG1_target, pch=16)
+points(df_SVM_train_WG1_target, SVM_train_WG1_pred, col = "blue", pch=4)
+points(df_SVM_train_WG1_target, SVM_train_WG1_pred_tuned, col = "red", pch=4)
+```
+
+Zeige die echten Umsätze (schwarze Punkte) zusammen mit den einfach prognostizierten Umsätzen (blaue Kreuze) und zusätzlich die Umsatzschätzung auf Basis des optimierten Modells (rote Kreuze) für die Testsdaten:
+
+```{r}
+plot(df_SVM_test_WG1_target, df_SVM_test_WG1_target, pch=16)
+points(df_SVM_test_WG1_target, SVM_test_WG1_pred, col = "blue", pch=4)
+points(df_SVM_test_WG1_target, SVM_test_WG1_pred_tuned, col = "red", pch=4)
+```
+
+### übrige Warengruppen
+
+Die Modellparameter sind vorbelegt mit epsilon=0.1 und Cost=1 (C). Gamma erhält als Startwert den Kehrwert der Anzahl der Inputparameter. Wir wollen nun epsilon und C optimieren. Dafür verwenden wir wieder eine Rasteranalyse und variieren beide Parameter (grid search). Anschließend verwenden wir das gefundene Optimum:
+
+```{r}
+# Die Rastersuche nach dem Optimum dauert einige Minuten, daher auskommentiert.
+# model_SVM_WG2_tuned_grid <- tune(svm, df_SVM_train_WG2_input, df_SVM_train_WG2_target, ranges = list(epsilon = seq(0,1,0.1), cost = 2^(2:9)))
+# model_SVM_WG3_tuned_grid <- tune(svm, df_SVM_train_WG3_input, df_SVM_train_WG3_target, ranges = list(epsilon = seq(0,1,0.1), cost = 2^(2:9)))
+# model_SVM_WG4_tuned_grid <- tune(svm, df_SVM_train_WG4_input, df_SVM_train_WG4_target, ranges = list(epsilon = seq(0,1,0.1), cost = 2^(2:9)))
+# model_SVM_WG5_tuned_grid <- tune(svm, df_SVM_train_WG5_input, df_SVM_train_WG5_target, ranges = list(epsilon = seq(0,1,0.1), cost = 2^(2:9)))
+
+# Verwende das beste Modell (auskommentiert)
+# model_SVM_WG2_tuned <- model_SVM_WG2_tuned_grid$best.model
+# model_SVM_WG3_tuned <- model_SVM_WG3_tuned_grid$best.model
+# model_SVM_WG4_tuned <- model_SVM_WG4_tuned_grid$best.model
+# model_SVM_WG5_tuned <- model_SVM_WG5_tuned_grid$best.model
+# summary(model_SVM_WG2_tuned) # cost = 4, epsilon = 0.2
+# summary(model_SVM_WG3_tuned) # cost = 4, epsilon = 0.4
+# summary(model_SVM_WG4_tuned) # cost = 4, epsilon = 0.8
+# summary(model_SVM_WG5_tuned) # cost = 16, epsilon = 0.2
+
+# Zur Zeitersparnis verwende nur die gefundenen optimalen Parameter: cost = 4, epsilon = 0.5
+model_SVM_WG2_tuned <- svm(df_SVM_train_WG2_input, df_SVM_train_WG2_target, cost=4, epsilon=0.2)
+model_SVM_WG3_tuned <- svm(df_SVM_train_WG3_input, df_SVM_train_WG3_target, cost=4, epsilon=0.4)
+model_SVM_WG4_tuned <- svm(df_SVM_train_WG4_input, df_SVM_train_WG4_target, cost=4, epsilon=0.8)
+model_SVM_WG5_tuned <- svm(df_SVM_train_WG5_input, df_SVM_train_WG5_target, cost=16, epsilon=0.2)
+```
+
+Jetzt wenden wir die optimierten Modelle auf die Trainings- und Testinputs an:
+
+```{r}
+# Anwendung des Modells auf die Trainings-Inputs
+SVM_train_WG2_pred_tuned <- predict(model_SVM_WG2_tuned, df_SVM_train_WG2_input)
+SVM_train_WG3_pred_tuned <- predict(model_SVM_WG3_tuned, df_SVM_train_WG3_input)
+SVM_train_WG4_pred_tuned <- predict(model_SVM_WG4_tuned, df_SVM_train_WG4_input)
+SVM_train_WG5_pred_tuned <- predict(model_SVM_WG5_tuned, df_SVM_train_WG5_input)
+
+# Anwendung des Modells auf die Test-Inputs
+SVM_test_WG2_pred_tuned <- predict(model_SVM_WG2_tuned, df_SVM_test_WG2_input)
+SVM_test_WG3_pred_tuned <- predict(model_SVM_WG3_tuned, df_SVM_test_WG3_input)
+SVM_test_WG4_pred_tuned <- predict(model_SVM_WG4_tuned, df_SVM_test_WG4_input)
+SVM_test_WG5_pred_tuned <- predict(model_SVM_WG5_tuned, df_SVM_test_WG5_input)
+```
+
+Zeige die echten Umsätze (schwarze Punkte) zusammen mit der Umsatzschätzung auf Basis des optimierten Modells (rote Kreuze) für die Trainingsdaten:
+
+```{r}
+plot(df_SVM_train_WG2_target, df_SVM_train_WG2_target, pch=16)
+points(df_SVM_train_WG2_target, SVM_train_WG2_pred_tuned, col = "red", pch=4)
+
+plot(df_SVM_train_WG3_target, df_SVM_train_WG3_target, pch=16)
+points(df_SVM_train_WG3_target, SVM_train_WG3_pred_tuned, col = "red", pch=4)
+
+plot(df_SVM_train_WG4_target, df_SVM_train_WG4_target, pch=16)
+points(df_SVM_train_WG4_target, SVM_train_WG4_pred_tuned, col = "red", pch=4)
+
+plot(df_SVM_train_WG5_target, df_SVM_train_WG5_target, pch=16)
+points(df_SVM_train_WG5_target, SVM_train_WG5_pred_tuned, col = "red", pch=4)
+```
+
+Zeige die echten Umsätze (schwarze Punkte) zusammen mit der Umsatzschätzung auf Basis des optimierten Modells (rote Kreuze) für die Testsdaten:
+
+```{r}
+plot(df_SVM_test_WG2_target, df_SVM_test_WG2_target, pch=16)
+points(df_SVM_test_WG2_target, SVM_test_WG2_pred_tuned, col = "red", pch=4)
+
+plot(df_SVM_test_WG3_target, df_SVM_test_WG3_target, pch=16)
+points(df_SVM_test_WG3_target, SVM_test_WG3_pred_tuned, col = "red", pch=4)
+
+plot(df_SVM_test_WG4_target, df_SVM_test_WG4_target, pch=16)
+points(df_SVM_test_WG4_target, SVM_test_WG4_pred_tuned, col = "red", pch=4)
+
+plot(df_SVM_test_WG5_target, df_SVM_test_WG5_target, pch=16)
+points(df_SVM_test_WG5_target, SVM_test_WG5_pred_tuned, col = "red", pch=4)
+
+```
+
+## 7.4 Modellergebnisse
+
+Zunächst wandeln wir die Umsatzschätzer in einen dataframe um und benennen die Spalte entsprechend:
+```{r}
+SVM_test_WG1_pred_tuned <- as.data.frame(SVM_test_WG1_pred_tuned)
+SVM_test_WG2_pred_tuned <- as.data.frame(SVM_test_WG2_pred_tuned)
+SVM_test_WG3_pred_tuned <- as.data.frame(SVM_test_WG3_pred_tuned)
+SVM_test_WG4_pred_tuned <- as.data.frame(SVM_test_WG4_pred_tuned)
+SVM_test_WG5_pred_tuned <- as.data.frame(SVM_test_WG5_pred_tuned)
+colnames(SVM_test_WG1_pred_tuned) <- "Umsatz_WG1"
+colnames(SVM_test_WG2_pred_tuned) <- "Umsatz_WG2"
+colnames(SVM_test_WG3_pred_tuned) <- "Umsatz_WG3"
+colnames(SVM_test_WG4_pred_tuned) <- "Umsatz_WG4"
+colnames(SVM_test_WG5_pred_tuned) <- "Umsatz_WG5"
+```
+
+Dann fügen wir die Umsatzschätzer an die Testdaten an und erstellen eine gemeinsame Übersichtstabelle für die Gütekennzahlen `prog_SVM_vgl_kennz`:
+
+```{r}
+# WG1
+df_SVM_test_WG1 <- cbind(df_SVM_test_WG1, SVM_test_WG1_pred_tuned)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_SVM_test_WG1 <- df_SVM_test_WG1 %>%
+  mutate(Prognose_zuhoch = (Umsatz_WG1 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_WG1 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_WG1 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_WG1 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_SVM_test_WG1 <-  df_SVM_test_WG1 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_SVM_test_WG1 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_SVM_vgl_kennz <- temp
+
+
+# WG2
+df_SVM_test_WG2 <- cbind(df_SVM_test_WG2, SVM_test_WG2_pred_tuned)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_SVM_test_WG2 <- df_SVM_test_WG2 %>%
+  mutate(Prognose_zuhoch = (Umsatz_WG2 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_WG2 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_WG2 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_WG2 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_SVM_test_WG2 <-  df_SVM_test_WG2 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_SVM_test_WG2 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "WG2")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_SVM_vgl_kennz <- rbind(prog_SVM_vgl_kennz, temp)
+
+
+# WG3
+df_SVM_test_WG3 <- cbind(df_SVM_test_WG3, SVM_test_WG3_pred_tuned)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_SVM_test_WG3 <- df_SVM_test_WG3 %>%
+  mutate(Prognose_zuhoch = (Umsatz_WG3 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_WG3 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_WG3 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_WG3 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_SVM_test_WG3 <-  df_SVM_test_WG3 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_SVM_test_WG3 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "WG3")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_SVM_vgl_kennz <- rbind(prog_SVM_vgl_kennz, temp)
+
+
+# WG4
+df_SVM_test_WG4 <- cbind(df_SVM_test_WG4, SVM_test_WG4_pred_tuned)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_SVM_test_WG4 <- df_SVM_test_WG4 %>%
+  mutate(Prognose_zuhoch = (Umsatz_WG4 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_WG4 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_WG4 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_WG4 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_SVM_test_WG4 <-  df_SVM_test_WG4 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_SVM_test_WG4 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "WG4")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_SVM_vgl_kennz <- rbind(prog_SVM_vgl_kennz, temp)
+
+
+# WG5
+df_SVM_test_WG5 <- cbind(df_SVM_test_WG5, SVM_test_WG5_pred_tuned)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_SVM_test_WG5 <- df_SVM_test_WG5 %>%
+  mutate(Prognose_zuhoch = (Umsatz_WG5 >= Umsatz)) %>%
+  mutate(Abweichung = Umsatz_WG5 - Umsatz) %>%
+  mutate(Abweichung_abs = abs(Umsatz_WG5 - Umsatz)) %>%
+  mutate(Abweichung_rel = (Umsatz_WG5 - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_SVM_test_WG5 <-  df_SVM_test_WG5 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_SVM_test_WG5 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+prog_SVM_vgl_kennz <- rbind(prog_SVM_vgl_kennz, temp)
+
+prog_SVM_vgl_kennz
+```
+
+Nun wollen wir und noch die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_SVM_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+
+```{r}
+# füge die relativen Abweichungen für WG1 an und benenne die Spalte um
+prog_SVM_vgl_relAbw <- df_SVM_test_WG1 %>% dplyr::select(Datum, Abweichung_rel)
+colnames(prog_SVM_vgl_relAbw)[2]="WG1"
+
+# füge die relativen Abweichungen für WG2 an und benenne die Spalte um
+prog_SVM_vgl_relAbw <- left_join(prog_SVM_vgl_relAbw, df_SVM_test_WG2 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_SVM_vgl_relAbw)[3]="WG2"
+
+# füge die relativen Abweichungen für WG3 an und benenne die Spalte um
+prog_SVM_vgl_relAbw <- left_join(prog_SVM_vgl_relAbw, df_SVM_test_WG3 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_SVM_vgl_relAbw)[4]="WG3"
+
+# füge die relativen Abweichungen für WG4 an und benenne die Spalte um
+prog_SVM_vgl_relAbw <- left_join(prog_SVM_vgl_relAbw, df_SVM_test_WG4 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_SVM_vgl_relAbw)[5]="WG4"
+
+# füge die relativen Abweichungen für WG5 an und benenne die Spalte um
+prog_SVM_vgl_relAbw <- left_join(prog_SVM_vgl_relAbw, df_SVM_test_WG5 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
+colnames(prog_SVM_vgl_relAbw)[6]="WG5"
+
+# pivotieren
+prog_SVM_vgl_relAbw <- prog_SVM_vgl_relAbw %>% 
+  pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
+
+# Boxplot
+prog_SVM_vgl_relAbw %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - Vergleich SVM Modell 1: Relative Abweichung") +
+  xlab("Modell_Warengruppe") + 
+  ylab("rel. Abweichung (%)") +
+  ylim(-100, 200)
+```
+
+## 7.4 Fazit SVM-Modell
+
+Fehlt noch!
 
 # 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
