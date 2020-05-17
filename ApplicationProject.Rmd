@@ -1066,6 +1066,10 @@ Wir verwenden den Zeitraum 2014 bis 2017 als Trainingsdaten. Die Daten des Jahre
 df_voll <- df_voll %>% arrange(Datum, Warengruppe)
 df_train <- df_voll %>% filter(Jahr >= 2014 & Jahr <= 2017)
 df_test <- df_voll %>% filter(Jahr == 2018)
+
+# Export nach EXCEL
+# df_voll <- df_voll %>% filter(Jahr >= 2014 & Jahr <= 2018)
+# write_csv(df_voll, path="data/df_voll.csv", col_names=TRUE)
 ```
 
 # 4. Deskriptive Analysen
@@ -4307,6 +4311,8 @@ lm_vgl_kennz
 ```
 
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
+
+svm regression with radial basis kernel, input mit Temperaturvariablen skaliert, Umsatz braucht nicht skaliert zu werden.
 
 ## 7.1 Vorhaben
 
