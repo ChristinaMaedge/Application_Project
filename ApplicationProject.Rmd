@@ -13,7 +13,7 @@ library(GGally) # Wird benötigt für die Erstellung des correlograms
 library(e1071) # Wird für Support Vector Machines benötigt
 ```
 
-# 1. Allgemeine Projektinformationen
+# 1 Allgemeine Projektinformationen
 
 ## 1.1 Ausgangslage
 Die Bestellung von Bäckereien ist häufig noch ein manueller und zeitaufwändiger Prozess, der auf adjustierten Vorwochenwerten basiert. Eine systematische Planung unter Einbeziehung von Mustern findet nur eingeschränkt statt.
@@ -1065,7 +1065,7 @@ df_test <- df_voll %>% filter(Jahr == 2018)
 # write_csv(df_voll, path="data/df_voll.csv", col_names=TRUE)
 ```
 
-# 4. Deskriptive Analysen
+# 4 Deskriptive Analysen
 
 ## 4.1 Umsatz je Wochentag / Warengruppe
 
@@ -1990,7 +1990,7 @@ Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabel
 prog_naiv_vgl_relAbw <- df_naiv %>%
   filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
   filter(Datum >= "2013-08-01") %>%  # starte ab 01.08.2013
-  select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c, SommerferienSH, Feiertag) # behalte nur diese Spalten
+  dplyr::select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c, SommerferienSH, Feiertag) # behalte nur diese Spalten
 ```
 
 Füge als nächstes die relativen Abweichungen an die Tabelle an:
@@ -2024,9 +2024,9 @@ prog_naiv_vgl_relAbw %>%
   xlim(-100, 200)
 ```
 
-AUSWERTUNG: Stelle auch die übrigen WGs dar! Unterschiede?!?
+Man könnte hier noch die Verteilungen für die übrigen Warengruppen darstellen, der Erkenntnisgewinn ist jedoch vermutlich gering, daher verzichten wir darauf.
 
-Stelle nun die Verteilung der relativen Abweichung für die Wochentage dar:
+Stattdessen stellen wir die Verteilungen im Vergleich exemplarisch für Montag dar:
 
 ```{r}
 prog_naiv_vgl_relAbw %>%
@@ -2040,9 +2040,7 @@ prog_naiv_vgl_relAbw %>%
   xlim(-100, 200)
 ```
 
-AUSWERTUNG: Stelle auch die übrigen Wochentag dar! Unterschiede?!?
-
-Um die Dichteverteilungen besser vergleichen zu können, wählen wir einen Boxplot:
+Um die Dichteverteilungen besser vergleichen zu können, wählen wir Boxplots und können dann auch die Verteilungen für alle Warengruppen und Wochentage in einem Facetten-Plot zeigen.
 
 ```{r}
 # Jahr 2018, alle Wochentage und Warengruppen
@@ -2111,7 +2109,7 @@ prog_naiv_vgl_relAbw %>%
   facet_wrap(vars(Warengruppe))
 ```
 
-Vergleicht man die Dichteverteilungen für das Jahr 2018 insgesamt (über alle Warengruppen und Wochentage), liefert der erweiterte gleitende Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage die besten Ergebnisse.
+Vergleicht man die Dichteverteilungen für das Jahr 2018 insgesamt (über alle Warengruppen und Wochentage), liefert der erweiterte gleitende Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse.
 
 Unterteilt man die Verteilungen nach Wochentag oder Warengruppe, ergibt sich ein differenzierteres Bild: 
 
@@ -2260,9 +2258,9 @@ temp <- prog_naiv_glDS_4T_erw %>%
 temp
 ```
 
-Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Und das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt die niedrigsten Werte.
+Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Und das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt mit 11 den niedrigsten Wert.
 
-Auch für Warengruppe 5 (Kuchen) liefert das Modell offenbar gute Schätzungen. Auffällig ist jedoch, dass die mittlere quadratische Abweichung (MSE) deutlich höher ist, als für die anderen Warengruppen. Das liegt vermutlich am Schätzfehler für Silvester, wird hier aber nicht weiter geprüft.
+Auch für Warengruppe 5 (Kuchen) liefert das Modell offenbar gute Schätzungen. Auffällig ist jedoch, dass die mittlere quadratische Abweichung (MSE) deutlich höher ist, als für die anderen Warengruppen. Das liegt am Schätzfehler für Silvester: Wie wir bereits gesehen hatten, haben wir in der Warengruppe auffällig hohen Umsatz durch den Berlinerverkauf.
 
 Zuletzt gucken wir uns die Gütekennzahlen für dieses Modell je Wochentag an.
 
@@ -2988,7 +2986,7 @@ Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples
 caret::postResample(pred = lm_WG1_28_predict, obs = df_lm_test_WG1_28$Umsatz)
 ```
 
-Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `prog_MLP_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `lm_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
 ```{r}
 # Hinzufügen der Ergebnisse
 df_lm_test_WG1_28 <- df_lm_test_WG1_28 %>%
@@ -3036,7 +3034,7 @@ Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples
 caret::postResample(pred = lm_WG1_36_predict, obs = df_lm_test_WG1$Umsatz)
 ```
 
-Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `prog_MLP_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und an die gemeinsame Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` angefügt, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
 ```{r}
 df_lm_test_WG1_36 <- df_lm_test_WG1
 
@@ -3068,11 +3066,6 @@ temp <- temp %>% mutate(Modell = "best36_WG1")
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
-
-
-
-\
-
 
 
 ### 6.3.2 Warengruppe 2
@@ -3148,12 +3141,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 29-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 21-Variablenmodell vor und der $C_p$ das 28-Variablen-Modell vor.
-
-Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
-```{r}
-
-```
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 32-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 19-Variablenmodell vor und der $C_p$ das 27-Variablen-Modell vor.
 
 Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
@@ -3167,7 +3155,7 @@ which.min(summary(backward)$cp)
 
 Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 31-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 30-Variablen-Modell vor.
 
-Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren-Stes folgendes Bild:. 
+Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren  folgendes Bild: 
 ```{r}
 # 19-Variablen-Modell
 coef(best_subset_WG2, 19)
@@ -3707,9 +3695,6 @@ lm_vgl_kennz
 ```
 
 
-\
-
-
 ### 6.3.3 Warengruppe 5
 
 **Erstellung von Trainings- und Testdatensätzen für Warengruppe 5**
@@ -3785,11 +3770,6 @@ which.min(results$cp)
 
 Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 31-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 23-Variablenmodell vor und der $C_p$ ein 27-Variablen-Modell vor.
 
-Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
-```{r}
-
-```
-
 Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
 forward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36, method = "forward")
@@ -3802,7 +3782,7 @@ which.min(summary(backward)$cp)
 
 Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 28-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 26-Variablen-Modell vor.
 
-Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren-Stes folgendes Bild:. 
+Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren  folgendes Bild:.
 ```{r}
 # 23-Variablen-Modell
 coef(best_subset_WG2, 23)
@@ -4303,11 +4283,21 @@ lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
 
+## 6.4 Vergleich der linearen Modelle
+
+Wir haben jetzt die Gütekennzahlen für die Warengruppen 1, 2 und 5 ermittelt und zwar für verschiedene Modelle. Innerhalb der Warengruppen unterscheiden sich die Modelle nur marginal. Das spricht dafür, jeweils das einfachste Modell zu verwenden, also mit möglichst wenig Variablen. Für die Warengruppe 1 entscheiden wir uns für das Modell mit 31 Variablen, für die Warengruppe 2 mit 19 Variablen und für die Warengruppe 5 mit nur 10 Variablen.
+
+Dann fällt auf, dass die Schätzer für die Warengruppe 2 offenbar systematisch zu hoch sind, weil die mittlere relative Abweichung bei 9% liegt. Für die übrigen Warengruppen liegt der Wert näher an Null.
+
+Und der mittlere gewichtete Absolutwert der relativen Abweichung (WAPE), den wir vorrangig als Güte-Kriterium im Auge haben, zeigt den niedrigsten Wert für Warengruppe 2, gefolgt von Warengruppe 5. Ähnliche Ergebnisse hatten wir auch mit dem besten naiven Modell erzielt: Dort konnten mit dem erweiterten gleitenden Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse für die Warengruppen insgesamt erzielt werden und für die Warengruppe 2 lag der WAPE mit nur 11 sogar knapp unter dem Wert des besten linearen Modells (12).
+
+Wir widmen uns nun den Verfahren aus dem Bereich Machine Learning und Deep Learning und wollen rausfinden, ob sich damit noch bessere Ergebnisse erzielen lassen.
+
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
 ## 7.1 Vorhaben
 
-Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM).
+Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM). Dieses Verfahren wird häufig für die Klassifizierung verwendet, kann jedoch auch zur Lösung von Regressions-Problemen verwendet werden. Genau das wollen wir tun.
 
 ## 7.2 Datenaufbereitung
 
@@ -4443,7 +4433,7 @@ SVM_train_WG1_pred <- predict(model_SVM_WG1, df_SVM_train_WG1_input)
 SVM_test_WG1_pred <- predict(model_SVM_WG1, df_SVM_test_WG1_input)
 ```
 
-Zeige die echten Umsätze (schwarze Punkte) zusammen mit den prognostizierten Umsätzen (blaue Kreuze) für die Trainingsdaten:
+Für einen schnellen Überblick zeigen wir die echten Umsätze (schwarze Punkte) zusammen mit den prognostizierten Umsätzen (blaue Kreuze) für die Trainingsdaten. Die echten Umsätze sind hier auf der Diagonalen dargestellt, die Schätzwerte schwanken darum:
 
 ```{r}
 plot(df_SVM_train_WG1_target, df_SVM_train_WG1_target, pch=16)
@@ -4457,7 +4447,7 @@ plot(df_SVM_test_WG1_target, df_SVM_test_WG1_target, pch=16)
 points(df_SVM_test_WG1_target, SVM_test_WG1_pred, col = "blue", pch=4)
 ```
 
-Die Modellparameter sind vorbelegt mit epsilon=0.1 und Cost=1 (C). Gamma erhält als Startwert den Kehrwert der Anzahl der Inputparameter. Wir wollen nun epsilon und C optimieren, um die Modellergebnisse zu verbessern. Dafür verwenden wir eine Rasteranalyse und variieren beide Parameter (grid search). Anschließend verwenden wir das gefundene Optimum:
+Die Modellparameter sind vorbelegt mit epsilon=0.1 und cost=1 (C). Gamma erhält als Startwert den Kehrwert der Anzahl der Inputparameter. Wir wollen nun epsilon und C optimieren, um die Modellergebnisse zu verbessern. Dafür verwenden wir eine Rasteranalyse und variieren beide Parameter (grid search). Anschließend verwenden wir das gefundene Optimum:
 
 ```{r}
 # Die Rastersuche nach dem Optimum dauert einige Minuten, daher auskommentiert.
@@ -4496,6 +4486,8 @@ plot(df_SVM_test_WG1_target, df_SVM_test_WG1_target, pch=16)
 points(df_SVM_test_WG1_target, SVM_test_WG1_pred, col = "blue", pch=4)
 points(df_SVM_test_WG1_target, SVM_test_WG1_pred_tuned, col = "red", pch=4)
 ```
+
+Die Optimierung des Modells hat offenbar Erfolg: Besonders für die hohen Umsätze in der rechten Hälfte liegt der optimierte Schätzer (rote Kreuze) dichter am tatsächlichen Umsatz.
 
 ### übrige Warengruppen
 
@@ -4769,7 +4761,11 @@ prog_SVM_vgl_relAbw %>%
 
 ## 7.4 Fazit SVM-Modell
 
-Fehlt noch!
+Unser SVM-Modell liefert sehr gute Schätzwerte für die Warengruppen 2 (= Brötchen) und 5 (= Kuchen). Und zwar liegt die mittlere relative Abweichung fast bei Null und der WAPE ist vergleichbar zum besten naiven und linearen Modell.
+
+Auf der anderen Seite fällt auf, dass mit unserem SVM-Modell die Umsätze der Warengruppe 4 (= Konditorei) nur mangelhaft geschätzt werden: Der WAPE liegt relativ hoch und vor allem die mittlere relative Abweichung ist mit 14% deutlich entfernt von Null. Die Umsätze werden also systematisch stark zu hoch geschätzt.
+
+Wir untersuchen nun, ob wir mit Deep Learning Methoden noch bessere Ergebnisse erzielen können.
 
 # 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
@@ -5081,7 +5077,7 @@ prog_MLP_vgl_kennz
 
 Das einfache Modell (mod1), das für die Umsatzschätzung nur SommerferienSH, Feiertag und Wochentage (Mo - So) als Inputvariablen einbezieht, liefert unterschiedliche Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) für die Warengruppen 1, 2 und 3 nahe Null ist, während wir für die beiden Warengruppen 4 und 5 offenbar den Umsatz systematisch zu hoch schätzen. 
 
-Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch bspw. für das beste naive Schätzmodell (glDS_4T_erw) einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11).
+Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch für das beste naive und lineare Schätzmodell einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11 bzw 12). Und auch unser SVM-Modell lag für die Warengruppe in der Größenordnung.
 
 Trotzdem wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
@@ -5289,9 +5285,9 @@ prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
 prog_MLP_vgl_kennz_mod2
 ```
 
-Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun für die beiden Warengruppen 4 und 5 nahe Null liegt und sich unser Schätzer für die Warengruppen 2 und 3 von Null entfernt haben. 
+Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun für die beiden Warengruppen 4 und 5 nahe Null liegt und sich unser Schätzer für die Warengruppen 2 und 3 leicht von Null entfernt haben. 
 
-Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt wieder für die Warengruppe 2 den niedrigsten Fehler und liegt jetzt auf einem vergleichbaren Niveau zum besten naiven Schätzmodell (glDS_4T_erw), für Warengruppe 2 hatten wir dort einen WAPE = 11 gesehen.
+Und der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppen 2 und 5 die niedrigsten Fehler. Gleiches hatten wir bei den besten naiven und linearen Modellen sowie unserem SVM-Modell gefunden. Zum Vergleich: Für das beste naive Schätzmodell (glDS_4T_erw) hatten wir für Warengruppe 2 sogar einen etwas niedrigeren WAPE = 11 gesehen.
 
 Als nächstes wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw_mod2`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
@@ -5332,11 +5328,7 @@ prog_MLP_vgl_relAbw_mod2 %>%
 
 Die Umsatzschätzung gelingt offenbar für die Warengruppe 2 (= Brötchen) ab besten.
 
-## 8.5 Vergleich der MLP Modelle
-
-!!! Hier fehlt noch eine ausführliche Vergleichsbetrachtung.
-
-### Fazit DL Modelle
+## 8.5 Fazit DL Modelle
 
 Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt und genauer untersucht. Die Ergebnisse sind brauchbar aber nicht umwerfend. In beiden Modellen haben wir stochastic gradiend descent einen iterativen Lernalgorithmus verwendet, der keine Garantie gibt, das globale Optimum für die Gewichte und Schwellwerte zu finden. Das kann ein Grund für die mangelnde Ergebnis-Qualität sein.
 
@@ -5374,7 +5366,11 @@ df_MLP_test_mod4_WG2 <- cbind(df_SVM_test_WG2, df_MLP_test_mod4_WG2_pred)
 
 # ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
 df_MLP_test_mod4_WG2 <- df_MLP_test_mod4_WG2 %>%
-  mutate(Umsatz = Umsatz * 2000) %>%
+  # mutate(Umsatz = Umsatz * 2000) %>%
+  # Hinweis: Wir hatten ursprünglich den Umsatz im Kapitel SVM skaliert und auf der Basis
+  # unser MLP (mod4) trainiert. Nachträglich haben wir die Skalierung für den    
+  # df_SVM_test_WG2 wieder raus genommen. Dennoch enthalten die Modellergebnisse aus Python
+  # den skalierten Umsatz und müssen wieder re-skaliert werden:
   mutate(Umsatz_mod4_WG2 = Umsatz_mod4_WG2 * 2000) %>%
   mutate(Prognose_zuhoch = (Umsatz_mod4_WG2 >= Umsatz)) %>%
   mutate(Abweichung = Umsatz_mod4_WG2 - Umsatz) %>%
@@ -5392,7 +5388,7 @@ df_MLP_test_mod4_WG2 %>%
   summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 ```
 
-Der WAPE liegt bei 10 und damit knapp unterhalb des besten naiven Modells. Das hat uns ermutigt, Modell 4 auf eine andere Warengruppe anzuwenden.
+Der WAPE liegt bei 10 und liegt damit knapp unterhalb des besten naiven und linearen Modells, sowie des SVM-Modells. Das hat uns ermutigt, Modell 4 auf eine andere Warengruppe anzuwenden.
 
 Hier die Ergebnisse für Warengruppe 4:
 
@@ -5410,7 +5406,11 @@ df_MLP_test_mod4_WG4 <- cbind(df_SVM_test_WG4, df_MLP_test_mod4_WG4_pred)
 
 # ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
 df_MLP_test_mod4_WG4 <- df_MLP_test_mod4_WG4 %>%
-  mutate(Umsatz = Umsatz * 2000) %>%
+  # mutate(Umsatz = Umsatz * 2000) %>%
+  # Hinweis: Wir hatten ursprünglich den Umsatz im Kapitel SVM skaliert und auf der Basis
+  # unser MLP (mod4) trainiert. Nachträglich haben wir die Skalierung für den    
+  # df_SVM_test_WG4 wieder raus genommen. Dennoch enthalten die Modellergebnisse aus Python
+  # den skalierten Umsatz und müssen wieder re-skaliert werden:
   mutate(Umsatz_mod4_WG4 = Umsatz_mod4_WG4 * 2000) %>%
   mutate(Prognose_zuhoch = (Umsatz_mod4_WG4 >= Umsatz)) %>%
   mutate(Abweichung = Umsatz_mod4_WG4 - Umsatz) %>%
@@ -5431,7 +5431,14 @@ df_MLP_test_mod4_WG4 %>%
 Unsere Hoffnung hat sich jedoch nicht erfüllt: Der WAPE ist schlechter als für das einfachere Modell 2 (mod2) für die Warengruppe 4.
 
 
-# 9. Modellvergleich über alle verwendeten Verfahren
+# 9 Modellvergleich über alle verwendeten Verfahren
+
+Nochmal zusammenfassen, für welche Warengruppen sich die Umsätze besonders gut schätzen lassen (WG2 und 5) und welche Güte-Kennzahlen wir für die verschiedenen besten Modelle aus allen Bereichen finden.
+
+And the winner is...
+
+Und Gesamtfazit: Wir hatten uns erhoft, eine bessere Prognosegüte zu erzielen. Aber vielleicht lassen sich die Umsätze mit unserem Datenmodell gar nicht besser schätzen. Möglicherweise bringt erst die Berücksichtigung weiterer Einflussfaktoren genauere Schätzergebnisse oder die Kombination unserer Modelle. Beides wird hier aber nicht weiter vertieft.
+
 ```{r}
 Modellvergleich_total <- rbind(prog_MLP_vgl_kennz_mod2, lm_vgl_kennz)
 
