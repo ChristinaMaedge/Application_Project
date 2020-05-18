@@ -19,11 +19,15 @@ library(e1071) # Wird für Support Vector Machines benötigt
 Die Bestellung von Bäckereien ist häufig noch ein manueller und zeitaufwändiger Prozess, der auf adjustierten Vorwochenwerten basiert. Eine systematische Planung unter Einbeziehung von Mustern findet nur eingeschränkt statt.
 
 ## 1.2 Zielsetzung 
-Es wird ein Prognosemodell entworfen, das Bäckereien ein bessere Planungsgrundlage auf Warengruppenebene bietet. 
+Wir testen verschiedene einfache und komplexe Modelle und bedienen uns dabei an Techniken aus dem Bereich Machine Learning und Deep Learning. Möglicherweise finden wir ein Verfahren, dass den anderen überlegen ist und die beste Prognosegüte für alle Warengruppen aufweist. 
+
+Oder es stellt sich heraus, dass das Verhalten der Warengruppen zu unterschiedlich ist und wir verschiedene Techniken für verschiedene Warengruppen benötigen.
+
+In jedem Fall wird ein Prognosemodell entworfen, das Bäckereien eine bessere Planungsgrundlage auf Warengruppenebene bietet.
 
 **Lösungsansatz**
 
-Mit Hilfe von verschiedenen Daten und Einflussfaktoren soll diese Umsätze je Warengruppe prognostiziert werden. 
+Mit Hilfe von verschiedenen Daten und Einflussfaktoren sollen die Umsätze je Warengruppe prognostiziert werden. 
 
 *	Umsatzdaten, Wetterdaten, Veranstaltungsdaten
 *	Weitere Einflussfaktoren (Wochentage, Feiertage, Ferien,…)
@@ -104,12 +108,11 @@ Der Datensatz **Wetter** enthält 2601 Zeilen und fünf Variablen:
 
 Weitere Informationen zu den einzelnen Variablen des Datensatzes **Wetter** und ihrer Interpretation können der privaten Webseite [**Seewetter Kiel**](http://www.seewetter-kiel.de/seewetter/daten_symbole.htm) entnommen werden. 
 
-Alle Datensätze enthalten die Variable `Datum`. Folglich können die einzelnen Datensätze über diese Variable vereinigt werden. 
+Alle Datensätze enthalten die Variable `Datum`. Folglich können die einzelnen Datensätze später über diese Variable vereinigt werden. 
 
 ## 2.3 Überprüfung des Anfangs- und Endzeitpunkt der Datumsattribute in den Datensätzen
 ```{r}
-min(Beispieldaten$Datum)
-max(Beispieldaten$Datum)
+range(Beispieldaten$Datum)
 range(KiWo$Datum)
 range(Wetter$Datum)
 ```
@@ -175,7 +178,7 @@ Beispieldaten %>%
 ```
 
 Es fehlen bei allen Warengruppen Datensätze. Bei den Warengruppen 1,2, 3 und 5 fallen ca. 70% der fehlenden Daten auf Feiertage (insb. Karfreitag, Tag der Arbeit und 1. und 2. Weihnachtsfeiertag).
-Bei Warengruppe 4 sind es ca. 30%. Weitere ~30% der fehlenden Daten der Warengruppe 4 liegen in den Sommermonaten Juni, Juli, August. Eine Möglichkeit wäre, dass die Kühlung ausgefallen ist / einen Defekt hatte und demzufolge keine Konditoreiwaren angeboten wurden. Eine andere Möglichkeit wäre, dass bei sehr trockenem, warmen Wetter der Verkauf von Konditoreiwaren in der Regel ein Minusgeschäft ist und daher das Sortiment temporär/tageweise verkleinert wird. Auffällig ist, dass die Anzahl der fehlenden Werte pro Jahr abnehmend ist und sich insbesondere in den Jahren 2012 und 2018 mehrheitlich auf Feiertage beschränkt.
+Bei Warengruppe 4 sind es ca. 30%. Weitere ~30% der fehlenden Daten der Warengruppe 4 liegen in den Sommermonaten Juni, Juli, August. Eine Möglichkeit wäre, dass die Kühlung ausgefallen ist / einen Defekt hatte und demzufolge keine Konditoreiwaren angeboten wurden. Eine andere Möglichkeit wäre, dass bei sehr trockenem, warmen Wetter der Verkauf von Konditoreiwaren in der Regel ein Minusgeschäft ist und daher das Sortiment temporär/tageweise verkleinert wird. Auffällig ist, dass die Anzahl der fehlenden Werte pro Jahr abnehmend ist und sich insbesondere in den Jahren 2013 und 2018 mehrheitlich auf Feiertage beschränkt.
 
 Untersucht man die einzelnen Jahre genauer, ergibt sich folgendes Bild: 
 
@@ -362,13 +365,15 @@ Je Warengruppe und Jahr fehlen unterschiedliche viele Datensätze.
 
 Ein Ausreißer ist ein Wert, der außerhalb der üblichen Struktur einer Verteilung liegt. Zunächst wird in einem ersten Schritt mittels einer Visualisierung in Form von `boxplots` überprüft, ob die einzelnen Datensätze überhaupt Ausreißer enthalten.
 
+Ein Boxplot zeigt uns den Median (dicke Linie) sowie das untere und obere Quartil (als Box). Der Abstand von unterem zu oberem Quartil (interquartile range: IQR) wird standardmäßig mit 1.5 multipliziert. Und genau über die auf diese Art ermittelte Spannweite erstrecken sich die sogenannten whiskers maximal, wobei die whiskers unten und oben an der Box ansetzen. Gibt es darüber hinaus noch Werte, die weiter außerhalb liegen, werden diese als Ausreißer durch Punkte gekennzeichnet.
+
 Die Überprüfung wird begonnen mit dem Datensatz **Beispieldaten**: 
 
 ```{r}
 # Überprüfung der Variable Umsatz
+summary(Beispieldaten$Umsatz)
 boxplot(Beispieldaten$Umsatz)
 hist(Beispieldaten$Umsatz)
-density(Beispieldaten$Umsatz)
 
 # Visualisierung
 Beispieldaten %>% 
@@ -379,10 +384,12 @@ Beispieldaten %>%
 
 Das Attribut `Umsatz` enthält zahlreiche Ausreißer. Mit bloßem Auge ist nicht zu erkennen, wie viele Ausreißer es genau sind. Die Ausreißer werden also in einem 2. Schritt genauer betrachtet, um die genaue Anzahl der Ausreißer zu ermitteln. Statistiker haben viele Verfahren entwickelt, um auseinanderzuhalten, was man als Ausreißer bezeichnen sollte, und was nicht. 
 
-Eine mögliche Definition und oft benutzte Regel, die von John W. Tukey stammt, besteht darin, dass ein Wert ein Ausreißer ist, falls er deutlich oberhalt des oberen Quartils (`Q_3`) oder unterhalb des unteren Quartils (`Q_1`) liegt. Dabei bezieht er den Abstand des oberen zum unteren Quartil mit ein, genannt "interquartile range" (IQR) und definiert einen Ausreißer als einen Punkt, der mehr als $$1,5 * IQR$$ vom oberen Quartils bzw. unteren Quartil abweicht. Anders gesagt liegen untere Ausreißer unterhalb
+Wir verwenden - wie bereits erwähnt - die Standardeinstellung, die aus einer Definition von John W. Tukey stammt: Sie definiert einen Ausreißer als einen Punkt, der mehr als $$1,5 * IQR$$ vom unteren bzw. oberen Quartil abweicht. Anders gesagt liegen untere Ausreißer unterhalb
 
 $$Q_1 - 1,5 * IQR$$
-und obere Ausreißer oberhalb $$Q_3 + 1.5 * IQR$$
+und obere Ausreißer oberhalb 
+
+$$Q_3 + 1.5 * IQR$$
 
 Vereinfachend untersuchen wir nun die Umsatzvariable insgesamt auf Ausreißer, wobei wir zunächst nicht nach Warengruppen trennen:
 
@@ -391,7 +398,7 @@ g_oben <- quantile(Beispieldaten$Umsatz, probs=0.75) + (1.5*IQR(Beispieldaten$Um
 g_oben
 
 Beispieldaten %>%
-  select(Umsatz) %>%
+  dplyr::select(Umsatz) %>%
   filter(Umsatz > g_oben) %>%
   summarise(n = n())
 ```
@@ -399,16 +406,16 @@ Die obere Grenze für Ausreißer liegt demzufolge bei 559,80€ (gerundet). Es g
 
 ```{r}
 Beispieldaten %>%
-  select(Datum, Umsatz, Warengruppe) %>%
+  dplyr::select(Datum, Umsatz, Warengruppe) %>%
   filter(Umsatz > g_oben) 
 
 Beispieldaten %>%
-  select(Datum, Umsatz, Warengruppe) %>%
+  dplyr::select(Datum, Umsatz, Warengruppe) %>%
   filter(Umsatz > g_oben) %>%
   arrange(desc(Umsatz))
 
 Beispieldaten %>%
- select(Datum, Umsatz, Warengruppe) %>%
+ dplyr::select(Datum, Umsatz, Warengruppe) %>%
  filter(Datum == "2018-12-31")
 ```
 
@@ -489,21 +496,18 @@ Fazit: Insgesamt ein eher untypisches Jahr was Ausreißer anbelangt, sowohl von 
 * Wiederum stark im Juni sind die beiden Kieler Woche-Wochenenden (22.-23. sowie 29.-30.06.).
 * Der Sommerferieneffekt beginnt Mitte Juli (Sa, 13.07.) und hält bis zum Ende des Monats an.  
 
-
-!!!!!!!!!!! an anderer Stelle einfügen oder ganz löschen !!!!!!!!!!!!!!!!!!!!!!!!
-
-Am Ende der Auswertung wird deutlich, dass für einzelne Daten, z. B. den 05.05.2014, mehrere Umsätze vorhanden sind. Eine Überprüfung auf doppelt belegte Daten ergibt:
+Am Ende der Auswertung wird deutlich, dass für einzelne Daten, z. B. den 05.05.2014, auffällig hohe Umsätze in mehreren Warengruppen vorliegen. Eine Überprüfung auf doppelt belegte Daten ergibt:
 
 ```{r}
 Beispieldaten %>%
-  select(Datum, Umsatz, Warengruppe) %>%
+  dplyr::select(Datum, Umsatz, Warengruppe) %>%
   filter(Umsatz > g_oben) %>%
   arrange(desc(Umsatz)) %>%
   filter(duplicated(Datum))
 
 # Gegenprüfung
 Beispieldaten %>%
-  select(Datum, Umsatz) %>%
+  dplyr::select(Datum, Umsatz) %>%
   filter(Umsatz > g_oben) %>%
   arrange(desc(Umsatz)) %>%
   distinct(Datum) 
@@ -522,14 +526,6 @@ Für acht Daten ergibt sich, dass für diese mehrere Umsätze für einen Tag ein
 
 Auch die Über- bzw. Gegenprüfung bestätigt dies: es gibt nur 339 nicht doppelte Fälle gibt.
 
-### Anzahl der der Ausreißer pro Jahr
-
-```{r}
-
-```
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ENDE potentielle Einfügung !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 **Zusammenfassung der Erkenntnisse:**
 
 * Warengruppe 2 (Brötchen) ist mit großem Abstand die Warengruppe mit den meisten Ausreißern, diese sind in jedem Jahr überwiegend in der Sommerfereinzeit zu verzeichnen. Weitere Ausreißer gibt es in Warengruppe 5 (Kuchen). Die Ausreißer der WG 5 sind insbesondere an Silvester zu beobachten. Einen einzelnen Ausreißer gibt es in der WG 3 (Croissant) am 05.05.2014.
@@ -540,8 +536,6 @@ Auch die Über- bzw. Gegenprüfung bestätigt dies: es gibt nur 339 nicht doppel
 * Feiertage haben nur teilweise einen bedeutsamen Einfluss auf den Umsatz (Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit, Silvester, nicht jedoch Weihnachten); andere Feiertage wie der Reformationstag haben keinen Einfluss.
 * Die stärksten Ausreißer eines jeden der betrachteten Jahre sind jeweils an Silvester zu verzeichnen.
 
-
-
 Als nächstes wird der Datensatz **Wetter** auf Ausreißer hin überprüft:
 ```{r}
 boxplot(Wetter$Bewoelkung)
@@ -550,19 +544,23 @@ boxplot(Wetter$Windgeschwindigkeit)
 boxplot(Wetter$Wettercode)
 ```
 
-Die Variable Windgeschwindigkeit enthält 7 Ausreißer.
-
-....
+Nur die Variable Windgeschwindigkeit enthält 7 Ausreißer (Stürme).
 
 ## 2.7 Deskriptive Statistik
+
+Wir werfen einen ersten Blick auf den Gesamtumsatz und den Mittelwert des Umsatzes je Warengruppe.
 
 ```{r}
 # tapply
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
+```
 
+Wir prüfen nun, wie viele Datensätze wir je Warengruppe vorfinden und über welchen Zeitraum sich die Datensätze erstrecken.
+
+```{r}
 Beispieldaten %>%
-  select(Warengruppe) %>%
+  dplyr::select(Warengruppe) %>%
   group_by(Warengruppe) %>%
   summarise(n = n())
 
@@ -581,31 +579,26 @@ Entscheidung: Die Warengruppe 6 wird in der Modellierung nicht betrachtet.
 
 ```{r}
 Beispieldaten %>%
-  select(Datum, Umsatz) %>%
+  dplyr::select(Datum, Umsatz) %>%
   group_by(Datum) %>%
   summarise(Gesamtumsatz = sum(Umsatz)) %>%
   arrange(desc(Gesamtumsatz)) %>%
   top_n(20)
 ```
 
-### Welches sind die 10 umsatzstärksten Tage des Jahres je Warengruppe? ÄNDERN!
-
-```{r}
-
-```
-
+Üblicherweise bilden die Silvestertage mit Abstand die Umsatzspitzen. Bereits vorher war uns der 05.05.2014 aufgefallen, den wir später genauer untersuchen werden.
 
 # 3 Datenaufbereitung, Erstellung von Rohdatensatz und Analysedatensätzen
 
 ## 3.1 Umgang mit Ausreißern
 
-Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z. B. Silvester).Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d. h. es werden Variablen für diese planbaren Ausreißer angelegt.
+Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z.B. Silvester). Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d.h. es werden Variablen für diese planbaren Ausreißer angelegt.
 
-Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 auf den ersten Blick nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z. B. an Silvester). 
+Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 auf den ersten Blick nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z.B. an Silvester). 
 
 Bei genauerem Hinsehen haben wir festgestellt, dass für die beiden Vortage 03.05.2014 und 04.05.2014 keine Umsatzdaten vorliegen und zwar für alle Warengruppen. Der Verdacht liegt nahe, dass die Umsätze für den Zeitraum 03.-05.05.2014 summiert für den 05.05.2014 angesetzt wurden. Wir finden nämlich für den 05.05.2014 insgesamt einen Umsatz in Höhe von 3.156. Für den Vergleichszeitraum eine Woche später (10.-12.05.2014) finden wir einen Gesamtumsatz in vergleichbarer Höhe: 3.267. Es handelt sich bei keinem der Tage um einen Feiertag. 
 
-Wir korrigierten die Werte für den Zeitraum 03.-05.05.2014 und setzen dafür vereinfachend die Werte der Folgewoche ein. Wir erstellen einen Datensatz `df` als Kopie der Beispieldaten. Dann löschen wir zunächst den 05.05.2014, laden die korrigierten Werte für den 03.-05.05.2014 aus dem Datensatz Beispieldaten_Korrektur.csv und verknüpfen ihn mit `df`.
+Wir korrigieren die Werte für den Zeitraum 03.-05.05.2014 und setzen dafür vereinfachend die Werte der Folgewoche ein. Wir erstellen einen Datensatz `df` als Kopie der Beispieldaten. Dann löschen wir zunächst den 05.05.2014, laden die korrigierten Werte für den 03.-05.05.2014 aus dem Datensatz Beispieldaten_Korrektur.csv und verknüpfen ihn mit `df`.
 
 ```{r}
 Beispieldaten %>% 
@@ -632,7 +625,6 @@ Beispieldaten_korr <- Beispieldaten_korr %>% mutate(Jahr = year(Datum))
 df <- rbind(df, Beispieldaten_korr)
 df %>% filter(Datum == "2014-05-05")
 ```
-
 
 Da die anderen Ausreißer durch jeweilige Sondereffekte zu erklären sind (Wochenende, Feiertag, Brückentag etc.) werden diese Ausreißer im Datensatz belassen und im Fortgang hierfür gesonderte Variablen angelegt.
 
@@ -851,9 +843,9 @@ df_voll <- df_voll %>%
 ```
 
 In einem nächsten Schritt werden Variablen erstellt, die neben den Feiertagen auch "Brückentage" / den vorherigen oder darauffolgenden Tag enthalten. Bezüglich der Frage, welche umgebenden Tage im Speziellen berücksichtigt werden, wird auf die Umsätze der umgebenden Tage in der Vergangenheit referenziert. Sind diese signifikant / bedeutend höher als vergleichbare Wochentage, so werden diese mit einbezogen.
-Ausgenommen wird an dieser Stelle der Tag der Deutschen Einheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt. (NOCHMAL ABSCHLIEßEND PRÜFEN)
+Ausgenommen wird an dieser Stelle der Tag der Deutschen Einheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt.
 
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Ostern_ext (= Ostern extendet) (Gründonnerstag, "Ostersamstag", Ostersonntag, Ostermontag, ohne Karfreitag, da geschlossen)
 Ostern_ext <- read_csv2("data/Ostern_extended.csv")
 df_voll <- left_join(df_voll, Ostern_ext, by = "Datum")
@@ -925,7 +917,7 @@ Es gibt wiederum zwei Möglichkeiten, die Variable anzulegen:
 
 
 Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelesen und an den bestehenden Rohdatensatz hinzugefügt:
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Jahreszeiten
 Jahreszeiten <- read_csv2("data/Jahreszeiten.csv")
 df_voll <- left_join(df_voll, Jahreszeiten, by = "Datum")
@@ -933,7 +925,7 @@ df_voll <- left_join(df_voll, Jahreszeiten, by = "Datum")
 
 In einem weiteren Schritt werden für die einzelnen Jahreszeiten eigene Variablen angelegt und mit dem bestehenden Rohdatensatz verknüpft:
 
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Fruehling
 Fruehling <- read_csv2("data/Fruehling.csv")
 df_voll <- left_join(df_voll, Fruehling, by = "Datum")
@@ -978,7 +970,7 @@ Ergebnis der vorangegegangenen Operationen ist der Datensatz `df_voll`, der eine
 
 In diesem Datensatz fehlen teilweise die Umsätze für einzelne Tage und/oder Warengruppen, weil die Rohdaten fehlende Werte aufweisen.
 
-Der Datensatz `df_voll` kann für einzelne Analysen ohne Weiteres verwendet werden, z. B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z. B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
+Der Datensatz `df_voll` kann für einzelne Analysen ohne Weiteres verwendet werden, z.B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z.B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
 
 ### Imputation: Ergänzung fehlender Werte
 
@@ -1243,7 +1235,7 @@ Beobachtungen:
 * Für die Warengruppen 1, 2, 3 und 5 zeigen sich ähnliche Effekte: Die Umsätze 2014 liegen systematisch höher. Das setzt sich bis in die ersten 3 Monate des Jahres 2015 fort. Ab April 2015 sind die Verläufe ähnlich bis Ende 2017.
 * Die Warengruppe 4 ist insgesamt die umsatzschwächste Gruppe. Die Monatsumsätze sind über die Jahre 2014 bis 2017 relativ ähnlich. Eine Ausnahme bildet der Februar 2017: Hier liegen die Umsätze deutlich unter den Umsätzen der übrigen Jahre. Dafür gibt es bislang keine Erklärung.
 
-Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze im Februar aufweist.
+Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze aufweist.
 
 # 5 Anwendung naiver Modelle
 
@@ -1699,7 +1691,7 @@ prog_naiv_glDS_3T %>%
   tail(n=10)
 ```
 
-Für Silvester liefert unser naiver Schätzer auf Basis des gleitenden Durchschnitts offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.
+Für Silvester liefert unser naiver Schätzer auf Basis des gleitenden Durchschnitts offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich zu hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.
 
 ### Erweiterter gl. Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage
 
@@ -1990,7 +1982,7 @@ Wir haben in diesem Kapitel die folgenden Analysedatensätze verwendet und gefü
 
 ### Vergleich der relativen Abweichung
 
-Nun bringen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung, Boxplots und Violinplots der Verteilungen zu erstellen.
+Nun bringen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung und Boxplots der Verteilungen zu erstellen.
 
 Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabelle dient uns der ursprüngliche Datensatz `df_naiv`. Wir starten ab dem 01.08.2013, weil wir ab diesem Datum Schätzer für alle Modelle haben. Und wir streichen die Datensätze, für die die Umsätze in den Rohdaten fehlen.
 
