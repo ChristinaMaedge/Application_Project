@@ -13,17 +13,21 @@ library(GGally) # Wird benötigt für die Erstellung des correlograms
 library(e1071) # Wird für Support Vector Machines benötigt
 ```
 
-# 1. Allgemeine Projektinformationen
+# 1 Allgemeine Projektinformationen
 
 ## 1.1 Ausgangslage
 Die Bestellung von Bäckereien ist häufig noch ein manueller und zeitaufwändiger Prozess, der auf adjustierten Vorwochenwerten basiert. Eine systematische Planung unter Einbeziehung von Mustern findet nur eingeschränkt statt.
 
 ## 1.2 Zielsetzung 
-Es wird ein Prognosemodell entworfen, das Bäckereien ein bessere Planungsgrundlage auf Warengruppenebene bietet. 
+Wir testen verschiedene einfache und komplexe Modelle und bedienen uns dabei an Techniken aus dem Bereich Machine Learning und Deep Learning. Möglicherweise finden wir ein Verfahren, dass den anderen überlegen ist und die beste Prognosegüte für alle Warengruppen aufweist. 
+
+Oder es stellt sich heraus, dass das Verhalten der Warengruppen zu unterschiedlich ist und wir verschiedene Techniken für verschiedene Warengruppen benötigen.
+
+In jedem Fall wird ein Prognosemodell entworfen, das Bäckereien eine bessere Planungsgrundlage auf Warengruppenebene bietet.
 
 **Lösungsansatz**
 
-Mit Hilfe von verschiedenen Daten und Einflussfaktoren soll diese Umsätze je Warengruppe prognostiziert werden. 
+Mit Hilfe von verschiedenen Daten und Einflussfaktoren sollen die Umsätze je Warengruppe prognostiziert werden. 
 
 *	Umsatzdaten, Wetterdaten, Veranstaltungsdaten
 *	Weitere Einflussfaktoren (Wochentage, Feiertage, Ferien,…)
@@ -104,12 +108,11 @@ Der Datensatz **Wetter** enthält 2601 Zeilen und fünf Variablen:
 
 Weitere Informationen zu den einzelnen Variablen des Datensatzes **Wetter** und ihrer Interpretation können der privaten Webseite [**Seewetter Kiel**](http://www.seewetter-kiel.de/seewetter/daten_symbole.htm) entnommen werden. 
 
-Alle Datensätze enthalten die Variable `Datum`. Folglich können die einzelnen Datensätze über diese Variable vereinigt werden. 
+Alle Datensätze enthalten die Variable `Datum`. Folglich können die einzelnen Datensätze später über diese Variable vereinigt werden. 
 
 ## 2.3 Überprüfung des Anfangs- und Endzeitpunkt der Datumsattribute in den Datensätzen
 ```{r}
-min(Beispieldaten$Datum)
-max(Beispieldaten$Datum)
+range(Beispieldaten$Datum)
 range(KiWo$Datum)
 range(Wetter$Datum)
 ```
@@ -175,7 +178,7 @@ Beispieldaten %>%
 ```
 
 Es fehlen bei allen Warengruppen Datensätze. Bei den Warengruppen 1,2, 3 und 5 fallen ca. 70% der fehlenden Daten auf Feiertage (insb. Karfreitag, Tag der Arbeit und 1. und 2. Weihnachtsfeiertag).
-Bei Warengruppe 4 sind es ca. 30%. Weitere ~30% der fehlenden Daten der Warengruppe 4 liegen in den Sommermonaten Juni, Juli, August. Eine Möglichkeit wäre, dass die Kühlung ausgefallen ist / einen Defekt hatte und demzufolge keine Konditoreiwaren angeboten wurden. Eine andere Möglichkeit wäre, dass bei sehr trockenem, warmen Wetter der Verkauf von Konditoreiwaren in der Regel ein Minusgeschäft ist und daher das Sortiment temporär/tageweise verkleinert wird. Auffällig ist, dass die Anzahl der fehlenden Werte pro Jahr abnehmend ist und sich insbesondere in den Jahren 2012 und 2018 mehrheitlich auf Feiertage beschränkt.
+Bei Warengruppe 4 sind es ca. 30%. Weitere ~30% der fehlenden Daten der Warengruppe 4 liegen in den Sommermonaten Juni, Juli, August. Eine Möglichkeit wäre, dass die Kühlung ausgefallen ist / einen Defekt hatte und demzufolge keine Konditoreiwaren angeboten wurden. Eine andere Möglichkeit wäre, dass bei sehr trockenem, warmen Wetter der Verkauf von Konditoreiwaren in der Regel ein Minusgeschäft ist und daher das Sortiment temporär/tageweise verkleinert wird. Auffällig ist, dass die Anzahl der fehlenden Werte pro Jahr abnehmend ist und sich insbesondere in den Jahren 2013 und 2018 mehrheitlich auf Feiertage beschränkt.
 
 Untersucht man die einzelnen Jahre genauer, ergibt sich folgendes Bild: 
 
@@ -362,13 +365,15 @@ Je Warengruppe und Jahr fehlen unterschiedliche viele Datensätze.
 
 Ein Ausreißer ist ein Wert, der außerhalb der üblichen Struktur einer Verteilung liegt. Zunächst wird in einem ersten Schritt mittels einer Visualisierung in Form von `boxplots` überprüft, ob die einzelnen Datensätze überhaupt Ausreißer enthalten.
 
+Ein Boxplot zeigt uns den Median (dicke Linie) sowie das untere und obere Quartil (als Box). Der Abstand von unterem zu oberem Quartil (interquartile range: IQR) wird standardmäßig mit 1.5 multipliziert. Und genau über die auf diese Art ermittelte Spannweite erstrecken sich die sogenannten whiskers maximal, wobei die whiskers unten und oben an der Box ansetzen. Gibt es darüber hinaus noch Werte, die weiter außerhalb liegen, werden diese als Ausreißer durch Punkte gekennzeichnet.
+
 Die Überprüfung wird begonnen mit dem Datensatz **Beispieldaten**: 
 
 ```{r}
 # Überprüfung der Variable Umsatz
+summary(Beispieldaten$Umsatz)
 boxplot(Beispieldaten$Umsatz)
 hist(Beispieldaten$Umsatz)
-density(Beispieldaten$Umsatz)
 
 # Visualisierung
 Beispieldaten %>% 
@@ -379,10 +384,12 @@ Beispieldaten %>%
 
 Das Attribut `Umsatz` enthält zahlreiche Ausreißer. Mit bloßem Auge ist nicht zu erkennen, wie viele Ausreißer es genau sind. Die Ausreißer werden also in einem 2. Schritt genauer betrachtet, um die genaue Anzahl der Ausreißer zu ermitteln. Statistiker haben viele Verfahren entwickelt, um auseinanderzuhalten, was man als Ausreißer bezeichnen sollte, und was nicht. 
 
-Eine mögliche Definition und oft benutzte Regel, die von John W. Tukey stammt, besteht darin, dass ein Wert ein Ausreißer ist, falls er deutlich oberhalt des oberen Quartils (`Q_3`) oder unterhalb des unteren Quartils (`Q_1`) liegt. Dabei bezieht er den Abstand des oberen zum unteren Quartil mit ein, genannt "interquartile range" (IQR) und definiert einen Ausreißer als einen Punkt, der mehr als $$1,5 * IQR$$ vom oberen Quartils bzw. unteren Quartil abweicht. Anders gesagt liegen untere Ausreißer unterhalb
+Wir verwenden - wie bereits erwähnt - die Standardeinstellung, die aus einer Definition von John W. Tukey stammt: Sie definiert einen Ausreißer als einen Punkt, der mehr als $$1,5 * IQR$$ vom unteren bzw. oberen Quartil abweicht. Anders gesagt liegen untere Ausreißer unterhalb
 
 $$Q_1 - 1,5 * IQR$$
-und obere Ausreißer oberhalb $$Q_3 + 1.5 * IQR$$
+und obere Ausreißer oberhalb 
+
+$$Q_3 + 1.5 * IQR$$
 
 Vereinfachend untersuchen wir nun die Umsatzvariable insgesamt auf Ausreißer, wobei wir zunächst nicht nach Warengruppen trennen:
 
@@ -391,7 +398,7 @@ g_oben <- quantile(Beispieldaten$Umsatz, probs=0.75) + (1.5*IQR(Beispieldaten$Um
 g_oben
 
 Beispieldaten %>%
-  select(Umsatz) %>%
+  dplyr::select(Umsatz) %>%
   filter(Umsatz > g_oben) %>%
   summarise(n = n())
 ```
@@ -399,16 +406,16 @@ Die obere Grenze für Ausreißer liegt demzufolge bei 559,80€ (gerundet). Es g
 
 ```{r}
 Beispieldaten %>%
-  select(Datum, Umsatz, Warengruppe) %>%
+  dplyr::select(Datum, Umsatz, Warengruppe) %>%
   filter(Umsatz > g_oben) 
 
 Beispieldaten %>%
-  select(Datum, Umsatz, Warengruppe) %>%
+  dplyr::select(Datum, Umsatz, Warengruppe) %>%
   filter(Umsatz > g_oben) %>%
   arrange(desc(Umsatz))
 
 Beispieldaten %>%
- select(Datum, Umsatz, Warengruppe) %>%
+ dplyr::select(Datum, Umsatz, Warengruppe) %>%
  filter(Datum == "2018-12-31")
 ```
 
@@ -489,21 +496,18 @@ Fazit: Insgesamt ein eher untypisches Jahr was Ausreißer anbelangt, sowohl von 
 * Wiederum stark im Juni sind die beiden Kieler Woche-Wochenenden (22.-23. sowie 29.-30.06.).
 * Der Sommerferieneffekt beginnt Mitte Juli (Sa, 13.07.) und hält bis zum Ende des Monats an.  
 
-
-!!!!!!!!!!! an anderer Stelle einfügen oder ganz löschen !!!!!!!!!!!!!!!!!!!!!!!!
-
-Am Ende der Auswertung wird deutlich, dass für einzelne Daten, z. B. den 05.05.2014, mehrere Umsätze vorhanden sind. Eine Überprüfung auf doppelt belegte Daten ergibt:
+Am Ende der Auswertung wird deutlich, dass für einzelne Daten, z. B. den 05.05.2014, auffällig hohe Umsätze in mehreren Warengruppen vorliegen. Eine Überprüfung auf doppelt belegte Daten ergibt:
 
 ```{r}
 Beispieldaten %>%
-  select(Datum, Umsatz, Warengruppe) %>%
+  dplyr::select(Datum, Umsatz, Warengruppe) %>%
   filter(Umsatz > g_oben) %>%
   arrange(desc(Umsatz)) %>%
   filter(duplicated(Datum))
 
 # Gegenprüfung
 Beispieldaten %>%
-  select(Datum, Umsatz) %>%
+  dplyr::select(Datum, Umsatz) %>%
   filter(Umsatz > g_oben) %>%
   arrange(desc(Umsatz)) %>%
   distinct(Datum) 
@@ -522,14 +526,6 @@ Für acht Daten ergibt sich, dass für diese mehrere Umsätze für einen Tag ein
 
 Auch die Über- bzw. Gegenprüfung bestätigt dies: es gibt nur 339 nicht doppelte Fälle gibt.
 
-### Anzahl der der Ausreißer pro Jahr
-
-```{r}
-
-```
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ENDE potentielle Einfügung !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 **Zusammenfassung der Erkenntnisse:**
 
 * Warengruppe 2 (Brötchen) ist mit großem Abstand die Warengruppe mit den meisten Ausreißern, diese sind in jedem Jahr überwiegend in der Sommerfereinzeit zu verzeichnen. Weitere Ausreißer gibt es in Warengruppe 5 (Kuchen). Die Ausreißer der WG 5 sind insbesondere an Silvester zu beobachten. Einen einzelnen Ausreißer gibt es in der WG 3 (Croissant) am 05.05.2014.
@@ -540,8 +536,6 @@ Auch die Über- bzw. Gegenprüfung bestätigt dies: es gibt nur 339 nicht doppel
 * Feiertage haben nur teilweise einen bedeutsamen Einfluss auf den Umsatz (Ostern, Christi Himmelfahrt, Pfingsten, Tag der Deutschen Einheit, Silvester, nicht jedoch Weihnachten); andere Feiertage wie der Reformationstag haben keinen Einfluss.
 * Die stärksten Ausreißer eines jeden der betrachteten Jahre sind jeweils an Silvester zu verzeichnen.
 
-
-
 Als nächstes wird der Datensatz **Wetter** auf Ausreißer hin überprüft:
 ```{r}
 boxplot(Wetter$Bewoelkung)
@@ -550,19 +544,23 @@ boxplot(Wetter$Windgeschwindigkeit)
 boxplot(Wetter$Wettercode)
 ```
 
-Die Variable Windgeschwindigkeit enthält 7 Ausreißer.
-
-....
+Nur die Variable Windgeschwindigkeit enthält 7 Ausreißer (Stürme).
 
 ## 2.7 Deskriptive Statistik
+
+Wir werfen einen ersten Blick auf den Gesamtumsatz und den Mittelwert des Umsatzes je Warengruppe.
 
 ```{r}
 # tapply
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], sum)
 tapply(Beispieldaten$Umsatz, Beispieldaten[,2], mean)
+```
 
+Wir prüfen nun, wie viele Datensätze wir je Warengruppe vorfinden und über welchen Zeitraum sich die Datensätze erstrecken.
+
+```{r}
 Beispieldaten %>%
-  select(Warengruppe) %>%
+  dplyr::select(Warengruppe) %>%
   group_by(Warengruppe) %>%
   summarise(n = n())
 
@@ -581,31 +579,26 @@ Entscheidung: Die Warengruppe 6 wird in der Modellierung nicht betrachtet.
 
 ```{r}
 Beispieldaten %>%
-  select(Datum, Umsatz) %>%
+  dplyr::select(Datum, Umsatz) %>%
   group_by(Datum) %>%
   summarise(Gesamtumsatz = sum(Umsatz)) %>%
   arrange(desc(Gesamtumsatz)) %>%
   top_n(20)
 ```
 
-### Welches sind die 10 umsatzstärksten Tage des Jahres je Warengruppe? ÄNDERN!
-
-```{r}
-
-```
-
+Üblicherweise bilden die Silvestertage mit Abstand die Umsatzspitzen. Bereits vorher war uns der 05.05.2014 aufgefallen, den wir später genauer untersuchen werden.
 
 # 3 Datenaufbereitung, Erstellung von Rohdatensatz und Analysedatensätzen
 
 ## 3.1 Umgang mit Ausreißern
 
-Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z. B. Silvester).Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d. h. es werden Variablen für diese planbaren Ausreißer angelegt.
+Zwei der 7 verbleibenden Variablen enthalten Ausreißer: `Umsatz` und `Windgeschwindigkeit`. Beim Umgang mit den vorhandenen Ausreißern muss differenziert werden, ob es sich um unerwartete / nicht prognostizierbare Ausreißer handelt oder ob diese in gewisser Hinsicht planbar sind, weil sie erwartbar sind, da sie in allen Jahren gleichermaßen zu beobachten sind (z.B. Silvester). Prognostizierbare Ausreißer werden im weiteren Verlauf kodiert, d.h. es werden Variablen für diese planbaren Ausreißer angelegt.
 
-Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 auf den ersten Blick nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z. B. an Silvester). 
+Was die vorliegenden Daten anbelangt, sind einzig die Umsätze am Montag, 05.05.2014 auf den ersten Blick nicht zu erklären. Dieser Tag ist der umsatzstärkste Tag im gesamten Zeitverlauf. Zudem ist es der einzige Tag im gesamten Datensatz, bei dem es Ausreißer für drei Warengruppen gibt (ansonsten beschränken sich die Ausreißer weitestgehend auf Warengruppe 2, vereinzelt gibt es Tage, an denen auch Warengruppe 5 Ausreißer aufweist, z.B. an Silvester). 
 
 Bei genauerem Hinsehen haben wir festgestellt, dass für die beiden Vortage 03.05.2014 und 04.05.2014 keine Umsatzdaten vorliegen und zwar für alle Warengruppen. Der Verdacht liegt nahe, dass die Umsätze für den Zeitraum 03.-05.05.2014 summiert für den 05.05.2014 angesetzt wurden. Wir finden nämlich für den 05.05.2014 insgesamt einen Umsatz in Höhe von 3.156. Für den Vergleichszeitraum eine Woche später (10.-12.05.2014) finden wir einen Gesamtumsatz in vergleichbarer Höhe: 3.267. Es handelt sich bei keinem der Tage um einen Feiertag. 
 
-Wir korrigierten die Werte für den Zeitraum 03.-05.05.2014 und setzen dafür vereinfachend die Werte der Folgewoche ein. Wir erstellen einen Datensatz `df` als Kopie der Beispieldaten. Dann löschen wir zunächst den 05.05.2014, laden die korrigierten Werte für den 03.-05.05.2014 aus dem Datensatz Beispieldaten_Korrektur.csv und verknüpfen ihn mit `df`.
+Wir korrigieren die Werte für den Zeitraum 03.-05.05.2014 und setzen dafür vereinfachend die Werte der Folgewoche ein. Wir erstellen einen Datensatz `df` als Kopie der Beispieldaten. Dann löschen wir zunächst den 05.05.2014, laden die korrigierten Werte für den 03.-05.05.2014 aus dem Datensatz Beispieldaten_Korrektur.csv und verknüpfen ihn mit `df`.
 
 ```{r}
 Beispieldaten %>% 
@@ -632,7 +625,6 @@ Beispieldaten_korr <- Beispieldaten_korr %>% mutate(Jahr = year(Datum))
 df <- rbind(df, Beispieldaten_korr)
 df %>% filter(Datum == "2014-05-05")
 ```
-
 
 Da die anderen Ausreißer durch jeweilige Sondereffekte zu erklären sind (Wochenende, Feiertag, Brückentag etc.) werden diese Ausreißer im Datensatz belassen und im Fortgang hierfür gesonderte Variablen angelegt.
 
@@ -851,9 +843,9 @@ df_voll <- df_voll %>%
 ```
 
 In einem nächsten Schritt werden Variablen erstellt, die neben den Feiertagen auch "Brückentage" / den vorherigen oder darauffolgenden Tag enthalten. Bezüglich der Frage, welche umgebenden Tage im Speziellen berücksichtigt werden, wird auf die Umsätze der umgebenden Tage in der Vergangenheit referenziert. Sind diese signifikant / bedeutend höher als vergleichbare Wochentage, so werden diese mit einbezogen.
-Ausgenommen wird an dieser Stelle der Tag der Deutschen Einheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt. (NOCHMAL ABSCHLIEßEND PRÜFEN)
+Ausgenommen wird an dieser Stelle der Tag der Deutschen Einheit, da der Einfluss umgebender Tage bei diesem einzelnen Feiertag sehr davon abhängt, auf welchen Wochentag der Feiertag fällt.
 
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Ostern_ext (= Ostern extendet) (Gründonnerstag, "Ostersamstag", Ostersonntag, Ostermontag, ohne Karfreitag, da geschlossen)
 Ostern_ext <- read_csv2("data/Ostern_extended.csv")
 df_voll <- left_join(df_voll, Ostern_ext, by = "Datum")
@@ -925,7 +917,7 @@ Es gibt wiederum zwei Möglichkeiten, die Variable anzulegen:
 
 
 Zunächst wird eine Variable für alle Jahreszeiten erstellt bzw. eingelesen und an den bestehenden Rohdatensatz hinzugefügt:
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Jahreszeiten
 Jahreszeiten <- read_csv2("data/Jahreszeiten.csv")
 df_voll <- left_join(df_voll, Jahreszeiten, by = "Datum")
@@ -933,7 +925,7 @@ df_voll <- left_join(df_voll, Jahreszeiten, by = "Datum")
 
 In einem weiteren Schritt werden für die einzelnen Jahreszeiten eigene Variablen angelegt und mit dem bestehenden Rohdatensatz verknüpft:
 
-```{r}
+```{r message=FALSE}
 ## Hinzufügen der Variable Fruehling
 Fruehling <- read_csv2("data/Fruehling.csv")
 df_voll <- left_join(df_voll, Fruehling, by = "Datum")
@@ -978,7 +970,7 @@ Ergebnis der vorangegegangenen Operationen ist der Datensatz `df_voll`, der eine
 
 In diesem Datensatz fehlen teilweise die Umsätze für einzelne Tage und/oder Warengruppen, weil die Rohdaten fehlende Werte aufweisen.
 
-Der Datensatz `df_voll` kann für einzelne Analysen ohne Weiteres verwendet werden, z. B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z. B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
+Der Datensatz `df_voll` kann für einzelne Analysen ohne Weiteres verwendet werden, z.B. für eine Regressionsanalyse. Möchte man Vorhersagen auf Basis der Vorwochenwerte durchführen, z.B. die Umsatz-Prognose für den aktuellen Montag auf Basis des vorangegangenen Montags durchführen, könnten Probleme auftreten, da der Vorwochenwert aufgrund der unterbrochenenen Zeitreihe ggf. nicht verfügbar ist. 
 
 ### Imputation: Ergänzung fehlender Werte
 
@@ -1073,7 +1065,7 @@ df_test <- df_voll %>% filter(Jahr == 2018)
 # write_csv(df_voll, path="data/df_voll.csv", col_names=TRUE)
 ```
 
-# 4. Deskriptive Analysen
+# 4 Deskriptive Analysen
 
 ## 4.1 Umsatz je Wochentag / Warengruppe
 
@@ -1243,7 +1235,7 @@ Beobachtungen:
 * Für die Warengruppen 1, 2, 3 und 5 zeigen sich ähnliche Effekte: Die Umsätze 2014 liegen systematisch höher. Das setzt sich bis in die ersten 3 Monate des Jahres 2015 fort. Ab April 2015 sind die Verläufe ähnlich bis Ende 2017.
 * Die Warengruppe 4 ist insgesamt die umsatzschwächste Gruppe. Die Monatsumsätze sind über die Jahre 2014 bis 2017 relativ ähnlich. Eine Ausnahme bildet der Februar 2017: Hier liegen die Umsätze deutlich unter den Umsätzen der übrigen Jahre. Dafür gibt es bislang keine Erklärung.
 
-Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze im Februar aufweist.
+Für die weitere Entwicklung unserer Prognosemodelle könnte es daher sinnvoll sein, dass wir uns bei den Trainingsdaten auf den Zeitraum ab April 2015 bis 2017 beschränken und die Zeit davor außer Acht lassen. Und wir behalten im Hinterkopf, dass der Februar 2017 auffällig niedrige Umsätze aufweist.
 
 # 5 Anwendung naiver Modelle
 
@@ -1699,7 +1691,7 @@ prog_naiv_glDS_3T %>%
   tail(n=10)
 ```
 
-Für Silvester liefert unser naiver Schätzer auf Basis des gleitenden Durchschnitts offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.
+Für Silvester liefert unser naiver Schätzer auf Basis des gleitenden Durchschnitts offenbar systematisch zu niedrige Prognosen, besonders für Warengruppe 5 (Kuchen), was vermutlich am Verkauf der Berliner liegt. Das war zu erwarten, weil Silvester immer sehr umsatzstarke Tage sind. Für die Tage mit deutlich zu hoher Prognose ist auf den ersten Blick keine Systematik zu erkennen.
 
 ### Erweiterter gl. Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage
 
@@ -1990,7 +1982,7 @@ Wir haben in diesem Kapitel die folgenden Analysedatensätze verwendet und gefü
 
 ### Vergleich der relativen Abweichung
 
-Nun bringen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung, Boxplots und Violinplots der Verteilungen zu erstellen.
+Nun bringen wir die relativen Abweichungen in einem Datensatz zusammen, je Datum, Warengruppe und Modell, um damit Facetten-Plots der Dichteverteilung und Boxplots der Verteilungen zu erstellen.
 
 Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabelle dient uns der ursprüngliche Datensatz `df_naiv`. Wir starten ab dem 01.08.2013, weil wir ab diesem Datum Schätzer für alle Modelle haben. Und wir streichen die Datensätze, für die die Umsätze in den Rohdaten fehlen.
 
@@ -1998,7 +1990,7 @@ Als Grundgerüst (Datum, Warengruppe, Jahr, Wochentag) für die gemeinsame Tabel
 prog_naiv_vgl_relAbw <- df_naiv %>%
   filter(Umsatz_NA == FALSE) %>% # fehlende Umsätze in den Rohdaten raus nehmen
   filter(Datum >= "2013-08-01") %>%  # starte ab 01.08.2013
-  select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c, SommerferienSH, Feiertag) # behalte nur diese Spalten
+  dplyr::select(Datum, Warengruppe, Jahr, Wochentag, Wochentag_c, SommerferienSH, Feiertag) # behalte nur diese Spalten
 ```
 
 Füge als nächstes die relativen Abweichungen an die Tabelle an:
@@ -2032,9 +2024,9 @@ prog_naiv_vgl_relAbw %>%
   xlim(-100, 200)
 ```
 
-AUSWERTUNG: Stelle auch die übrigen WGs dar! Unterschiede?!?
+Man könnte hier noch die Verteilungen für die übrigen Warengruppen darstellen, der Erkenntnisgewinn ist jedoch vermutlich gering, daher verzichten wir darauf.
 
-Stelle nun die Verteilung der relativen Abweichung für die Wochentage dar:
+Stattdessen stellen wir die Verteilungen im Vergleich exemplarisch für Montag dar:
 
 ```{r}
 prog_naiv_vgl_relAbw %>%
@@ -2048,9 +2040,7 @@ prog_naiv_vgl_relAbw %>%
   xlim(-100, 200)
 ```
 
-AUSWERTUNG: Stelle auch die übrigen Wochentag dar! Unterschiede?!?
-
-Um die Dichteverteilungen besser vergleichen zu können, wählen wir einen Boxplot:
+Um die Dichteverteilungen besser vergleichen zu können, wählen wir Boxplots und können dann auch die Verteilungen für alle Warengruppen und Wochentage in einem Facetten-Plot zeigen.
 
 ```{r}
 # Jahr 2018, alle Wochentage und Warengruppen
@@ -2119,7 +2109,7 @@ prog_naiv_vgl_relAbw %>%
   facet_wrap(vars(Warengruppe))
 ```
 
-Vergleicht man die Dichteverteilungen für das Jahr 2018 insgesamt (über alle Warengruppen und Wochentage), liefert der erweiterte gleitende Durchschnitt der letzten 3 Wochen- bzw. Wochenendtage die besten Ergebnisse.
+Vergleicht man die Dichteverteilungen für das Jahr 2018 insgesamt (über alle Warengruppen und Wochentage), liefert der erweiterte gleitende Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse.
 
 Unterteilt man die Verteilungen nach Wochentag oder Warengruppe, ergibt sich ein differenzierteres Bild: 
 
@@ -2268,9 +2258,9 @@ temp <- prog_naiv_glDS_4T_erw %>%
 temp
 ```
 
-Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Und das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt die niedrigsten Werte.
+Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Und das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt mit 11 den niedrigsten Wert.
 
-Auch für Warengruppe 5 (Kuchen) liefert das Modell offenbar gute Schätzungen. Auffällig ist jedoch, dass die mittlere quadratische Abweichung (MSE) deutlich höher ist, als für die anderen Warengruppen. Das liegt vermutlich am Schätzfehler für Silvester, wird hier aber nicht weiter geprüft.
+Auch für Warengruppe 5 (Kuchen) liefert das Modell offenbar gute Schätzungen. Auffällig ist jedoch, dass die mittlere quadratische Abweichung (MSE) deutlich höher ist, als für die anderen Warengruppen. Das liegt am Schätzfehler für Silvester: Wie wir bereits gesehen hatten, haben wir in der Warengruppe auffällig hohen Umsatz durch den Berlinerverkauf.
 
 Zuletzt gucken wir uns die Gütekennzahlen für dieses Modell je Wochentag an.
 
@@ -2996,7 +2986,7 @@ Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples
 caret::postResample(pred = lm_WG1_28_predict, obs = df_lm_test_WG1_28$Umsatz)
 ```
 
-Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `prog_MLP_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `lm_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
 ```{r}
 # Hinzufügen der Ergebnisse
 df_lm_test_WG1_28 <- df_lm_test_WG1_28 %>%
@@ -3044,7 +3034,7 @@ Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples
 caret::postResample(pred = lm_WG1_36_predict, obs = df_lm_test_WG1$Umsatz)
 ```
 
-Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `prog_MLP_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und an die gemeinsame Übersichtstabelle für die Gütekennzahlen `lm_vgl_kennz` angefügt, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
 ```{r}
 df_lm_test_WG1_36 <- df_lm_test_WG1
 
@@ -3076,11 +3066,6 @@ temp <- temp %>% mutate(Modell = "best36_WG1")
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
-
-
-
-\
-
 
 
 ### 6.3.2 Warengruppe 2
@@ -3156,12 +3141,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 29-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 21-Variablenmodell vor und der $C_p$ das 28-Variablen-Modell vor.
-
-Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
-```{r}
-
-```
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 32-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 19-Variablenmodell vor und der $C_p$ das 27-Variablen-Modell vor.
 
 Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
@@ -3175,7 +3155,7 @@ which.min(summary(backward)$cp)
 
 Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 31-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 30-Variablen-Modell vor.
 
-Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren-Stes folgendes Bild:. 
+Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren  folgendes Bild: 
 ```{r}
 # 19-Variablen-Modell
 coef(best_subset_WG2, 19)
@@ -3715,9 +3695,6 @@ lm_vgl_kennz
 ```
 
 
-\
-
-
 ### 6.3.3 Warengruppe 5
 
 **Erstellung von Trainings- und Testdatensätzen für Warengruppe 5**
@@ -3793,11 +3770,6 @@ which.min(results$cp)
 
 Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 31-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 23-Variablenmodell vor und der $C_p$ ein 27-Variablen-Modell vor.
 
-Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
-```{r}
-
-```
-
 Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
 forward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 36, method = "forward")
@@ -3810,7 +3782,7 @@ which.min(summary(backward)$cp)
 
 Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 28-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 26-Variablen-Modell vor.
 
-Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren-Stes folgendes Bild:. 
+Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren  folgendes Bild:.
 ```{r}
 # 23-Variablen-Modell
 coef(best_subset_WG2, 23)
@@ -4311,11 +4283,21 @@ lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
 
+## 6.4 Vergleich der linearen Modelle
+
+Wir haben jetzt die Gütekennzahlen für die Warengruppen 1, 2 und 5 ermittelt und zwar für verschiedene Modelle. Innerhalb der Warengruppen unterscheiden sich die Modelle nur marginal. Das spricht dafür, jeweils das einfachste Modell zu verwenden, also mit möglichst wenig Variablen. Für die Warengruppe 1 entscheiden wir uns für das Modell mit 31 Variablen, für die Warengruppe 2 mit 19 Variablen und für die Warengruppe 5 mit nur 10 Variablen.
+
+Dann fällt auf, dass die Schätzer für die Warengruppe 2 offenbar systematisch zu hoch sind, weil die mittlere relative Abweichung bei 9% liegt. Für die übrigen Warengruppen liegt der Wert näher an Null.
+
+Und der mittlere gewichtete Absolutwert der relativen Abweichung (WAPE), den wir vorrangig als Güte-Kriterium im Auge haben, zeigt den niedrigsten Wert für Warengruppe 2, gefolgt von Warengruppe 5. Ähnliche Ergebnisse hatten wir auch mit dem besten naiven Modell erzielt: Dort konnten mit dem erweiterten gleitenden Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse für die Warengruppen insgesamt erzielt werden und für die Warengruppe 2 lag der WAPE mit nur 11 sogar knapp unter dem Wert des besten linearen Modells (12).
+
+Wir widmen uns nun den Verfahren aus dem Bereich Machine Learning und Deep Learning und wollen rausfinden, ob sich damit noch bessere Ergebnisse erzielen lassen.
+
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
 ## 7.1 Vorhaben
 
-Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM).
+Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM). Dieses Verfahren wird häufig für die Klassifizierung verwendet, kann jedoch auch zur Lösung von Regressions-Problemen verwendet werden. Genau das wollen wir tun.
 
 ## 7.2 Datenaufbereitung
 
@@ -4451,7 +4433,7 @@ SVM_train_WG1_pred <- predict(model_SVM_WG1, df_SVM_train_WG1_input)
 SVM_test_WG1_pred <- predict(model_SVM_WG1, df_SVM_test_WG1_input)
 ```
 
-Zeige die echten Umsätze (schwarze Punkte) zusammen mit den prognostizierten Umsätzen (blaue Kreuze) für die Trainingsdaten:
+Für einen schnellen Überblick zeigen wir die echten Umsätze (schwarze Punkte) zusammen mit den prognostizierten Umsätzen (blaue Kreuze) für die Trainingsdaten. Die echten Umsätze sind hier auf der Diagonalen dargestellt, die Schätzwerte schwanken darum:
 
 ```{r}
 plot(df_SVM_train_WG1_target, df_SVM_train_WG1_target, pch=16)
@@ -4465,7 +4447,7 @@ plot(df_SVM_test_WG1_target, df_SVM_test_WG1_target, pch=16)
 points(df_SVM_test_WG1_target, SVM_test_WG1_pred, col = "blue", pch=4)
 ```
 
-Die Modellparameter sind vorbelegt mit epsilon=0.1 und Cost=1 (C). Gamma erhält als Startwert den Kehrwert der Anzahl der Inputparameter. Wir wollen nun epsilon und C optimieren, um die Modellergebnisse zu verbessern. Dafür verwenden wir eine Rasteranalyse und variieren beide Parameter (grid search). Anschließend verwenden wir das gefundene Optimum:
+Die Modellparameter sind vorbelegt mit epsilon=0.1 und cost=1 (C). Gamma erhält als Startwert den Kehrwert der Anzahl der Inputparameter. Wir wollen nun epsilon und C optimieren, um die Modellergebnisse zu verbessern. Dafür verwenden wir eine Rasteranalyse und variieren beide Parameter (grid search). Anschließend verwenden wir das gefundene Optimum:
 
 ```{r}
 # Die Rastersuche nach dem Optimum dauert einige Minuten, daher auskommentiert.
@@ -4504,6 +4486,8 @@ plot(df_SVM_test_WG1_target, df_SVM_test_WG1_target, pch=16)
 points(df_SVM_test_WG1_target, SVM_test_WG1_pred, col = "blue", pch=4)
 points(df_SVM_test_WG1_target, SVM_test_WG1_pred_tuned, col = "red", pch=4)
 ```
+
+Die Optimierung des Modells hat offenbar Erfolg: Besonders für die hohen Umsätze in der rechten Hälfte liegt der optimierte Schätzer (rote Kreuze) dichter am tatsächlichen Umsatz.
 
 ### übrige Warengruppen
 
@@ -4777,7 +4761,11 @@ prog_SVM_vgl_relAbw %>%
 
 ## 7.4 Fazit SVM-Modell
 
-Fehlt noch!
+Unser SVM-Modell liefert sehr gute Schätzwerte für die Warengruppen 2 (= Brötchen) und 5 (= Kuchen). Und zwar liegt die mittlere relative Abweichung fast bei Null und der WAPE ist vergleichbar zum besten naiven und linearen Modell.
+
+Auf der anderen Seite fällt auf, dass mit unserem SVM-Modell die Umsätze der Warengruppe 4 (= Konditorei) nur mangelhaft geschätzt werden: Der WAPE liegt relativ hoch und vor allem die mittlere relative Abweichung ist mit 14% deutlich entfernt von Null. Die Umsätze werden also systematisch stark zu hoch geschätzt.
+
+Wir untersuchen nun, ob wir mit Deep Learning Methoden noch bessere Ergebnisse erzielen können.
 
 # 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
@@ -5089,7 +5077,7 @@ prog_MLP_vgl_kennz
 
 Das einfache Modell (mod1), das für die Umsatzschätzung nur SommerferienSH, Feiertag und Wochentage (Mo - So) als Inputvariablen einbezieht, liefert unterschiedliche Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) für die Warengruppen 1, 2 und 3 nahe Null ist, während wir für die beiden Warengruppen 4 und 5 offenbar den Umsatz systematisch zu hoch schätzen. 
 
-Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch bspw. für das beste naive Schätzmodell (glDS_4T_erw) einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11).
+Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch für das beste naive und lineare Schätzmodell einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11 bzw 12). Und auch unser SVM-Modell lag für die Warengruppe in der Größenordnung.
 
 Trotzdem wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
@@ -5297,9 +5285,9 @@ prog_MLP_vgl_kennz_mod2 <- rbind(prog_MLP_vgl_kennz_mod2, temp)
 prog_MLP_vgl_kennz_mod2
 ```
 
-Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun für die beiden Warengruppen 4 und 5 nahe Null liegt und sich unser Schätzer für die Warengruppen 2 und 3 von Null entfernt haben. 
+Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) einheitlichere Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) nun für die beiden Warengruppen 4 und 5 nahe Null liegt und sich unser Schätzer für die Warengruppen 2 und 3 leicht von Null entfernt haben. 
 
-Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt wieder für die Warengruppe 2 den niedrigsten Fehler und liegt jetzt auf einem vergleichbaren Niveau zum besten naiven Schätzmodell (glDS_4T_erw), für Warengruppe 2 hatten wir dort einen WAPE = 11 gesehen.
+Und der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppen 2 und 5 die niedrigsten Fehler. Gleiches hatten wir bei den besten naiven und linearen Modellen sowie unserem SVM-Modell gefunden. Zum Vergleich: Für das beste naive Schätzmodell (glDS_4T_erw) hatten wir für Warengruppe 2 sogar einen etwas niedrigeren WAPE = 11 gesehen.
 
 Als nächstes wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw_mod2`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
@@ -5340,11 +5328,7 @@ prog_MLP_vgl_relAbw_mod2 %>%
 
 Die Umsatzschätzung gelingt offenbar für die Warengruppe 2 (= Brötchen) ab besten.
 
-## 8.5 Vergleich der MLP Modelle
-
-!!! Hier fehlt noch eine ausführliche Vergleichsbetrachtung.
-
-### Fazit DL Modelle
+## 8.5 Fazit DL Modelle
 
 Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt und genauer untersucht. Die Ergebnisse sind brauchbar aber nicht umwerfend. In beiden Modellen haben wir stochastic gradiend descent einen iterativen Lernalgorithmus verwendet, der keine Garantie gibt, das globale Optimum für die Gewichte und Schwellwerte zu finden. Das kann ein Grund für die mangelnde Ergebnis-Qualität sein.
 
@@ -5382,7 +5366,11 @@ df_MLP_test_mod4_WG2 <- cbind(df_SVM_test_WG2, df_MLP_test_mod4_WG2_pred)
 
 # ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
 df_MLP_test_mod4_WG2 <- df_MLP_test_mod4_WG2 %>%
-  mutate(Umsatz = Umsatz * 2000) %>%
+  # mutate(Umsatz = Umsatz * 2000) %>%
+  # Hinweis: Wir hatten ursprünglich den Umsatz im Kapitel SVM skaliert und auf der Basis
+  # unser MLP (mod4) trainiert. Nachträglich haben wir die Skalierung für den    
+  # df_SVM_test_WG2 wieder raus genommen. Dennoch enthalten die Modellergebnisse aus Python
+  # den skalierten Umsatz und müssen wieder re-skaliert werden:
   mutate(Umsatz_mod4_WG2 = Umsatz_mod4_WG2 * 2000) %>%
   mutate(Prognose_zuhoch = (Umsatz_mod4_WG2 >= Umsatz)) %>%
   mutate(Abweichung = Umsatz_mod4_WG2 - Umsatz) %>%
@@ -5400,7 +5388,7 @@ df_MLP_test_mod4_WG2 %>%
   summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))))
 ```
 
-Der WAPE liegt bei 10 und damit knapp unterhalb des besten naiven Modells. Das hat uns ermutigt, Modell 4 auf eine andere Warengruppe anzuwenden.
+Der WAPE liegt bei 10 und liegt damit knapp unterhalb des besten naiven und linearen Modells, sowie des SVM-Modells. Das hat uns ermutigt, Modell 4 auf eine andere Warengruppe anzuwenden.
 
 Hier die Ergebnisse für Warengruppe 4:
 
@@ -5418,7 +5406,11 @@ df_MLP_test_mod4_WG4 <- cbind(df_SVM_test_WG4, df_MLP_test_mod4_WG4_pred)
 
 # ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
 df_MLP_test_mod4_WG4 <- df_MLP_test_mod4_WG4 %>%
-  mutate(Umsatz = Umsatz * 2000) %>%
+  # mutate(Umsatz = Umsatz * 2000) %>%
+  # Hinweis: Wir hatten ursprünglich den Umsatz im Kapitel SVM skaliert und auf der Basis
+  # unser MLP (mod4) trainiert. Nachträglich haben wir die Skalierung für den    
+  # df_SVM_test_WG4 wieder raus genommen. Dennoch enthalten die Modellergebnisse aus Python
+  # den skalierten Umsatz und müssen wieder re-skaliert werden:
   mutate(Umsatz_mod4_WG4 = Umsatz_mod4_WG4 * 2000) %>%
   mutate(Prognose_zuhoch = (Umsatz_mod4_WG4 >= Umsatz)) %>%
   mutate(Abweichung = Umsatz_mod4_WG4 - Umsatz) %>%
@@ -5439,7 +5431,14 @@ df_MLP_test_mod4_WG4 %>%
 Unsere Hoffnung hat sich jedoch nicht erfüllt: Der WAPE ist schlechter als für das einfachere Modell 2 (mod2) für die Warengruppe 4.
 
 
-# 9. Modellvergleich über alle verwendeten Verfahren
+# 9 Modellvergleich über alle verwendeten Verfahren
+
+Nochmal zusammenfassen, für welche Warengruppen sich die Umsätze besonders gut schätzen lassen (WG2 und 5) und welche Güte-Kennzahlen wir für die verschiedenen besten Modelle aus allen Bereichen finden.
+
+And the winner is...
+
+Und Gesamtfazit: Wir hatten uns erhoft, eine bessere Prognosegüte zu erzielen. Aber vielleicht lassen sich die Umsätze mit unserem Datenmodell gar nicht besser schätzen. Möglicherweise bringt erst die Berücksichtigung weiterer Einflussfaktoren genauere Schätzergebnisse oder die Kombination unserer Modelle. Beides wird hier aber nicht weiter vertieft.
+
 ```{r}
 Modellvergleich_total <- rbind(prog_MLP_vgl_kennz_mod2, lm_vgl_kennz)
 
