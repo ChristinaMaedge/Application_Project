@@ -4762,7 +4762,7 @@ prog_SVM_vgl_relAbw %>%
   ylim(-100, 200)
 ```
 
-## 7.4 Fazit SVM-Modell
+## 7.5 Fazit SVM-Modell
 
 Unser SVM-Modell liefert sehr gute Schätzwerte für die Warengruppen 2 (= Brötchen) und 5 (= Kuchen). Und zwar liegt die mittlere relative Abweichung fast bei Null und der WAPE ist vergleichbar zum besten naiven und linearen Modell.
 
