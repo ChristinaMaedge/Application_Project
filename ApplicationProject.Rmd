@@ -6063,6 +6063,51 @@ modell_vergleich_WG %>%
 
 Für Warengruppe 5 gewinnt das lineare Modell, jetzt knapp vor dem Ensemble-Modell.
 
+Insgesamt gelingt die Umsatzschätzung für die Warengruppe 2 (= Brötchen) am besten. Wir wollen uns exemplarisch für diese Warengruppe daher noch die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `ensemble_WG2_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+
+```{r}
+# füge die relativen Abweichungen für das naive Modell an
+ensemble_WG2_vgl_relAbw <- ensemble_WG2 %>% 
+  group_by() %>%
+  mutate(naiv = (Umsatz_naiv - Umsatz) / Umsatz) %>%
+  dplyr::select(Datum, naiv)
+  
+# füge die relativen Abweichungen für das lineare Modell an
+ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
+  group_by() %>% mutate(lm = (Umsatz_lm - Umsatz) / Umsatz) %>%
+  dplyr::select(Datum, lm),by="Datum")
+
+# füge die relativen Abweichungen für das SVM Modell an
+ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
+  group_by() %>% mutate(SVM = (Umsatz_SVM - Umsatz) / Umsatz) %>%
+  dplyr::select(Datum, SVM),by="Datum")
+
+# füge die relativen Abweichungen für das MLP Modell an
+ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
+  group_by() %>% mutate(MLP = (Umsatz_MLP - Umsatz) / Umsatz) %>%
+  dplyr::select(Datum, MLP),by="Datum")
+
+# füge die relativen Abweichungen für das Ensemble Modell an
+ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
+  group_by() %>% mutate(Ensemble = (Umsatz_ensemble - Umsatz) / Umsatz) %>%
+  dplyr::select(Datum, Ensemble),by="Datum")
+
+# pivotieren
+ensemble_WG2_vgl_relAbw <- ensemble_WG2_vgl_relAbw %>% 
+  pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
+
+# Boxplot
+ensemble_WG2_vgl_relAbw %>%
+  ggplot(mapping=aes(x=Modell, y=Abweichung_rel*100)) +
+  geom_boxplot() + coord_flip() +
+  ggtitle("2018 - WG2, Vergleich der besten Modelle: Rel. Abweichung") +
+  xlab("Modell") + 
+  ylab("rel. Abweichung (%)") +
+  ylim(-100, 200)
+```
+
+Wir sehen inder Tat, dass sich die Umsätze für die Warengruppe 2 sehr gut prognostizieren lassen. Die Verteilungen der relativen Abweichungen sind verhältnismäßig schmal.
+
 # 11 Zusammenfassung und Ausblick
 
 Im Vergleich der besten Einzelmodelle finden wir ein Kopf-an-Kopf-Rennen zwischen dem besten naiven Modell und den linearen Modellen, aber auch das MLP ist bei den besten Schätzern vertreten, zumindest für eine Warengruppe. Die Support Vector Machines liefern insgesamt etwas schlechtere Ergebnisse. Das zeigt zum einen, dass es sehr viel Erfahrung braucht, um diese komplexen Modelle zu optimieren. Diese Erfahrung fehlt uns.
@@ -6070,6 +6115,8 @@ Im Vergleich der besten Einzelmodelle finden wir ein Kopf-an-Kopf-Rennen zwische
 Auf der anderen Seite lassen sich die Umsätze mit unserem Datenmodell vielleicht auch gar nicht besser schätzen. Möglicherweise bringt erst die Berücksichtigung weiterer Einflussfaktoren genauere Schätzergebnisse, hier aber nicht weiter vertieft.
 
 Durch einfache Ensemble-Bildung als Mittelwert der besten Einzelschätzer können wir für einige Warengruppen die Prognosegüte noch verbessern.
+
+Und insgesamt lassen sich die Umsätze für die Warengruppe 2 (= Brötchen) am treffsichersten voraussagen. Brötchen scheinen also eine "Konstante" im Leben vieler Menschen hierzulande zu sein.
 
 # Management Summary
 
