@@ -6448,8 +6448,220 @@ library(ipred)       # bagging
 # already loaded: library(caret)       # bagging
 ```
 
+## 7.2 Datenaufbereitung
+
+Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable Umsatz_NA (= TRUE).
+
+Für unser Vorhaben beschränken wir uns auf die in den Rohdaten vorhandenen Umsätze (Umsatz_NA = FALSE). Und wir schränken die Trainingsdaten später auf den Zeitraum 2015 bis 2017 ein, weil wir oben gesehen hatten, dass die Umsätze in 2014 systematisch höher liegen als in den folgenden Jahren. Die Umsätze des Jahres 2018 dienen uns dann als Testdaten.
+
+Wir erstellen für diesen Abschnitt einen Analysedatensatz `df_dt` auf Basis von `df_voll`.
+Redundante Spalten nehmen wir raus (Wochentag, Monat, Jahreszeit) und entfernen die nicht benötigten Umsatz-Spalten (Umsatz_NA sowie die Umsatz_lag Variablen).
+
+```{r}
+df_dt <- df_voll
+
+# verwende nur originäre Umsatzdaten und grenze den Zeitraum auf 2015 bis 2018 ein
+df_dt <- df_dt %>% 
+  filter(Umsatz_NA == FALSE) %>%
+  filter(Jahr >= 2015 & Jahr <= 2018)
+
+# behalte nur die Spalten, die wir für unsere SVM verwenden wollen
+df_dt <- df_dt %>%
+  dplyr::select(-Wochentag, -Monat, -Jahreszeit, -Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag)
+```
+
+Weiterhin werden fehlende Werte eleminiert.
+
+```{r}
+# eliminiere fehlende Werte
+df_dt <- na.omit(df_dt)
+```
+
+Für die Trainingsdaten verwenden wir den Zeitraum 2015 bis 2017 und für die Testdaten das Jahr 2018. Die Modellierung erfolgt je Warengruppe, daher teilen wir den Datensatz `df_dt` auf.
+
+```{r}
+df_dt_train <- df_dt %>% filter(Jahr < 2018)
+df_dt_test <- df_dt %>% filter(Jahr == 2018)
+
+df_dt_train_WG1 <- df_dt_train %>% filter(Warengruppe==1)
+df_dt_train_WG2 <- df_dt_train %>% filter(Warengruppe==2)
+df_dt_train_WG3 <- df_dt_train %>% filter(Warengruppe==3)
+df_dt_train_WG4 <- df_dt_train %>% filter(Warengruppe==4)
+df_dt_train_WG5 <- df_dt_train %>% filter(Warengruppe==5)
+
+df_dt_test_WG1 <- df_dt_test %>% filter(Warengruppe==1)
+df_dt_test_WG2 <- df_dt_test %>% filter(Warengruppe==2)
+df_dt_test_WG3 <- df_dt_test %>% filter(Warengruppe==3)
+df_dt_test_WG4 <- df_dt_test %>% filter(Warengruppe==4)
+df_dt_test_WG5 <- df_dt_test %>% filter(Warengruppe==5)
+```
+
+## 7.3 Grundlegende Implementierung
+
+Wir können einen Regressionsbaum mit `rpart` anpassen und ihn dann mit `rpart.plot` visualisieren. Der Anpassungsprozess und die visuelle Ausgabe von Regressionsbäumen und Klassifizierungsbäumen sind sehr ähnlich. Beide verwenden die Formelmethode zum Ausdrücken des Modells (ähnlich wie `lm`). Wenn wir jedoch einen Regressionsbaum anpassen, müssen wir `method = "anova"` setzen. Standardmäßig errät rpart auf intelligente Weise, welcher Methodenwert auf dem Datentyp Ihrer Antwortspalte basieren soll. Es wird jedoch empfohlen, die Methode aus Gründen der Reproduzierbarkeit explizit festzulegen.
+
+```{r}
+# Warengruppe 1
+dt1_WG1 <- rpart(
+  formula = Umsatz ~ .,
+  data    = df_dt_train_WG1,
+  method  = "anova"
+  )
+
+dt1_WG1
+```
+
+Sobald wir unser Modell angepasst haben, können wir einen Spitzenwert am dt1_WG1-Ausgang erreichen. Dies erklärt nur die Schritte der Teilung.
+Wir beginnen bspw. mit 1061 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist der Wochentag Sonntag. Wir sehen, dass am ersten Knoten alle Beobachtungen mit Wochentag_c = Sonntag zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (152), der durchschnittliche Umsatz (70,14) und der SSE (83154.48) sind aufgeführt.
+
+Wenn man nach dem 3. Zweig sucht, sieht man, dass 909 Beobachtungen mit Wochentag_c = Dienstag, Donnerstag, Freitag, Mittwoch, Montag, Samstag diesem Zweig folgen und ihre durchschnittlichen Umsätze 123.49€betragen und der SSE hier 1109737.00 beträgt.
+
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SEE aufweist, der Wochentag ist, wobei die Umsätze sonntags in der Warengruppe Brot um > 40% geringer sind als an den anderen tagen der Woche.
+
+Wir können unser Modell mit `rpart.plot` visualisieren. `rpart.plot` bietet viele Plotoptionen, auf die wir an dieser Stelle nicht weiter eingehen werden. Im Standard-Plot werden jedoch der Prozentsatz der Daten angezeigt, die auf diesen Knoten fallen, und der durchschnittliche Umsatz für diesen Zweig. 
+
+```{r}
+rpart.plot(dt1_WG1)
+
+library(partykit)
+plot(as.party(dt1_WG1))
+```
+
+Man kann feststellen, dass dieser Baum 11 interne Knoten enthält, was zu 12 Endknoten führt. Grundsätzlich partitioniert dieser Baum in 11 Variablen, um sein Modell zu erstellen. Es gibt jedoch 28 Variablen in `df_dt_train_WG1`. Also was ist passiert?
+
+Hinter den Kulissen wendet `rpart` automatisch einen Bereich von Kostenkomplexität an (α-Werte zum Beschneiden des Baums). Um den Fehler für jeden α-Wert zu vergleichen, führt `rpart` eine 10-fache Kreuzvalidierung durch, sodass der mit einem bestimmten α-Wert verbundene Fehler berechnet wird. 
+
+```{r}
+plotcp(dt1_WG1)
+```
+
+In diesem Beispiel finden wir abnehmende Renditen nach 12 Endknoten, wie in der Grafik dargestellt (y-Achse ist Kreuzvalidierungsfehler, untere x-Achse ist Kostenkomplexitätswert (α), obere x-Achse ist die Anzahl von Endknoten (Baumgröße = | T |)). Die gestrichelte Linie, die zwischen den Punkten | T | = 3 und 4 verläuft, deutet darauf hin, dass auch ein kleiner Baum gewählt werden kann. Breiman et al. (1984) schlugen vor, dass es in der Praxis üblich ist, den kleinsten Baum innerhalb von 1 Standardabweichung des minimalen Kreuzvalidierungsfehlers zu verwenden (auch bekannt als 1-SE-Regel). Daher könnten wir auch einen Baum mit 3 bzw. 4 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
+
+```{r}
+dt1_WG1$cptable
+```
+
+```{r}
+dt2_WG1 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG1,
+    method  = "anova", 
+    control = list(minsplit = 10, maxdepth = 12, xval = 10)
+)
+
+dt2_WG1$cptable
+```
+
+```{r}
+hyper_grid <- expand.grid(
+  minsplit = seq(5, 20, 1),
+  maxdepth = seq(8, 15, 1)
+)
+
+head(hyper_grid)
+##   minsplit maxdepth
+## 1        5        8
+## 2        6        8
+## 3        7        8
+## 4        8        8
+## 5        9        8
+## 6       10        8
+
+# total number of combinations
+nrow(hyper_grid)
+## [1] 128
+```
+
+```{r}
+models <- list()
+
+for (i in 1:nrow(hyper_grid)) {
+  
+  # get minsplit, maxdepth values at row i
+  minsplit <- hyper_grid$minsplit[i]
+  maxdepth <- hyper_grid$maxdepth[i]
+
+  # train a model and store in the list
+  models[[i]] <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG1,
+    method  = "anova",
+    control = list(minsplit = minsplit, maxdepth = maxdepth)
+    )
+}
+```
 
 
+
+```{r}
+# function to get optimal cp
+get_cp <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  cp <- x$cptable[min, "CP"] 
+}
+
+# function to get minimum error
+get_min_error <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  xerror <- x$cptable[min, "xerror"] 
+}
+
+hyper_grid %>%
+  mutate(
+    cp    = purrr::map_dbl(models, get_cp),
+    error = purrr::map_dbl(models, get_min_error)
+    ) %>%
+  arrange(error) %>%
+  top_n(-5, wt = error)
+## minsplit  maxdepth  cp     error
+##       12	       10	 0.01	  0.6173595	
+##        8	       14	 0.01	  0.6244051	
+##       11	       10	 0.01	  0.6341631	
+##       13        12	 0.01	  0.6347811	
+##        8	        9	 0.01	  0.6355263	  
+```
+
+```{r}
+optimal_tree <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG1,
+    method  = "anova",
+    control = list(minsplit = 12, maxdepth = 10, cp = 0.01)
+    )
+
+pred <- predict(optimal_tree, newdata = df_dt_test_WG1)
+RMSE(pred = pred, obs = df_dt_test_WG1$Umsatz)
+```
+
+```{r}
+# Hinzufügen der Ergebnisse
+df_dt_test_WG1 <- df_dt_test_WG1 %>%
+  mutate(predicted = pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_dt_test_WG1 <- df_dt_test_WG1 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_dt_test_WG1 <- df_dt_test_WG1 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_dt_test_WG1 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "optimaltree_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+dt_vgl_kennz <- temp
+dt_vgl_kennz
+```
 
 # 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
