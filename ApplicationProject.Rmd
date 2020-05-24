@@ -3402,9 +3402,8 @@ df_lm_test_WG1_21 <- df_lm_test_WG1 %>%
 Für das 21-Variablenmodell der best subset selection wird nun ein Regressionsmodell erstellt:
 
 ```{r}
-lm_WG1_21_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Februar + Januar + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + Pfingsten_ext + Herbst, data = df_lm_train_WG1_31)
+lm_WG1_21_train <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Februar + Januar + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + Pfingsten_ext + Herbst, data = df_lm_train_WG1_21)
 
-library(broom)
 glance(lm_WG1_21_train)
 ```
 
@@ -3452,6 +3451,97 @@ lm_vgl_kennz
 
 
 Der Vergleich der Modelle zeigt, dass es keine großen Unterschiede bei den Gütekennzahlen gibt. Die 10 Variablen mehr, die im 31-Variablen-Modell gegenüber dem 21-Variablen-Modell hinzugefügt werden, scheinen keinen wirklich relevanten weiteren Prognosebeitrag zu liefern. Das schlanke Modell performt sogar am besten, wenn auch nur marginal. Da generell schlankere Modelle bevorzugt werden sollten, würde die Wahl hier auf das 21-Variablen-Modell fallen.
+
+Für das 21-Variablen-Modell wird nun noch geprüft, ob das Hinzufügen von Interaktionseffekten eine Verbesserung bewirkt. 
+Es könnte ja bspw. sein, dassdie Stärke des Einflusses der Kieler Woche am Wochenende anders ist als an den Wochentagen. Am Samstag und Sonntag, so könnte man argumentieren, besuchen mehr Gäste von außerhalb, also Menschen, die nicht in Kiel wohnen, die Kieler Woche, da sie nicht arbeiten müssen, mehr Zeit haben etc.
+
+Um R dazu zu bringen, die Regressionsgerade frei variieren zu lassen, werden die Interaktionen als zusätzliche Terme zur Regressionsgeraden hinzugefügt:
+
+```{r}
+lm_WG1_21_train_inter <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Februar + Januar + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + Pfingsten_ext + Herbst + KielerWoche:Samstag + KielerWoche:Sonntag, data = df_lm_train_WG1_21)
+
+glance(lm_WG1_21_train_inter)
+tidy(lm_WG1_21_train_inter)
+```
+
+Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
+
+```{r}
+lm_WG1_21_predict_inter <- predict(lm_WG1_21_train_inter, newdata = df_lm_test_WG1_21)
+```
+
+Als Ergebnis wird ein Vektor erzeugt, der für jede Beobachtung des Test-Samples den geschätzten (vorhergesagten) Umsatzwert speichert. Die Gütewerte lassen sich mit `caret::postResample` ausgeben:
+```{r}
+caret::postResample(pred = lm_WG1_21_predict_inter, obs = df_lm_test_WG1_21$Umsatz)
+```
+
+Diese Vorhersage-Ergebnisse werden den Test-Daten hinzugefügt und sodann eine gemeinsame Übersichtstabelle für die Gütekennzahlen angelegt `lm_vgl_kennz`, die nach und nach angereichert wird mit den Ergebnissen der anderen Modelle je Warengruppe:
+```{r}
+# Hinzufügen der Ergebnisse
+df_lm_test_WG1_21 <- df_lm_test_WG1_21 %>%
+  mutate(predicted_inter = lm_WG1_21_predict_inter)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_lm_test_WG1_21 <- df_lm_test_WG1_21 %>%
+  mutate(Prognose_zuhoch = (predicted_inter >= Umsatz)) %>%
+  mutate(Abweichung = predicted_inter - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted_inter - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted_inter - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_lm_test_WG1_21 <-df_lm_test_WG1_21 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_lm_test_WG1_21 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "best21_inter_WG1")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
+lm_vgl_kennz
+```
+
+
+```{r}
+lm_WG1_21_train_inter <- lm(Umsatz ~ KielerWoche + Donnerstag + Freitag + Montag + Samstag + Sonntag + Februar + Januar + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + Feiertag + Ostern + ChristiHimmelfahrt + Pfingsten + TDE + Ostern_ext + Pfingsten_ext + Herbst + KielerWoche:Freitag + KielerWoche:Samstag + KielerWoche:Sonntag, data = df_lm_train_WG1_21)
+
+glance(lm_WG1_21_train_inter)
+```
+
+Das Hinzufügen des Interaktionseffekts bewirkt hier keine Verbesserung. Somit bleibt es dabei, dass das 21-Variablen-Modell für Warengruppe 1 am besten performt.
+
+Folgende Variablen sind also am besten geeignet, um Prognosen für die Umsätze in der Warengruppe 1 zu erstellen:
+
+* KielerWoche 
+* Wochentage:
+  + Donnerstag    
+  + Freitag     
+  + Montag
+  + Samstag    
+  + Sonntag        
+* Monate:
+  + Februar         
+  + Januar        
+  + Oktober 
+  + September        
+* Sommerferien:
+  + SH       
+  + NRW       
+  + NDS              
+* Feiertag 
+* Ostern   
+* ChristiHimmelfahrt
+* Pfingsten                   
+* TDE            
+* Ostern_ext 
+* Pfingsten_ext 
+* Jahreszeit:
+  + Herbst
 
 ### 6.3.2 Warengruppe 2
 
@@ -3699,8 +3789,7 @@ points(min, val_errors[min][1], col = "red", cex = 2, pch = 20)
 Es ist erkennbar, dass ein 24-Variablen-Modell, das durch den besten Teilmengenansatz erzeugt wird, den niedrigsten Test-MSE erzeugt. 
 Auch ein 30-Variablen-Modell scheinz vergleichweichsweise gut zu performen.
 
-Wir können jetzt die beste Teilmengenauswahl für den gesamten Datensatz durchführen, um zum einen das 24-Variablen-Modell zu erhalten. Dieses Modell wird mit den 32-Variablen-Modellen nach Best subset selection verglichen.
-Diese Modelle werden sodann mit den 29-Variablen-Modellen verglichen. 
+Wir können jetzt die beste Teilmengenauswahl für den gesamten Datensatz durchführen, um zum einen das 24-Variablen-Modell zu erhalten. Dieses Modell wird mit den 32-Variablen-Modellen nach Best subset selection verglichen. Diese Modelle werden sodann mit den 29-Variablen-Modellen verglichen. 
 
 **Teilmengenauswahl für das 24-Variablen-Modell**
 
@@ -3795,31 +3884,6 @@ df_lm_test_WG2_24 <- df_lm_test_WG2 %>%
 
 
 Für das 24-Variablenmodell wird nun ein Regressionsmodell erstellt:
-
-* KielerWoche
-* Temperatur
-* Windgeschwindigkeit
-* Wochentag_cFreitag
-* Wochentag_cSamstag
-* Wochentag_cSonntag
-* Monat_cAugust
-* Monat_cDezember
-* Monat_cJuli
-* Monat_cJuni
-* Monat_cMai
-* Monat_cNovember
-* Monat_cOktober
-* Monat_cSeptember 
-* SommerferienSH 
-* SommerferienNRW 
-* SommerferienNDS
-* SommerferienHE
-* Feiertag
-* Ostern_ext
-* ChristiHimmelfahrt_ext
-* Pfingsten_ext    
-* Silvester_ext
-* JahreszeitHerbst
 
 ```{r}
 lm_WG2_24_train <- lm(Umsatz ~ KielerWoche + Temperatur + Windgeschwindigkeit + Freitag + Samstag + Sonntag + August +  Dezember + Juli + Juni + Mai + November + Oktober + September + SommerferienSH + SommerferienNRW + SommerferienNDS + SommerferienHE + Feiertag + Ostern_ext + ChristiHimmelfahrt_ext + Silvester_ext + Herbst, data = df_lm_train_WG2_24)
@@ -4208,6 +4272,39 @@ temp <- temp %>% mutate(Modell = "best29_back_WG2")
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
+
+Auch wenn es nur marginale Unterschiede zwischen den Performances der einzelnen Modelle gibt, performt abschließend das 24-Variablen-Modell am besten. da generell schlankere Modelle bevorzugt werden sollten, fällt die Wahl auf das genannte Modell.
+
+Folgende Variablen sind also am besten geeignet, um Prognosen für die Umsätze in der Warengruppe 2 zu erstellen:
+
+* KielerWoche
+* Temperatur
+* Windgeschwindigkeit
+* Wochentage:
+  + Freitag
+  + Samstag
+  + Sonntag
+* Monate:
+  + August
+  + Dezember
+  + Juli
+  + Juni
+  + Mai
+  + November
+  + Oktober
+  + September 
+* Sommerferien:
+  + SH 
+  + NRW 
+  + NDS
+  + HE
+* Feiertag
+* Ostern_ext
+* ChristiHimmelfahrt_ext
+* Pfingsten_ext    
+* Silvester_ext
+* Jahreszeit:
+  + Herbst
 
 ### 6.3.3 Warengruppe 3
 
@@ -4693,6 +4790,44 @@ lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
 
+Auch bei der Warengruppe 3 gibt es hnur marginale Unterschiede zwischen dem 20- und dem 30-Variablen-Modell. Letzteres performt ein wenig besser, aht aber den Nachteil, dass es 50% mehr Prädikatoren enthält. Es ist die Frage, ob sich das Aufblähen des Modells für eine solch marginale Verbesserung lohnt. An dieser Stelle wird das bisherige Vorgehen weiterverfolgt und gemessen an den Gütekriterien das 30-Variablen-Modell ausgewählt. 
+
+Die 30 Variablen, die am besten geeignet sind um Prognosen für die Umsätze der Warengruppe 3 vorzunehmen sind:
+
+* KielerWoche
+* Temperatur
+* Bewoelkung
+* Wochentage:
+  + Freitag
+  + Montag
+  + Samstag
+  + Sonntag
+* Monate:
+  + August
+  + Februar
+  + Januar
+  + Juli 
+  + Juni
+  + Mai
+  + März
+  + Oktober
+  + September
+* Sommerferien
+  + SH 
+  + NRW
+  + NDS
+  + HE
+* Ostern
+* Pfingsten
+* TDE
+* Ostern_ext
+* ChristiHimmelfahrt_ext
+* Pfingsten_ext
+* Silvester_ext
+* Jahreszeiten:
+  + Herbst
+  + Sommer
+  + Winter
 
 ### 6.3.4 Warengruppe 4
 
@@ -4933,6 +5068,8 @@ lm_WG4_1_train <- lm(Umsatz ~ Sonntag, data = df_lm_train_WG4_1)
 
 glance(lm_WG4_1_train)
 ```
+
+Dieses einfache Regressionsmodell hat einen vergleichweise schlechten $R^2$-Wert. Am Ende ist es wahrscheinlich zu einfach.
 
 Dann wird (die Modellgüte) anhand der *Test*-Stichprobe getestet:
 
@@ -5493,6 +5630,8 @@ temp <- temp %>% mutate(Modell = "best15_WG4")
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
+
+Auch bei Warengruppe 4 gibt es nur sehr marginale unterschiede zwischen den einzelnen modellen. Selbst das 1-Variablen-Modell performt vergleichsweise gut. Der Sonntag scheint somit der ausschlaggebende Prädiktor für den Umsatz in der Warengruppe 4 zu sein. Das 18- und das 20-Variablen-Modell performen nahezu identisch. Da eine eindeutige Entscheidung zwischen dem 1-Variablen-Modell und dem 20-Variablen-Modell nicht möglich ist, wird an dieser Stelle das sehr schlanke Modell bevorzugt. 
 
 ### 6.3.5 Warengruppe 5
 
@@ -6259,13 +6398,21 @@ lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
 lm_vgl_kennz
 ```
 
+Auch für Warengruppe 5 ergibt sich ein ähnliches Bild wie für alle anderen Warengruppen: Die Modelle weichen nur marginal voneinander ab. Je nachdem, ob man den MPE oder den RMSE als finales Entscheidungskriteirum heranzieht, performt im ersten Fall das 22-Variablen-Modell am besten, im letzteren das 8-Variablen-Modell.
+
 ## 6.4 Vergleich der linearen Modelle
 
-Wir haben jetzt die Gütekennzahlen für die Warengruppen 1, 2 und 5 ermittelt und zwar für verschiedene Modelle. Innerhalb der Warengruppen unterscheiden sich die Modelle nur marginal. Die besten Modelle für die Warengruppen 1, 2 und 5 sind die Modelle mit 36, 30 bzw. 16 Variablen.
+Wir haben jetzt die Gütekennzahlen für sämtliche Warengruppen für verschiedene Modelle ermittelt. Innerhalb der Warengruppen unterscheiden sich die Modelle nur marginal. Die besten Modelle für die Warengruppen sind:
 
-In der Praxis könnte man sich auch dazu entschließen, jeweils das einfachste Modell zu verwenden, also mit möglichst wenig Variablen. Für die Warengruppe 1 ist es das Modell mit 31 Variablen, für die Warengruppe 2 mit 19 Variablen und für die Warengruppe 5 mit nur 10 Variablen.
+* Warengruppe 1: 21 Variablen
+* Warengruppe 2: 24 Variablen
+* Warengruppe 3: 30 Variablen
+* Warengruppe 4: 1 Variablen
+* Warengruppe 5: 8 Variablen.
 
-Dann fällt auf, dass die Schätzer für die Warengruppe 2 offenbar systematisch zu hoch sind, weil die mittlere relative Abweichung bei 9% liegt. Für die übrigen Warengruppen liegt der Wert näher an Null.
+In Anlehnung an gängiges vorgehen in der Praxis wurde jeweils das einfachste Modell gewählt, also das mit möglichst wenig Variablen. 
+
+Dann fällt auf, dass die Schätzer für die Warengruppe 1 und 3 offenbar systematisch zu niedrig sind, weil die mittlere relative Abweichung bei -8% liegt. Warengruppe 4 wird dagegen konsequent zu hoch geschätzt. Für die Warengruppen 2 und 5 liegt der Wert näher an Null bzw. ist gleich 0.
 
 Und der mittlere gewichtete Absolutwert der relativen Abweichung (WAPE), den wir vorrangig als Güte-Kriterium im Auge haben, zeigt den niedrigsten Wert für Warengruppe 2, gefolgt von Warengruppe 5. Ähnliche Ergebnisse hatten wir auch mit dem besten naiven Modell erzielt: Dort konnten mit dem erweiterten gleitenden Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse für die Warengruppen insgesamt erzielt werden und für die Warengruppe 2 lag der WAPE mit nur 11 sogar knapp unter dem Wert des besten linearen Modells (12).
 
@@ -7470,9 +7617,9 @@ temp <- prog_naiv_glDS_4T_erw %>%
 modell_vergleich_WG <- temp
 
 # bestes lineares Modell: WG1
-temp <- df_lm_test_WG1_36 %>%
+temp <- df_lm_test_WG1_21 %>%
   mutate(Verfahren="lm") %>%
-  mutate(Modell="best36") %>%
+  mutate(Modell="best21") %>%
   mutate(Warengruppe=1) %>%
   group_by(Verfahren, Modell, Warengruppe) %>%
   summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
@@ -7481,7 +7628,7 @@ temp <- df_lm_test_WG1_36 %>%
 modell_vergleich_WG <- rbind(modell_vergleich_WG, temp) 
 
 # bestes lineares Modell: WG2
-temp <- df_lm_test_WG2_30 %>%
+temp <- df_lm_test_WG2_24 %>%
   mutate(Verfahren="lm") %>%
   mutate(Modell="best30") %>%
   mutate(Warengruppe=2) %>%
@@ -7492,9 +7639,31 @@ temp <- df_lm_test_WG2_30 %>%
 modell_vergleich_WG <- rbind(modell_vergleich_WG, temp) 
 
 # bestes lineares Modell: WG3
-temp <- df_lm_test_WG5_16 %>%
+temp <- df_lm_test_WG3_30 %>%
   mutate(Verfahren="lm") %>%
-  mutate(Modell="best16") %>%
+  mutate(Modell="best30") %>%
+  mutate(Warengruppe=3) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp) 
+
+# bestes lineares Modell: WG4
+temp <- df_lm_test_WG4_1 %>%
+  mutate(Verfahren="lm") %>%
+  mutate(Modell="best1") %>%
+  mutate(Warengruppe=4) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp) 
+
+# bestes lineares Modell: WG5
+temp <- df_lm_test_WG5_8 %>%
+  mutate(Verfahren="lm") %>%
+  mutate(Modell="best8") %>%
   mutate(Warengruppe=5) %>%
   group_by(Verfahren, Modell, Warengruppe) %>%
   summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
@@ -7680,7 +7849,7 @@ ensemble_WG1 <- prog_naiv_glDS_4T_erw %>%
   dplyr::select(-Umsatz_glDS_4T_erw)
 
 # bestes lineares Modell
-temp <- df_lm_test_WG1_36 %>%
+temp <- df_lm_test_WG1_21 %>%
   dplyr::select(predicted) %>%
   mutate(Umsatz_lm = predicted) %>%
   dplyr::select(-predicted)
@@ -7718,7 +7887,7 @@ ensemble_WG2 <- prog_naiv_glDS_4T_erw %>%
   dplyr::select(-Umsatz_glDS_4T_erw)
 
 # bestes lineares Modell
-temp <- df_lm_test_WG2_30 %>%
+temp <- df_lm_test_WG2_24 %>%
   dplyr::select(predicted) %>%
   mutate(Umsatz_lm = predicted) %>%
   dplyr::select(-predicted)
@@ -7756,7 +7925,13 @@ ensemble_WG3 <- prog_naiv_glDS_4T_erw %>%
   dplyr::select(-Umsatz_glDS_4T_erw)
 
 # bestes lineares Modell
-# fehlt noch für WG3
+temp <- df_lm_test_WG3_30 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_lm = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG3 <- cbind(ensemble_WG3, temp)
 
 # bestes SVM Modell
 temp <- df_SVM_test_WG3 %>%
@@ -7788,7 +7963,13 @@ ensemble_WG4 <- prog_naiv_glDS_4T_erw %>%
   dplyr::select(-Umsatz_glDS_4T_erw)
 
 # bestes lineares Modell
-# fehlt noch für WG4
+temp <- df_lm_test_WG4_1 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_lm = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG4 <- cbind(ensemble_WG4, temp)
 
 # bestes SVM Modell
 temp <- df_SVM_test_WG4 %>%
@@ -7820,7 +8001,7 @@ ensemble_WG5 <- prog_naiv_glDS_4T_erw %>%
   dplyr::select(-Umsatz_glDS_4T_erw)
 
 # bestes lineares Modell
-temp <- df_lm_test_WG5_16 %>%
+temp <- df_lm_test_WG5_8 %>%
   dplyr::select(predicted) %>%
   mutate(Umsatz_lm = predicted) %>%
   dplyr::select(-predicted)
