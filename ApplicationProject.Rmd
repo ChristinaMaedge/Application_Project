@@ -7716,7 +7716,7 @@ Insgesamt ging es hier eher darum, Erfahrungswerte in der praktischen Anwendung 
 
 Weil wir uns vom MLP bessere Ergebnisse erhofft hatten, haben wir noch einen drauf gesetzt und noch ein viertes MLP (mod4) getestet. Dafür haben wir den vollständigen SVM-Datensatz verwendet mit allen Inputvariablen und skalierten Wettervariablen sowie skaliertem Umsatz.
 
-Getestet haben wir wieder sequentielle MLP-Modelle, diesmal aber gezielt mit mehreren hidden layers. Die besten Ergebnisse lieferte ein MOdell mit zwei hidden layers, bestehend aus 100 bzw. 50 Einheiten, jeweils mit 'relu' Aktivierungsfunktionen. Als Lernalgorithmus haben wir dabei 'Adam' angewendet mit einer Lernrate von 0.001, gleichzeitig haben wir online learning (batch_size = 1) angewendet und das Modell über 20 Epochen trainiert.
+Getestet haben wir wieder sequentielle MLP-Modelle, diesmal aber gezielt mit mehreren hidden layers. Die besten Ergebnisse lieferte ein Modell mit zwei hidden layers, bestehend aus 100 bzw. 50 Einheiten, jeweils mit 'relu' Aktivierungsfunktionen. Als Lernalgorithmus haben wir dabei 'Adam' angewendet mit einer Lernrate von 0.001, gleichzeitig haben wir online learning (batch_size = 1) angewendet und das Modell über 20 Epochen trainiert.
 
 Diese Parametereinstellungen lieferten die besten Ergebnisse (df_MLP_test_mod4_WG2_pred.csv). Verlängert man die Trainingsphase um weitere 20 Epochen (df_MLP_test_mod4_WG2_pred2.csv), verschlechtert sich die Prognosegüte bei Anwendung des Modells auf die Testdaten. Ein dritter hidden layer mit 25 Einheiten (df_MLP_test_mod4_WG2_pred3.csv) bringt keinen Mehrwert. Und auch wenn man die Anzahl der Einheiten im ersten hidden layer verdoppelt (df_MLP_test_mod4_WG2_pred4.csv), erzielt man keine genaueren Schätzwerte.
 
