@@ -7141,7 +7141,15 @@ Wir untersuchen nun, ob wir mit Deep Learning Methoden noch bessere Ergebnisse e
 
 ## 8.1 Vorhaben
 
-Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Wir verwenden dafür ein Python-Skript (MLP.py).
+Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Ein Perpeptron bezeichnet dabei die Grundeinheit (unit) unseres Netzes und ist eine vereinfachte künstliche Nervenzelle.
+
+Die Abbildung zeigt ein solches Perceptron mit zwei Eingabewerten $x1$ und $x2$.
+![](MLP_bild0.PNG)
+
+
+
+
+Wir verwenden dafür ein Python-Skript (MLP.py).
 
 ## 8.2 Datenaufbereitung
 
