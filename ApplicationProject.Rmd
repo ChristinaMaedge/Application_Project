@@ -6663,13 +6663,55 @@ dt_vgl_kennz <- temp
 dt_vgl_kennz
 ```
 
-# 7 Anwendung von ML Verfahren: Support Vector Machines (SVM)
+# 8 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
-## 7.1 Vorhaben
+## 8.1 Vorhaben und Theorie
 
 Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM). Dieses Verfahren wird häufig für die Klassifizierung verwendet, kann jedoch auch zur Lösung von Regressions-Problemen verwendet werden. Genau das wollen wir tun.
 
-## 7.2 Datenaufbereitung
+### Lineare SVM zur Klassifizierung
+
+In der einfachsten Form hat man ein Trainingsset $D=\{(\vec{x}^{(1)},y^{(1)}),...,(\vec{x}^{(p)},y^{(p)})\}$ bestehend aus $p$ Eingabevektoren $\vec{x}$ mit zugehörigem Label $y$, beispielsweise $+1$ und $-1$.
+
+![](SVM_bild1.PNG)
+
+Im Bild sehen wir ein Beispiel in zwei Dimensionen: Die roten Quadrate haben Label $+1$, die grünen Kreise $-1$. Man sucht dann die Trennlinie (durchgezogene Linie), die den Sicherheitsabstand ("Marge" oder engl. "margin") maximiert. Dir Grenzen der Sicherheitszone sind durch die gestrichelten Linien gezeigt. Die Datenpunkte, die direkt auf den getrennten Linien liegen haben als Abstand gerade die doppelte Marge und werden als Support-Vektoren bezeichnet. Für die Lösung des Problems sind nämlich gerade die Support-Vektoren entscheidend.
+
+Die Trennlinie (in höheren Dimensionen Hyperebene) lässt sich beschreiben als $H=\{\vec{x}|\vec{w}^T\cdot\vec{x}+b=0\}$. Dabei bezeichnet $\vec{w}$ den Normal-Vektor der Hyperebene. Und als Lösung erhalten wir eine Klassifizierungsfunktion $f(\vec{x})=sgn(\vec{w}^T\cdot\vec{x}+b)$. Dieser Klassifizierer ist unsere Support Vector Machine.
+
+Das Problem ist, dass die Hyperebene durch $\vec{w}$ nicht eindeutig bestimmt ist. Wir legen daher durch Normierung die sogenannte kanonische Hyperebene fest. Konkret erreichen wir das durch die Nebenbedingungen $(*)$: $\vec{w}^T\cdot\vec{x}+b \ge +1$ für Support-Vektoren mit Label $+1$ und $\vec{w}^T\cdot\vec{x}+b \le -1$ für Support-Vektoren mit Label $-1$. Damit ergibt sich der Sicherheitsabstand zwischen den beiden gestrichelten Linien zu $\frac{2}{||\vec{w}||}$.
+
+Jetzt haben wir ein Optimierungsproblem und müssen $||\vec{w}||$ minimieren, um den Sicherheitsabstand zu maximieren, unter den Nebenbedingungen $(*)$. Bei der Lösung kommen Lagrange-Multiplikatoren $\alpha_\mu\ge0$ ins Spiel und liefern als Lösung die optimalen Werte $\vec{w}^*$ und $b^*$ mit $\vec{w}^*=\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\vec{x}^{(\mu)}$. Die Details sparen wir an dieser Stelle aus.
+
+Damit erhalten wir die Klassifizierungsfunktion $f(\vec{x})=sgn(\vec{w}^{*T}\cdot\vec{x}+b^*)=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\vec{x}^{(\mu)T}\cdot\vec{x}+b^*)$.
+
+### Klassifizierung von linear nicht trennbaren Datensätzen
+
+SVM kann auch angewendet werden, wenn keine scharfe Trennung zwischen den Klassen möglich ist. In solchen Fällen verwendet man die sogenannte Soft-Margin-Klassifizierung. Ziel dabei ist eine Trennlinie zu finden, die die Anzahl der Punkte innerhalb des Sicherheitsabstandes minimiert bzw. die Anzahl der falsch klassifizierten Datenpunkte minimiert. Durch diese Nebenbedingung kommt ein weiterer Parameter $C$ ("cost") ins Spiel.
+
+### Nicht-lineare SVM zur Klassifizierung
+
+Bislang haben skizziert, wie man SVM auf linear trennbare Datensätze anwendet - abgesehen von einigen Überlappungen der Daten unterschiedlicher Klassen. Aber SVM kann noch mehr:
+
+![](SVM_bild2.PNG)
+
+Im oberen Teil der Abbildung sehen wir Daten zweier Klassen (rote und blaue Kreise), die in einer Dimension linear nicht trennbar sind. Transformiert man die Daten jedoch in eine höhere Dimension (hier 2D) durch eine Funktion $\vec{x}\rightarrow\Phi(\vec{x})$, sieht man, dass die Klassen nun linear trennbar sind. Man spricht von einer Transformation in den höher-dimensionalen "Feature-Raum" und führt dann SVM eben in diesem Feature-Raum durch.
+
+Dabei nutzt man aus, dass die transformierten Eingabevektoren $\Phi(\vec{x})$ nur in Form von Skalarprodukten auftauchen und definiert eine sogenannte Kernel-Funktion $k(.,.)$, um den Zusammenhang zwischen Eingabevektoren und transformierten Eingabevektoren im Feature-Raum zu vereinfachen: $k(\vec{x},\vec{y})=\Phi(\vec{x})^T\cdot\Phi(\vec{y})$. 
+
+Wir verwenden später als Kernel $k(\vec{x},\vec{y})=exp(-\gamma(\vec{x}-\vec{y})^2)$, also eine Gauss-Funktion, die man auch als "Radial-Basis-Funktion" (rbf) bezeichnet. Unsere Klassifizierungsfunktion wird dann zu:
+
+$f(\vec{x})=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\Phi(\vec{x}^{(\mu)})^T\cdot\Phi(\vec{x})+b^*)=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}k(\vec{x}^{(\mu)},\vec{x})+b^*)$.
+
+### SVM zur Regression
+
+Verzichten wir in der Klassifizierungsfunktion $f(.)$ auf $sgn(.)$ und verwenden stattdessen nur das Argument, dann können wir SVM auch auf Regressions-Probleme anwenden. Wir wollen dabei eine Funktion $f(\vec{x})$ finden mit möglichst geringem Fehler $|f(\vec{x})-y|$ bei Anwendung auf den Testdaten. Dabei besteht die Gefahr von Overfitting, nämlich dass wir den Schätzer zu gut an die Besonderheiten in den verwendeten Trainingsdaten anpassen und gleichzeitig die Prognosequalität bei Anwendung auf neue unbekannte Eingabewerte sinkt (schlechte Veralgemeinerung). Um diesen Interessenskonflikt zu lösen, führt man in der später durchgeführten $\epsilon$-Regression einen Toleranzbereich $\epsilon$ ein, innerhalb dessen wir Abweichungen nicht bestrafen. Mathematisch ausgedrückt gilt für die Loss-Funktion $L_\epsilon=0$ für $|f(\vec{x})-y|\le\epsilon$.
+
+Als freie Parameter haben wir also $C$ ("cost") und $\epsilon$, die es zu optimieren gilt. Dafür verwenden wir später eine Funktion zum Tuning der Hyperparameter. Daneben haben wir in unserem rbf-Kernel noch den Parameter $\gamma$, der üblicherweise als Kehrwert der Anzahl der Eingabeparameter festgelegt wird.
+
+Die SVM-Funktionalitäten sind im R-Paket "e1071" implementiert.
+
+## 8.2 Datenaufbereitung
 
 Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable Umsatz_NA (= TRUE).
 
@@ -6785,7 +6827,7 @@ df_SVM_test_WG4_target <- df_SVM_test_WG4$Umsatz
 df_SVM_test_WG5_target <- df_SVM_test_WG5$Umsatz
 ```
 
-## 7.3 Modelparameter
+## 8.3 Modelparameter
 
 Wir wollen im folgenden eine Regression mithilfe von SVM durchführen und verwenden dafür einen radial basis kernel. Die einzelnen Schritte führen wir zunächst für Warengruppe 1 im Detail durch und anschließend für die übrigen Warengruppen.
 
@@ -6936,7 +6978,7 @@ points(df_SVM_test_WG5_target, SVM_test_WG5_pred_tuned, col = "red", pch=4)
 
 ```
 
-## 7.4 Modellergebnisse
+## 8.4 Modellergebnisse
 
 Zunächst wandeln wir die Umsatzschätzer in einen dataframe um und benennen die Spalte entsprechend:
 ```{r}
@@ -7129,7 +7171,7 @@ prog_SVM_vgl_relAbw %>%
   ylim(-100, 200)
 ```
 
-## 7.5 Fazit SVM-Modell
+## 8.5 Fazit SVM-Modell
 
 Unser SVM-Modell liefert sehr gute Schätzwerte für die Warengruppen 2 (= Brötchen) und 5 (= Kuchen). Und zwar liegt die mittlere relative Abweichung fast bei Null und der WAPE ist vergleichbar zum besten naiven und linearen Modell.
 
@@ -7137,21 +7179,33 @@ Auf der anderen Seite fällt auf, dass mit unserem SVM-Modell die Umsätze der W
 
 Wir untersuchen nun, ob wir mit Deep Learning Methoden noch bessere Ergebnisse erzielen können.
 
-# 8 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
+# 9 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
-## 8.1 Vorhaben
+## 9.1 Vorhaben und Theorie
 
 Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Ein Perpeptron bezeichnet dabei die Grundeinheit (unit) unseres Netzes und ist eine vereinfachte künstliche Nervenzelle.
 
-Die Abbildung zeigt ein solches Perceptron mit zwei Eingabewerten $x1$ und $x2$.
+Die Abbildung zeigt ein solches Perceptron mit zwei Eingabewerten $x_1$ und $x_2$, sowie Gewichten $w_1$, $w_2$ und einer Schwelle $\theta$. Der Ausgabewert $y$ ergibt sich durch Anwendung einer sogenannten Aktivierungsfunktion $f(.)$ auf die Summe der gewichteten Eingabewerte abzüglich Schwellwert. Dabei wird häufig $b=-\theta$ gesetzt: $y=f(h)=f(\vec{x}\cdot\vec{w}+b)$, wobei mit $h$ das postsynaptische Potential bezeichnet wird. Beispiele für Aktivierungsfunktionen sind die Heaviside-Stufenfunktion, einfache lineare Funktionen $f(h)=h$, gerichtete lineare Funktionen ("relu" = rectified linear units) $f(h)=max(h,0)$ oder sigmoide Funktionen $f(h)=\frac{1}{1+e^{-h}}$.
+
 ![](MLP_bild0.PNG)
 
+Mehrere Perceptrons bilden eine Schicht eines neuronalen Netzes. Und ein Netz besteht in der Regel aus einer Eingabeschicht (input layer), einer Ausgabeschicht (output layer) und optional Zwischenschichten (hidden layers), wie im Bild skizziert:
 
+![](MLP_bild1.PNG)
 
+Wir haben in dieser Arbeit nur sogenannte Feedforward-Netze benutzt, bei denen die Signalrichtung immer nur von einer zur nächsten Schicht zeigt. Im Grundzustand ist jede Einheit einer Schicht mit jeder Einheit der nächsten Schicht verbunden und die Verbindung erhält ein Gewicht $w$. 
 
-Wir verwenden dafür ein Python-Skript (MLP.py).
+Für eine Kombination von Eingabewerten lässt sich der Ausgabewert in einem Feedforward-Netz sehr einfach berechnen. In unserem Fall haben wir eine Reihe von Trainingsdaten und kennen für gewisse Eingabeparameter die gewünschten Ausgabewerte, nämlich Umsätze je Warengruppe. In der Trainingsphase berechnen wir den Fehler (die sogenannte "Loss"-Funktion) $L$ aus der Differenz des berechneten Ausgabewertes zum erwarteten Umsatz.
 
-## 8.2 Datenaufbereitung
+Um den Fehler zu minimieren, müssen die Gewichte und Schwellwerte rückwirkend angepasst werden, man spricht hierbei von "backpropagation", weil man nur die Schichten bis zurück zur Eingabeschicht durchwandert. Die nötige Anpassung der Gewichte und Schwellwerte berehnet man bspw. mithilfe des Gradienten der Loss-Funktionen in Bezug auf die postsynaptischen Potentiale. Ein Standard-Verfahren ist das Gradient-Descent-Verfahren. Werden zusätzlich die Gewichte und Schwellwerte mit zufälligen Werten initialisiert, spricht man vom Stochastic-Gradient-Descent-Verfahren (SGD). Bei diesem iterativen Lernalgorithmus versucht man den Fehler zu minimieren und sich so schrittweise an ein lokales oder sogar an das globale Minimum anzunähern. Neben SGD gibt es zahlreiche weitere Optimierungsstrategien. 
+
+Eine Erweiterung des klassischen SGD-Verfahrens ist "Adam": Dabei wird nicht nur der aktuelle Gradient für die Anpassung der Gewichte und Schwellwerte herangezogen, sondern eine Sequenz von Gradienten. Wenn mehrere aufeinanderfolgende Anpassungen in die gleiche Richtung vorgenommen werden, erhöht sich somit die Lerngeschwindigkeit, man spricht von Lernen mit Momentum. Für klassisches SGD hingegen ist die Lernrate konstant.
+
+Ein Modell wird üblicherweise über viele Epochen trainiert. In jeder Epoche kommt jeder Trainings-Input zum Einsatz. Die Anpassung der Gewichte und Schwellwerte kann nach jedem Input vorgenommen werden ("online learning") oder erst am Ende einer Epoche, nachdem alle Ausgabewerte für alle Eingabekombinationen berechnet wurden ("batch learning"). In der Praxis verwendet man als Kompromiss häufig sogenannte mini-batches und verwendet dabei eine gewisse Anzahl an Trainings-Inputs, bevor die Gewichte und Schwellwerte angepasst werden.
+
+Wir haben unsere neuronalen Netze in Python programmiert. Dabei verwenden wir das von Google entwickelte open-source Framework Tensonflow, das für die datenstromorientierte Programmierung konzipiert wurde und im Bereich Deep Learning weit verbreitet ist. Darüberhinaus verwenden wir Keras als open-source Deep-Learning-Bibliothek. Unser Quellcode befindet sich im Python-Skript MLP.py.
+
+## 9.2 Datenaufbereitung
 
 Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable Umsatz_NA (= TRUE).
 
@@ -7265,7 +7319,7 @@ write_csv(df_MLP_test_WG4, path="data/df_MLP_test_WG4.csv", col_names=FALSE)
 write_csv(df_MLP_test_WG5, path="data/df_MLP_test_WG5.csv", col_names=FALSE)
 ```
 
-## 8.3 Modellparameter
+## 9.3 Modellparameter
 
 ### Modell 1 (MLP_mod1)
 Im ersten Versuch bauen wir ein vergleichsweise kleines Modell und behalten nur die Variablen für SommerferienSH, Feiertag und Wochentage (Mo - So) als binäre Inputvariablen. Anders als bei der linearen Regression verwenden wir alle Wochentage. Wir haben also insgesamt 9 binäre Inputvariablen. Als output wollen wir den Umsatzschätzer erhalten und brauchen dafür im output layer nur eine Unit mit linearer Aktivierungsfunktion. Der Umsatz soll jedoch positiv sein, also verwenden wir eine "rectified linear unit" (relu).
@@ -7284,7 +7338,7 @@ Insgesamt haben wir 27 Inputvariablen und erhöhen die Anzahl der Neuronen im hi
 
 Im Training verwenden wir diesmal 100 Epochen, weil das komplexere Modell erst nach ca. 80 Epochen stabile loss-Werte zeigt.
 
-## 8.4 Ergebnisse
+## 9.4 Ergebnisse
 
 ### Modell 1 (MLP_mod1)
 
@@ -7706,7 +7760,7 @@ prog_MLP_vgl_relAbw_mod2 %>%
 
 Die Umsatzschätzung gelingt offenbar für die Warengruppe 2 (= Brötchen) ab besten.
 
-## 8.5 Fazit DL Modelle
+## 9.5 Fazit DL Modelle
 
 Wir haben in diesem Abschnitt zwei Multilayer Perceptron Modelle eingesetzt und genauer untersucht. Die Ergebnisse sind brauchbar aber nicht umwerfend. In beiden Modellen haben wir stochastic gradiend descent einen iterativen Lernalgorithmus verwendet, der keine Garantie gibt, das globale Optimum für die Gewichte und Schwellwerte zu finden. Das kann ein Grund für die mangelnde Ergebnis-Qualität sein.
 
@@ -7714,15 +7768,15 @@ Die Parameter - wie bspw. die Lernrate, die Anzahl der hidden layers und der Anz
 
 Insgesamt stellen wir fest, dass die so gebauten MLP Modelle dem Problem nicht gerecht werden. Vermutlich würde man mit rekursiven Netzen und/oder dem Einsatz von long-short-term-memory (LSTM) Einheiten deutlich bessere Ergebnisse erzielen. Das sprengt jedoch den Umfang dieser Projektarbeit und wird daher nicht weiter betrachtet. 
 
-Wir hatten gesehen, dass das komplexe Modell (mod2) für die Warengruppe 2 in Bezug auf den WAPE gute Ergebnisse liefert. Ein Ansatz ist, das Modell gezielt für diese Warengruppe noch zu erweitern. Hier haben wir versucht, einen zweiten hidden layer mit 20 Einheiten in das Modell zu integrieren. Allerdings verschlechterten sich dadurch die Prognose-Ergebnisse, so dass wir den Ansatz nicht weiter verfolgt haben. Alternativ haben wir ein Kompromiss-Modell (mod3) getestet, das nur die Variablen SommerferienSH, Feiertag, Silvester_ext, Samstag, Sonntag, Juli und August enthält. Und dieses Modell haben wir versucht, für Warengruppe 2 zu optimieren durch Variation der Units im hidden layer, Anwendung anderer Lernalgorithmen (Adam) oder Hinzunahme eines weiteren hidden layers - ohne Erfolg.
+Wir hatten gesehen, dass das komplexe Modell (mod2) für die Warengruppe 2 in Bezug auf den WAPE gute Ergebnisse liefert. Ein Ansatz ist, das Modell gezielt für diese Warengruppe noch zu erweitern. Wir haben dazu ein Kompromiss-Modell (mod3) getestet, das nur die Variablen SommerferienSH, Feiertag, Silvester_ext, Samstag, Sonntag, Juli und August enthält. Und dieses Modell haben wir versucht, für Warengruppe 2 zu optimieren durch Variation der Units im hidden layer, Anwendung anderer Lernalgorithmen (Adam) oder Hinzunahme eines weiteren hidden layers - ohne Erfolg.
 
-Auch könnte man das Modell gezielt auf die Feiertags-Effekte trainieren, um dafür bessere Ergebnisse zu erzielen. Diese Idee stellt eine Ausbaustufe dar, die wir hier nicht umgesetzt haben.
+Auch könnte man das Modell gezielt auf die Feiertags-Effekte trainieren, um dafür bessere Ergebnisse zu erzielen. Konkret könnte man in der Trainingsphase besonderen Schwerpunkt auf die Eingabekombinationen legen, für die der Schätzer stark vom tatsächlichen Umsatz abweicht. Diese Idee stellt eine Ausbaustufe dar, die wir hier nicht umgesetzt haben.
 
 Insgesamt ging es hier eher darum, Erfahrungswerte in der praktischen Anwendung von DL-Verfahren zu sammeln und das ist in der Tat sehr gut gelungen.
 
-## 8.6 Zugabe
+## 9.6 Zugabe
 
-Weil wir uns vom MLP bessere Ergebnisse erhofft hatten, haben wir noch einen drauf gesetzt und noch ein viertes MLP (mod4) getestet. Dafür haben wir den vollständigen SVM-Datensatz verwendet mit allen Inputvariablen und skalierten Wettervariablen sowie skaliertem Umsatz.
+Weil wir uns vom MLP bessere Ergebnisse erhofft hatten, haben wir nachträglich doch noch einen drauf gesetzt und noch ein viertes MLP (mod4) getestet. Dafür haben wir den vollständigen SVM-Datensatz verwendet mit allen Inputvariablen und skalierten Wettervariablen sowie skaliertem Umsatz.
 
 Getestet haben wir wieder sequentielle MLP-Modelle, diesmal aber gezielt mit mehreren hidden layers. Die besten Ergebnisse lieferte ein Modell mit zwei hidden layers, bestehend aus 100 bzw. 50 Einheiten, jeweils mit 'relu' Aktivierungsfunktionen. Als Lernalgorithmus haben wir dabei 'Adam' angewendet mit einer Lernrate von 0.001, gleichzeitig haben wir online learning (batch_size = 1) angewendet und das Modell über 20 Epochen trainiert.
 
@@ -7809,7 +7863,7 @@ df_MLP_test_mod4_WG4 %>%
 Unsere Hoffnung hat sich jedoch nicht erfüllt: Der WAPE ist schlechter als für das einfachere Modell 2 (mod2) für die Warengruppe 4.
 
 
-# 9 Modellvergleich
+# 10 Modellvergleich
 
 Wir wollen nun eine Gesamttabelle aller Vergleichskennzahlen erstellen. Wir beschränken uns dabei auf die Anwendung der Modelle auf die Testdaten, betrachten also die Testfehler.
 
@@ -8051,7 +8105,7 @@ modell_vergleich_WG %>%
 
 Für Warengruppe 5 gewinnt das lineare Modell knapp vor dem naiven Modell.
 
-# 10 Ensemble Methoden
+# 11 Ensemble Methoden
 
 Wir haben im letzten Abschnitt für jede Warengruppe die besten Einzelmodelle der verschiedenen Verfahren identifiziert. Als nächsten wollen wir eine Kombination dieser besten Einzelmodelle - ein sogenanntes Ensemble - bilden, in der Hoffnung, dass sich dadurch noch bessere Prognosen erstellen lassen. 
 
@@ -8517,7 +8571,7 @@ ensemble_WG2_vgl_relAbw %>%
 
 Wir sehen inder Tat, dass sich die Umsätze für die Warengruppe 2 sehr gut prognostizieren lassen. Die Verteilungen der relativen Abweichungen sind verhältnismäßig schmal.
 
-# 11 Zusammenfassung und Ausblick
+# 12 Zusammenfassung und Ausblick
 
 Im Vergleich der besten Einzelmodelle finden wir ein Kopf-an-Kopf-Rennen zwischen dem besten naiven Modell und den linearen Modellen, aber auch das MLP ist bei den besten Schätzern vertreten, zumindest für eine Warengruppe. Die Support Vector Machines liefern insgesamt etwas schlechtere Ergebnisse. Das zeigt zum einen, dass es sehr viel Erfahrung braucht, um diese komplexen Modelle zu optimieren. Diese Erfahrung fehlt uns.
 
