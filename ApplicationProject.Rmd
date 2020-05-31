@@ -6498,7 +6498,9 @@ df_dt_test_WG5 <- df_dt_test %>% filter(Warengruppe==5)
 
 ## 7.3 Grundlegende Implementierung
 
-Wir können einen Regressionsbaum mit `rpart` anpassen und ihn dann mit `rpart.plot` visualisieren. Der Anpassungsprozess und die visuelle Ausgabe von Regressionsbäumen und Klassifizierungsbäumen sind sehr ähnlich. Beide verwenden die Formelmethode zum Ausdrücken des Modells (ähnlich wie `lm`). Wenn wir jedoch einen Regressionsbaum anpassen, müssen wir `method = "anova"` setzen. Standardmäßig errät rpart auf intelligente Weise, welcher Methodenwert auf dem Datentyp Ihrer Antwortspalte basieren soll. Es wird jedoch empfohlen, die Methode aus Gründen der Reproduzierbarkeit explizit festzulegen.
+Wir können einen Regressionsbaum mit `rpart` anpassen und ihn dann mit `rpart.plot` visualisieren. Der Anpassungsprozess und die visuelle Ausgabe von Regressionsbäumen und Klassifizierungsbäumen sind sehr ähnlich. Beide verwenden die Formelmethode zum Ausdrücken des Modells (ähnlich wie `lm`). Wenn wir jedoch einen Regressionsbaum anpassen, müssen wir `method = "anova"` setzen. Standardmäßig errät `rpart` auf intelligente Weise, welcher Methodenwert auf dem Datentyp Ihrer Antwortspalte basieren soll. Es wird jedoch empfohlen, die Methode aus Gründen der Reproduzierbarkeit explizit festzulegen.
+
+Wir beginnen mit Warengruppe 1:
 
 ```{r}
 # Warengruppe 1
@@ -6511,12 +6513,11 @@ dt1_WG1 <- rpart(
 dt1_WG1
 ```
 
-Sobald wir unser Modell angepasst haben, können wir einen Spitzenwert am dt1_WG1-Ausgang erreichen. Dies erklärt nur die Schritte der Teilung.
-Wir beginnen bspw. mit 1061 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist der Wochentag Sonntag. Wir sehen, dass am ersten Knoten alle Beobachtungen mit Wochentag_c = Sonntag zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (152), der durchschnittliche Umsatz (70,14) und der SSE (83154.48) sind aufgeführt.
+Sobald wir unser Modell angepasst haben, können wir einen Blick auf den dt1_WG1-Output werfen. Dieser erklärt die Schritte der Teilung: Wir beginnen bspw. mit 1061 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist der Wochentag Sonntag. Wir sehen, dass am ersten Knoten alle Beobachtungen mit Wochentag_c = Sonntag zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (152), der durchschnittliche Umsatz (70,14) und der SSE (83154.48) sind aufgeführt.
 
-Wenn man nach dem 3. Zweig sucht, sieht man, dass 909 Beobachtungen mit Wochentag_c = Dienstag, Donnerstag, Freitag, Mittwoch, Montag, Samstag diesem Zweig folgen und ihre durchschnittlichen Umsätze 123.49€betragen und der SSE hier 1109737.00 beträgt.
+Wenn man nach dem 3. Zweig sucht, sieht man, dass 909 Beobachtungen mit Wochentag_c = Dienstag, Donnerstag, Freitag, Mittwoch, Montag, Samstag diesem Zweig folgen und ihre durchschnittlichen Umsätze 123.49€ betragen und der SSE hier 1109737.00 beträgt.
 
-Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SEE aufweist, der Wochentag ist, wobei die Umsätze sonntags in der Warengruppe Brot um > 40% geringer sind als an den anderen tagen der Woche.
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SEE aufweist, der Wochentag ist, wobei die Umsätze sonntags in der Warengruppe Brot um > 40% geringer sind als an den anderen Tagen der Woche.
 
 Wir können unser Modell mit `rpart.plot` visualisieren. `rpart.plot` bietet viele Plotoptionen, auf die wir an dieser Stelle nicht weiter eingehen werden. Im Standard-Plot werden jedoch der Prozentsatz der Daten angezeigt, die auf diesen Knoten fallen, und der durchschnittliche Umsatz für diesen Zweig. 
 
@@ -6535,26 +6536,39 @@ Hinter den Kulissen wendet `rpart` automatisch einen Bereich von Kostenkomplexit
 plotcp(dt1_WG1)
 ```
 
-In diesem Beispiel finden wir abnehmende Renditen nach 12 Endknoten, wie in der Grafik dargestellt (y-Achse ist Kreuzvalidierungsfehler, untere x-Achse ist Kostenkomplexitätswert (α), obere x-Achse ist die Anzahl von Endknoten (Baumgröße = | T |)). Die gestrichelte Linie, die zwischen den Punkten | T | = 3 und 4 verläuft, deutet darauf hin, dass auch ein kleiner Baum gewählt werden kann. Breiman et al. (1984) schlugen vor, dass es in der Praxis üblich ist, den kleinsten Baum innerhalb von 1 Standardabweichung des minimalen Kreuzvalidierungsfehlers zu verwenden (auch bekannt als 1-SE-Regel). Daher könnten wir auch einen Baum mit 3 bzw. 4 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
+In diesem Beispiel finden wir abnehmende Renditen nach 12 Endknoten, wie in der Grafik dargestellt (y-Achse ist Kreuzvalidierungsfehler, untere x-Achse ist Kostenkomplexitätswert (α), obere x-Achse ist die Anzahl von Endknoten (Baumgröße = | T |)). Die gestrichelte Linie, die zwischen den Punkten | T | = 3 und 4 verläuft, deutet darauf hin, dass auch ein kleiner Baum gewählt werden kann. Breiman et al. (1984) schlugen vor, dass es in der Praxis üblich ist, den kleinsten Baum innerhalb von 1 Standardabweichung des minimalen Kreuzvalidierungsfehlers zu verwenden (auch bekannt als 1-SE-Regel). Daher könnten wir auch einen Baum mit 3 oder 4 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
 
 ```{r}
 dt1_WG1$cptable
 ```
+
+## 7.4 Tuning
+
+Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
+
+* `minsplit`: Die Mindestanzahl von Datenpunkten, die erforderlich sind, um eine Teilung zu versuchen, bevor ein Endknoten erstellt werden muss. Der Standardwert ist 20. Wenn man diesen Wert verkleinert, können Endknoten, die möglicherweise nur eine Handvoll Beobachtungen enthalten, erstellt werden um den vorhergesagten Wert zu prognostizieren. 
+* `maxdepth`: Die maximale Anzahl interner Knoten zwischen dem Wurzelknoten und den Endknoten. Der Standardwert ist 30, was ziemlich liberal ist und das Bauen ziemlich großer Bäume ermöglicht.
+
+`rpart` verwendet ein spezielles Steuer- bzw. Kontrollargument, bei dem eine Liste von Hyperparameterwerten bereitgestellt wird. Wenn wir beispielsweise ein Modell mit `minsplit` = 20 und `maxdepth` = 12 bewerten möchten, können wir Folgendes ausführen:
 
 ```{r}
 dt2_WG1 <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG1,
     method  = "anova", 
-    control = list(minsplit = 10, maxdepth = 12, xval = 10)
+    control = list(minsplit = 20, maxdepth = 12, xval = 10)
 )
 
 dt2_WG1$cptable
 ```
 
+Obwohl dieser Ansatz nützlich ist, müssen mehrere Modelle manuell bewertet werden. Besser ist es insofern eine Rastersuche durchzuführen, um automatisch nach einer Reihe unterschiedlich abgestimmter Modelle zu suchen, um die optimale Hyperparametereinstellung zu ermitteln.
+
+Um eine Rastersuche durchzuführen, erstellen wir zuerst unser Hyperparameter-Raster. In diesem Beispiel suchen wir einen Bereich von `minsplit` von 5 bis 150 und variiere die maximale Tiefe von 8 bis 15 (da unser ursprüngliches Modell eine optimale Tiefe von 12 gefunden hat). Das Ergebnis sind 1168 verschiedene Kombinationen, für die 1168 verschiedene Modelle erforderlich sind.
+
 ```{r}
 hyper_grid <- expand.grid(
-  minsplit = seq(5, 20, 1),
+  minsplit = seq(5, 150, 1),
   maxdepth = seq(8, 15, 1)
 )
 
@@ -6569,8 +6583,10 @@ head(hyper_grid)
 
 # total number of combinations
 nrow(hyper_grid)
-## [1] 128
+## [1] 1168
 ```
+
+Um die Modellierung zu automatisieren, richten wir einfach eine `for`-Schleife ein und durchlaufen jede Kombination aus `minsplit` und `maxdepth`. Wir speichern jedes Modell in einem eigenen Listenelement.
 
 ```{r}
 models <- list()
@@ -6591,7 +6607,7 @@ for (i in 1:nrow(hyper_grid)) {
 }
 ```
 
-
+Wir können jetzt eine Funktion erstellen, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
 
 ```{r}
 # function to get optimal cp
@@ -6613,26 +6629,33 @@ hyper_grid %>%
     ) %>%
   arrange(error) %>%
   top_n(-5, wt = error)
-## minsplit  maxdepth  cp     error
-##       12	       10	 0.01	  0.6173595	
-##        8	       14	 0.01	  0.6244051	
-##       11	       10	 0.01	  0.6341631	
-##       13        12	 0.01	  0.6347811	
-##        8	        9	 0.01	  0.6355263	  
+## minsplit  maxdepth   cp      error
+##       51	       14	0.01	0.6055641	
+##       70     	 10	0.01	0.6061298	
+##        9	       14	0.01	0.6149394	
+##       81	        8	0.01	0.6154432	
+##       92	       11	0.01	0.6165628	
 ```
 
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.605 gegenüber 0.643).
+
+Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
+
 ```{r}
-optimal_tree <- rpart(
+optimal_tree_WG1 <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG1,
     method  = "anova",
-    control = list(minsplit = 12, maxdepth = 10, cp = 0.01)
+    control = list(minsplit = 51, maxdepth = 14, cp = 0.01)
     )
 
-pred <- predict(optimal_tree, newdata = df_dt_test_WG1)
+pred <- predict(optimal_tree_WG1, newdata = df_dt_test_WG1)
 RMSE(pred = pred, obs = df_dt_test_WG1$Umsatz)
 ```
 
+Der endgültige RMSE beträgt 39.78, was darauf hindeutet, dass unsere prognostizierten Umsätze im Durchschnitt etwa 39.78 € vom tatsächlichen Umsatz abweichen.
+
+Um das Modell abschließend mit den anderen vergleichen zu können, wird eine Tabelle mit den zu untersuchenden Kennzahlen erstellt:
 ```{r}
 # Hinzufügen der Ergebnisse
 df_dt_test_WG1 <- df_dt_test_WG1 %>%
@@ -6663,53 +6686,688 @@ dt_vgl_kennz <- temp
 dt_vgl_kennz
 ```
 
+Wir führen unsere Modellierung fort mit Warengruppe 2:
+
+```{r}
+# Warengruppe 2
+dt1_WG2 <- rpart(
+  formula = Umsatz ~ .,
+  data    = df_dt_train_WG2,
+  method  = "anova"
+  )
+
+dt1_WG2
+```
+
+Sobald wir unser Modell angepasst haben, können wir einen Blick auf den dt1_WG2-Output werfen. Wir beginnen wieder mit 1061 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist bei dieser Warengruppe der Monat (Monat_c=April,Dezember,Februar,Januar,Juni,Mai,März,November,Oktober,September). Wir sehen, dass am ersten Knoten alle Beobachtungen mit Monat_c=April,Dezember,Februar,Januar,Juni,Mai,März,November,Oktober,September zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (880), der durchschnittliche Umsatz (266.70) und der SSE (974238.00) sind aufgeführt.
+
+Wenn man nach dem 3. Zweig sucht, sieht man, dass 181 Beobachtungen mit Monat_c=August,Juli diesem Zweig folgen und ihre durchschnittlichen Umsätze 535.80€ betragen und der SSE hier 1594924.00 beträgt.
+
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SSE aufweist, der Monat ist, wobei die durchschnittlichen Umsätze im August und Juli in der Warengruppe Brötchen um > 100% höher sind als in den Monaten April, Dezember, Februar, Januar, Juni, Mai, März, November, Oktober, September.
+
+Wir visualisieren unser Modell mit erneut `rpart.plot`.
+
+```{r}
+rpart.plot(dt1_WG2)
+
+library(partykit)
+plot(as.party(dt1_WG2))
+```
+
+Man kann feststellen, dass dieser Baum 10 interne Knoten enthält, was zu 11 Endknoten führt. 
+
+```{r}
+plotcp(dt1_WG2)
+```
+
+Die gestrichelte Linie, die zwischen den Punkten | T | = 8 und 9 verläuft, deutet abermals darauf hin, dass auch ein kleiner Baum gewählt werden kann. Wir könnten nach der 1-SE-Regel auch einen Baum mit 8 oder 9 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
+
+```{r}
+dt1_WG2$cptable
+```
+
+## 7.4 Tuning
+
+Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
+
+* `minsplit`: Die Mindestanzahl von Datenpunkten, die erforderlich sind, um eine Teilung zu versuchen, bevor ein Endknoten erstellt werden muss. Der Standardwert ist 20. Wenn man diesen Wert verkleinert, können Endknoten, die möglicherweise nur eine Handvoll Beobachtungen enthalten, erstellt werden um den vorhergesagten Wert zu prognostizieren. 
+* `maxdepth`: Die maximale Anzahl interner Knoten zwischen dem Wurzelknoten und den Endknoten. Der Standardwert ist 30, was ziemlich liberal ist und das Bauen ziemlich großer Bäume ermöglicht.
+
+`rpart` verwendet ein spezielles Steuer- bzw. Kontrollargument, bei dem eine Liste von Hyperparameterwerten bereitgestellt wird. Wenn wir beispielsweise ein Modell mit `minsplit` = 20 und `maxdepth` = 12 bewerten möchten, können wir Folgendes ausführen:
+
+```{r}
+dt2_WG2 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG2,
+    method  = "anova", 
+    control = list(minsplit = 20, maxdepth = 12, xval = 10)
+)
+
+dt2_WG2$cptable
+```
+
+Obwohl dieser Ansatz nützlich ist, müssen mehrere Modelle manuell bewertet werden. Besser ist es insofern eine Rastersuche durchzuführen, um automatisch nach einer Reihe unterschiedlich abgestimmter Modelle zu suchen, um die optimale Hyperparametereinstellung zu ermitteln.
+
+Um eine Rastersuche durchzuführen, erstellen wir zuerst unser Hyperparameter-Raster. In diesem Beispiel suchen wir einen Bereich von `minsplit` von 5 bis 150 und variiere die maximale Tiefe von 8 bis 15 (da unser ursprüngliches Modell eine optimale Tiefe von 11 gefunden hat). Das Ergebnis sind 1168 verschiedene Kombinationen, für die 1168 verschiedene Modelle erforderlich sind.
+
+```{r}
+hyper_grid <- expand.grid(
+  minsplit = seq(5, 150, 1),
+  maxdepth = seq(8, 15, 1)
+)
+
+head(hyper_grid)
+
+# total number of combinations
+nrow(hyper_grid)
+```
+
+Um die Modellierung zu automatisieren, richten wir einfach eine `for`-Schleife ein und durchlaufen jede Kombination aus `minsplit` und `maxdepth`. Wir speichern jedes Modell in einem eigenen Listenelement.
+
+```{r}
+models <- list()
+
+for (i in 1:nrow(hyper_grid)) {
+  
+  # get minsplit, maxdepth values at row i
+  minsplit <- hyper_grid$minsplit[i]
+  maxdepth <- hyper_grid$maxdepth[i]
+
+  # train a model and store in the list
+  models[[i]] <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG2,
+    method  = "anova",
+    control = list(minsplit = minsplit, maxdepth = maxdepth)
+    )
+}
+```
+
+Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
+
+```{r}
+# function to get optimal cp
+get_cp <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  cp <- x$cptable[min, "CP"] 
+}
+
+# function to get minimum error
+get_min_error <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  xerror <- x$cptable[min, "xerror"] 
+}
+
+hyper_grid %>%
+  mutate(
+    cp    = purrr::map_dbl(models, get_cp),
+    error = purrr::map_dbl(models, get_min_error)
+    ) %>%
+  arrange(error) %>%
+  top_n(-5, wt = error)
+```
+
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.2711664	 gegenüber 0.2886208).
+
+Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
+
+```{r}
+optimal_tree_WG2 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG2,
+    method  = "anova",
+    control = list(minsplit = 10, maxdepth = 10, cp = 0.01)
+    )
+
+pred <- predict(optimal_tree_WG2, newdata = df_dt_test_WG2)
+RMSE(pred = pred, obs = df_dt_test_WG2$Umsatz)
+```
+
+Der endgültige RMSE beträgt 65.51, was darauf hindeutet, dass unsere prognostizierten Umsätze im Durchschnitt etwa 65.51 € vom tatsächlichen Umsatz abweichen.
+
+```{r}
+# Hinzufügen der Ergebnisse
+df_dt_test_WG2 <- df_dt_test_WG2 %>%
+  mutate(predicted = pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_dt_test_WG2 <- df_dt_test_WG2 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_dt_test_WG2 <- df_dt_test_WG2 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_dt_test_WG2 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "optimaltree_WG2")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
+dt_vgl_kennz
+```
+
+Nachfolgend wird Warengruppe 3 behandelt.
+
+```{r}
+# Warengruppe 3
+dt1_WG3 <- rpart(
+  formula = Umsatz ~ .,
+  data    = df_dt_train_WG3,
+  method  = "anova"
+  )
+
+dt1_WG3
+```
+
+Der dt1_WG3-Output beginnt wieder mit 1061 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist bei dieser Warengruppe der Monat (Monat_c=April,Dezember,Februar,Januar,Juni,Mai,März,November,Oktober,September). Wir sehen, dass am ersten Knoten alle Beobachtungen mit Monat_c=April,Dezember,Februar,Januar,Juni,Mai,März,November,Oktober,September zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (880), der durchschnittliche Umsatz (266.70) und der SSE (974238.00) sind aufgeführt.
+
+Wenn man nach dem 3. Zweig sucht, sieht man, dass 181 Beobachtungen mit Monat_c=August,Juli diesem Zweig folgen und ihre durchschnittlichen Umsätze 535.80€ betragen und der SSE hier 1594924.00 beträgt.
+
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SSE aufweist, der Monat ist, wobei die durchschnittlichen Umsätze im August und Juli in der Warengruppe Brötchen um > 100% höher sind als in den Monaten April, Dezember, Februar, Januar, Juni, Mai, März, November, Oktober, September.
+
+Wir visualisieren unser Modell mit erneut `rpart.plot`.
+
+```{r}
+rpart.plot(dt1_WG3)
+
+library(partykit)
+plot(as.party(dt1_WG3))
+```
+
+Man kann feststellen, dass dieser Baum 9 interne Knoten enthält, was zu 10 Endknoten führt. 
+
+```{r}
+plotcp(dt1_WG3)
+```
+
+Die gestrichelte Linie, die durch den Punkt | T | = 9 verläuft, deutet abermals darauf hin, dass auch ein kleiner Baum gewählt werden kann. Wir könnten nach der 1-SE-Regel auch einen Baum mit 9 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
+
+```{r}
+dt1_WG3$cptable
+```
+
+## 7.4 Tuning
+
+Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
+
+* `minsplit`: Die Mindestanzahl von Datenpunkten, die erforderlich sind, um eine Teilung zu versuchen, bevor ein Endknoten erstellt werden muss. Der Standardwert ist 20. Wenn man diesen Wert verkleinert, können Endknoten, die möglicherweise nur eine Handvoll Beobachtungen enthalten, erstellt werden um den vorhergesagten Wert zu prognostizieren. 
+* `maxdepth`: Die maximale Anzahl interner Knoten zwischen dem Wurzelknoten und den Endknoten. Der Standardwert ist 30, was ziemlich liberal ist und das Bauen ziemlich großer Bäume ermöglicht.
+
+`rpart` verwendet ein spezielles Steuer- bzw. Kontrollargument, bei dem eine Liste von Hyperparameterwerten bereitgestellt wird. Wenn wir beispielsweise ein Modell mit `minsplit` = 20 und `maxdepth` = 12 bewerten möchten, können wir Folgendes ausführen:
+
+```{r}
+dt2_WG3 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG3,
+    method  = "anova", 
+    control = list(minsplit = 20, maxdepth = 12, xval = 10)
+)
+
+dt2_WG3$cptable
+```
+
+Obwohl dieser Ansatz nützlich ist, müssen mehrere Modelle manuell bewertet werden. Besser ist es insofern eine Rastersuche durchzuführen, um automatisch nach einer Reihe unterschiedlich abgestimmter Modelle zu suchen, um die optimale Hyperparametereinstellung zu ermitteln.
+
+Um eine Rastersuche durchzuführen, erstellen wir zuerst unser Hyperparameter-Raster. In diesem Beispiel suchen wir einen Bereich von `minsplit` von 5 bis 150 und variiere die maximale Tiefe von 8 bis 15 (da unser ursprüngliches Modell eine optimale Tiefe von 11 gefunden hat). Das Ergebnis sind 1168 verschiedene Kombinationen, für die 1168 verschiedene Modelle erforderlich sind.
+
+```{r}
+hyper_grid <- expand.grid(
+  minsplit = seq(5, 150, 1),
+  maxdepth = seq(8, 15, 1)
+)
+
+head(hyper_grid)
+
+# total number of combinations
+nrow(hyper_grid)
+```
+
+Um die Modellierung zu automatisieren, richten wir einfach eine `for`-Schleife ein und durchlaufen jede Kombination aus `minsplit` und `maxdepth`. Wir speichern jedes Modell in einem eigenen Listenelement.
+
+```{r}
+models <- list()
+
+for (i in 1:nrow(hyper_grid)) {
+  
+  # get minsplit, maxdepth values at row i
+  minsplit <- hyper_grid$minsplit[i]
+  maxdepth <- hyper_grid$maxdepth[i]
+
+  # train a model and store in the list
+  models[[i]] <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG3,
+    method  = "anova",
+    control = list(minsplit = minsplit, maxdepth = maxdepth)
+    )
+}
+```
+
+Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
+
+```{r}
+# function to get optimal cp
+get_cp <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  cp <- x$cptable[min, "CP"] 
+}
+
+# function to get minimum error
+get_min_error <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  xerror <- x$cptable[min, "xerror"] 
+}
+
+hyper_grid %>%
+  mutate(
+    cp    = purrr::map_dbl(models, get_cp),
+    error = purrr::map_dbl(models, get_min_error)
+    ) %>%
+  arrange(error) %>%
+  top_n(-5, wt = error)
+```
+
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.2490572 gegenüber 0.2652715).
+
+Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
+
+```{r}
+optimal_tree_WG3 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG3,
+    method  = "anova",
+    control = list(minsplit = 37, maxdepth = 13, cp = 0.01)
+    )
+
+pred <- predict(optimal_tree_WG3, newdata = df_dt_test_WG3)
+RMSE(pred = pred, obs = df_dt_test_WG3$Umsatz)
+```
+
+Der endgültige RMSE beträgt 50.81, was darauf hindeutet, dass unsere prognostizierten Umsätze im Durchschnitt etwa 50.81 € vom tatsächlichen Umsatz abweichen.
+
+```{r}
+# Hinzufügen der Ergebnisse
+df_dt_test_WG3 <- df_dt_test_WG3 %>%
+  mutate(predicted = pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_dt_test_WG3 <- df_dt_test_WG3 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_dt_test_WG3 <- df_dt_test_WG3 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_dt_test_WG3 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "optimaltree_WG3")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
+dt_vgl_kennz
+```
+
+Da ganze Procedere wird nun auf Warengruppe 4 angewendet.
+
+```{r}
+# Warengruppe 4
+dt1_WG4 <- rpart(
+  formula = Umsatz ~ .,
+  data    = df_dt_train_WG4,
+  method  = "anova"
+  )
+
+dt1_WG4
+```
+
+Der dt1_WG4-Output beginnt mit 1047 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist bei dieser Warengruppe der Wochentag (Wochentag_c=Dienstag,Donnerstag,Freitag,Mittwoch,Montag,Samstag). Wir sehen, dass am ersten Knoten alle Beobachtungen mit Wochentag_c=Dienstag,Donnerstag,Freitag,Mittwoch,Montag,Samstag zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (895), der durchschnittliche Umsatz (81.13) und der SSE (632802.600) sind aufgeführt.
+
+Wenn man nach dem 3. Zweig sucht, sieht man, dass 152 Beobachtungen mit 3) Wochentag_c=Sonntag diesem Zweig folgen und ihre durchschnittlichen Umsätze 132.82€ betragen und der SSE hier 305680.200 beträgt.
+
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SSE aufweist, der Wochentag ist, wobei die durchschnittlichen Umsätze am Sonntag in der Warengruppe Kuchen um > 64% höher sind als an den anderen Wochentagen.
+
+Wir visualisieren unser Modell mit erneut `rpart.plot`.
+
+```{r}
+rpart.plot(dt1_WG4)
+
+library(partykit)
+plot(as.party(dt1_WG4))
+```
+
+Man kann feststellen, dass dieser Baum 9 interne Knoten enthält, was zu 10 Endknoten führt. 
+
+```{r}
+plotcp(dt1_WG4)
+```
+
+Die gestrichelte Linie, die etwa durch den Punkt | T | = 8 verläuft, deutet abermals darauf hin, dass auch ein kleiner Baum gewählt werden kann. Wir könnten nach der 1-SE-Regel auch einen Baum mit 8 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
+
+```{r}
+dt1_WG4$cptable
+```
+
+## 7.4 Tuning
+
+Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
+
+* `minsplit`: Die Mindestanzahl von Datenpunkten, die erforderlich sind, um eine Teilung zu versuchen, bevor ein Endknoten erstellt werden muss. Der Standardwert ist 20. Wenn man diesen Wert verkleinert, können Endknoten, die möglicherweise nur eine Handvoll Beobachtungen enthalten, erstellt werden um den vorhergesagten Wert zu prognostizieren. 
+* `maxdepth`: Die maximale Anzahl interner Knoten zwischen dem Wurzelknoten und den Endknoten. Der Standardwert ist 30, was ziemlich liberal ist und das Bauen ziemlich großer Bäume ermöglicht.
+
+`rpart` verwendet ein spezielles Steuer- bzw. Kontrollargument, bei dem eine Liste von Hyperparameterwerten bereitgestellt wird. Wenn wir beispielsweise ein Modell mit `minsplit` = 20 und `maxdepth` = 12 bewerten möchten, können wir Folgendes ausführen:
+
+```{r}
+dt2_WG4 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG4,
+    method  = "anova", 
+    control = list(minsplit = 20, maxdepth = 12, xval = 10)
+)
+
+dt2_WG4$cptable
+```
+
+Obwohl dieser Ansatz nützlich ist, müssen mehrere Modelle manuell bewertet werden. Besser ist es insofern eine Rastersuche durchzuführen, um automatisch nach einer Reihe unterschiedlich abgestimmter Modelle zu suchen, um die optimale Hyperparametereinstellung zu ermitteln.
+
+Um eine Rastersuche durchzuführen, erstellen wir zuerst unser Hyperparameter-Raster. In diesem Beispiel suchen wir einen Bereich von `minsplit` von 5 bis 150 und variiere die maximale Tiefe von 8 bis 15 (da unser ursprüngliches Modell eine optimale Tiefe von 11 gefunden hat). Das Ergebnis sind 1168 verschiedene Kombinationen, für die 1168 verschiedene Modelle erforderlich sind.
+
+```{r}
+hyper_grid <- expand.grid(
+  minsplit = seq(5, 150, 1),
+  maxdepth = seq(8, 15, 1)
+)
+
+head(hyper_grid)
+
+# total number of combinations
+nrow(hyper_grid)
+```
+
+Um die Modellierung zu automatisieren, richten wir einfach eine `for`-Schleife ein und durchlaufen jede Kombination aus `minsplit` und `maxdepth`. Wir speichern jedes Modell in einem eigenen Listenelement.
+
+```{r}
+models <- list()
+
+for (i in 1:nrow(hyper_grid)) {
+  
+  # get minsplit, maxdepth values at row i
+  minsplit <- hyper_grid$minsplit[i]
+  maxdepth <- hyper_grid$maxdepth[i]
+
+  # train a model and store in the list
+  models[[i]] <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG4,
+    method  = "anova",
+    control = list(minsplit = minsplit, maxdepth = maxdepth)
+    )
+}
+```
+
+Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
+
+```{r}
+# function to get optimal cp
+get_cp <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  cp <- x$cptable[min, "CP"] 
+}
+
+# function to get minimum error
+get_min_error <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  xerror <- x$cptable[min, "xerror"] 
+}
+
+hyper_grid %>%
+  mutate(
+    cp    = purrr::map_dbl(models, get_cp),
+    error = purrr::map_dbl(models, get_min_error)
+    ) %>%
+  arrange(error) %>%
+  top_n(-5, wt = error)
+```
+
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.5018793 gegenüber 0.5157798).
+
+Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
+
+```{r}
+optimal_tree_WG4 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG4,
+    method  = "anova",
+    control = list(minsplit = 13, maxdepth = 12, cp = 0.01)
+    )
+
+pred <- predict(optimal_tree_WG4, newdata = df_dt_test_WG4)
+RMSE(pred = pred, obs = df_dt_test_WG4$Umsatz)
+```
+
+Der endgültige RMSE beträgt 24.31, was darauf hindeutet, dass unsere prognostizierten Umsätze im Durchschnitt etwa 24.31 € vom tatsächlichen Umsatz abweichen.
+
+```{r}
+# Hinzufügen der Ergebnisse
+df_dt_test_WG4 <- df_dt_test_WG4 %>%
+  mutate(predicted = pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_dt_test_WG4 <- df_dt_test_WG4 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_dt_test_WG4 <- df_dt_test_WG4 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_dt_test_WG4 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "optimaltree_WG4")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
+dt_vgl_kennz
+```
+
+Abschließend wird nun noch ein Entscheidungsbaum für Warengruppe 5 erstellt.
+
+```{r}
+# Warengruppe 5
+dt1_WG5 <- rpart(
+  formula = Umsatz ~ .,
+  data    = df_dt_train_WG5,
+  method  = "anova"
+  )
+
+dt1_WG5
+```
+
+Der dt1_WG5-Output beginnt mit 1061 Beobachtungen am Wurzelknoten (ganz am Anfang) und die erste Variable, die zur Teilung verwendet wird (also die erste Variable, die eine Reduzierung der SSE optimiert), ist bei dieser Warengruppe der Feiertag. Wir sehen, dass am ersten Knoten alle Beobachtungen mit Feiertag< 0.5 zum zweiten Zweig gehen. Die Gesamtzahl der Beobachtungen, die diesem Zweig folgen (743), der durchschnittliche Umsatz (246.50) und der SSE (1693783.00) sind aufgeführt.
+
+Wenn man nach dem 3. Zweig sucht, sieht man, dass 21 Beobachtungen mit Feiertag> 0.5 diesem Zweig folgen und ihre durchschnittlichen Umsätze 503.02€ betragen und der SSE hier 4876955.00 beträgt.
+
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SSE aufweist, der Feiertag ist, wobei die durchschnittlichen Umsätze am Feiertag in der Warengruppe Konditorei um > 100% höher sind als an den Nicht-Feiertagen.
+
+Wir visualisieren unser Modell mit erneut `rpart.plot`.
+
+```{r}
+rpart.plot(dt1_WG5)
+
+library(partykit)
+plot(as.party(dt1_WG5))
+```
+
+Man kann feststellen, dass dieser Baum 7 interne Knoten enthält, was zu 8 Endknoten führt. 
+
+```{r}
+plotcp(dt1_WG5)
+```
+
+Die gestrichelte Linie verläuft hier durch keinen Punkt. Ein Baum mit 8 Knoten ist somit scheinbar der kleinstmögliche.
+
+```{r}
+dt1_WG5$cptable
+```
+
+## 7.4 Tuning
+
+Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
+
+* `minsplit`: Die Mindestanzahl von Datenpunkten, die erforderlich sind, um eine Teilung zu versuchen, bevor ein Endknoten erstellt werden muss. Der Standardwert ist 20. Wenn man diesen Wert verkleinert, können Endknoten, die möglicherweise nur eine Handvoll Beobachtungen enthalten, erstellt werden um den vorhergesagten Wert zu prognostizieren. 
+* `maxdepth`: Die maximale Anzahl interner Knoten zwischen dem Wurzelknoten und den Endknoten. Der Standardwert ist 30, was ziemlich liberal ist und das Bauen ziemlich großer Bäume ermöglicht.
+
+`rpart` verwendet ein spezielles Steuer- bzw. Kontrollargument, bei dem eine Liste von Hyperparameterwerten bereitgestellt wird. Wenn wir beispielsweise ein Modell mit `minsplit` = 20 und `maxdepth` = 10 bewerten möchten, können wir Folgendes ausführen:
+
+```{r}
+dt2_WG5 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG5,
+    method  = "anova", 
+    control = list(minsplit = 20, maxdepth = 10, xval = 10)
+)
+
+dt2_WG5$cptable
+```
+
+Obwohl dieser Ansatz nützlich ist, müssen mehrere Modelle manuell bewertet werden. Besser ist es insofern eine Rastersuche durchzuführen, um automatisch nach einer Reihe unterschiedlich abgestimmter Modelle zu suchen, um die optimale Hyperparametereinstellung zu ermitteln.
+
+Um eine Rastersuche durchzuführen, erstellen wir zuerst unser Hyperparameter-Raster. In diesem Beispiel suchen wir einen Bereich von `minsplit` von 5 bis 150 und variiere die maximale Tiefe von 8 bis 15 (da unser ursprüngliches Modell eine optimale Tiefe von 11 gefunden hat). Das Ergebnis sind 1168 verschiedene Kombinationen, für die 208 verschiedene Modelle erforderlich sind.
+
+```{r}
+hyper_grid <- expand.grid(
+  minsplit = seq(5, 30, 1),
+  maxdepth = seq(8, 15, 1)
+)
+
+head(hyper_grid)
+
+# total number of combinations
+nrow(hyper_grid)
+```
+
+Um die Modellierung zu automatisieren, richten wir einfach eine `for`-Schleife ein und durchlaufen jede Kombination aus `minsplit` und `maxdepth`. Wir speichern jedes Modell in einem eigenen Listenelement.
+
+```{r}
+models <- list()
+
+for (i in 1:nrow(hyper_grid)) {
+  
+  # get minsplit, maxdepth values at row i
+  minsplit <- hyper_grid$minsplit[i]
+  maxdepth <- hyper_grid$maxdepth[i]
+
+  # train a model and store in the list
+  models[[i]] <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG5,
+    method  = "anova",
+    control = list(minsplit = minsplit, maxdepth = maxdepth)
+    )
+}
+```
+
+Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
+
+```{r}
+# function to get optimal cp
+get_cp <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  cp <- x$cptable[min, "CP"] 
+}
+
+# function to get minimum error
+get_min_error <- function(x) {
+  min    <- which.min(x$cptable[, "xerror"])
+  xerror <- x$cptable[min, "xerror"] 
+}
+
+hyper_grid %>%
+  mutate(
+    cp    = purrr::map_dbl(models, get_cp),
+    error = purrr::map_dbl(models, get_min_error)
+    ) %>%
+  arrange(error) %>%
+  top_n(-5, wt = error)
+```
+
+Es ist erkennbar, dass das optimale Modell eine deutliche Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.6213613 gegenüber 0.7828373).
+
+Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
+
+```{r}
+optimal_tree_WG5 <- rpart(
+    formula = Umsatz ~ .,
+    data    = df_dt_train_WG5,
+    method  = "anova",
+    control = list(minsplit = 13, maxdepth = 10, cp = 0.01)
+    )
+
+pred <- predict(optimal_tree_WG5, newdata = df_dt_test_WG5)
+RMSE(pred = pred, obs = df_dt_test_WG5$Umsatz)
+```
+
+Der endgültige RMSE beträgt 68.65, was darauf hindeutet, dass unsere prognostizierten Umsätze im Durchschnitt etwa 68.65 € vom tatsächlichen Umsatz abweichen.
+
+```{r}
+# Hinzufügen der Ergebnisse
+df_dt_test_WG5 <- df_dt_test_WG5 %>%
+  mutate(predicted = pred)
+
+# ergänze Prognose_zuhoch (TRUE / FALSE), Abweichung (Schätzer - Umsatz), absolute Abweichung (Abweichung_abs), relative Abweichung (Abweichung_rel), quadratische Abweichung (Abweichung_quad)
+df_dt_test_WG5 <- df_dt_test_WG5 %>%
+  mutate(Prognose_zuhoch = (predicted >= Umsatz)) %>%
+  mutate(Abweichung = predicted - Umsatz) %>%
+  mutate(Abweichung_abs = abs(predicted - Umsatz)) %>%
+  mutate(Abweichung_rel = (predicted - Umsatz) / Umsatz) %>%
+  mutate(Abweichung_quad = Abweichung^2)
+
+# Ergänze die benötigten Hilfsgrößen
+df_dt_test_WG5 <- df_dt_test_WG5 %>%
+  mutate(Abweichung_rel_abs = abs(Abweichung_rel), Abweichung_rel_abs_mult_umsatz = Abweichung_rel_abs * Umsatz)
+
+# Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
+temp <- df_dt_test_WG5 %>%
+  group_by() %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# füge das Modell hinzu
+temp <- temp %>% mutate(Modell = "optimaltree_WG5")
+
+# füge die Kennzahlen nun an die Vergleichstabelle
+dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
+dt_vgl_kennz
+```
+
+
 # 8 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
-## 8.1 Vorhaben und Theorie
+## 8.1 Vorhaben
 
 Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM). Dieses Verfahren wird häufig für die Klassifizierung verwendet, kann jedoch auch zur Lösung von Regressions-Problemen verwendet werden. Genau das wollen wir tun.
-
-### Lineare SVM zur Klassifizierung
-
-In der einfachsten Form hat man ein Trainingsset $D=\{(\vec{x}^{(1)},y^{(1)}),...,(\vec{x}^{(p)},y^{(p)})\}$ bestehend aus $p$ Eingabevektoren $\vec{x}$ mit zugehörigem Label $y$, beispielsweise $+1$ und $-1$.
-
-![](SVM_bild1.PNG)
-
-Im Bild sehen wir ein Beispiel in zwei Dimensionen: Die roten Quadrate haben Label $+1$, die grünen Kreise $-1$. Man sucht dann die Trennlinie (durchgezogene Linie), die den Sicherheitsabstand ("Marge" oder engl. "margin") maximiert. Dir Grenzen der Sicherheitszone sind durch die gestrichelten Linien gezeigt. Die Datenpunkte, die direkt auf den getrennten Linien liegen haben als Abstand gerade die doppelte Marge und werden als Support-Vektoren bezeichnet. Für die Lösung des Problems sind nämlich gerade die Support-Vektoren entscheidend.
-
-Die Trennlinie (in höheren Dimensionen Hyperebene) lässt sich beschreiben als $H=\{\vec{x}|\vec{w}^T\cdot\vec{x}+b=0\}$. Dabei bezeichnet $\vec{w}$ den Normal-Vektor der Hyperebene. Und als Lösung erhalten wir eine Klassifizierungsfunktion $f(\vec{x})=sgn(\vec{w}^T\cdot\vec{x}+b)$. Dieser Klassifizierer ist unsere Support Vector Machine.
-
-Das Problem ist, dass die Hyperebene durch $\vec{w}$ nicht eindeutig bestimmt ist. Wir legen daher durch Normierung die sogenannte kanonische Hyperebene fest. Konkret erreichen wir das durch die Nebenbedingungen $(*)$: $\vec{w}^T\cdot\vec{x}+b \ge +1$ für Support-Vektoren mit Label $+1$ und $\vec{w}^T\cdot\vec{x}+b \le -1$ für Support-Vektoren mit Label $-1$. Damit ergibt sich der Sicherheitsabstand zwischen den beiden gestrichelten Linien zu $\frac{2}{||\vec{w}||}$.
-
-Jetzt haben wir ein Optimierungsproblem und müssen $||\vec{w}||$ minimieren, um den Sicherheitsabstand zu maximieren, unter den Nebenbedingungen $(*)$. Bei der Lösung kommen Lagrange-Multiplikatoren $\alpha_\mu\ge0$ ins Spiel und liefern als Lösung die optimalen Werte $\vec{w}^*$ und $b^*$ mit $\vec{w}^*=\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\vec{x}^{(\mu)}$. Die Details sparen wir an dieser Stelle aus.
-
-Damit erhalten wir die Klassifizierungsfunktion $f(\vec{x})=sgn(\vec{w}^{*T}\cdot\vec{x}+b^*)=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\vec{x}^{(\mu)T}\cdot\vec{x}+b^*)$.
-
-### Klassifizierung von linear nicht trennbaren Datensätzen
-
-SVM kann auch angewendet werden, wenn keine scharfe Trennung zwischen den Klassen möglich ist. In solchen Fällen verwendet man die sogenannte Soft-Margin-Klassifizierung. Ziel dabei ist eine Trennlinie zu finden, die die Anzahl der Punkte innerhalb des Sicherheitsabstandes minimiert bzw. die Anzahl der falsch klassifizierten Datenpunkte minimiert. Durch diese Nebenbedingung kommt ein weiterer Parameter $C$ ("cost") ins Spiel.
-
-### Nicht-lineare SVM zur Klassifizierung
-
-Bislang haben skizziert, wie man SVM auf linear trennbare Datensätze anwendet - abgesehen von einigen Überlappungen der Daten unterschiedlicher Klassen. Aber SVM kann noch mehr:
-
-![](SVM_bild2.PNG)
-
-Im oberen Teil der Abbildung sehen wir Daten zweier Klassen (rote und blaue Kreise), die in einer Dimension linear nicht trennbar sind. Transformiert man die Daten jedoch in eine höhere Dimension (hier 2D) durch eine Funktion $\vec{x}\rightarrow\Phi(\vec{x})$, sieht man, dass die Klassen nun linear trennbar sind. Man spricht von einer Transformation in den höher-dimensionalen "Feature-Raum" und führt dann SVM eben in diesem Feature-Raum durch.
-
-Dabei nutzt man aus, dass die transformierten Eingabevektoren $\Phi(\vec{x})$ nur in Form von Skalarprodukten auftauchen und definiert eine sogenannte Kernel-Funktion $k(.,.)$, um den Zusammenhang zwischen Eingabevektoren und transformierten Eingabevektoren im Feature-Raum zu vereinfachen: $k(\vec{x},\vec{y})=\Phi(\vec{x})^T\cdot\Phi(\vec{y})$. 
-
-Wir verwenden später als Kernel $k(\vec{x},\vec{y})=exp(-\gamma(\vec{x}-\vec{y})^2)$, also eine Gauss-Funktion, die man auch als "Radial-Basis-Funktion" (rbf) bezeichnet. Unsere Klassifizierungsfunktion wird dann zu:
-
-$f(\vec{x})=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\Phi(\vec{x}^{(\mu)})^T\cdot\Phi(\vec{x})+b^*)=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}k(\vec{x}^{(\mu)},\vec{x})+b^*)$.
-
-### SVM zur Regression
-
-Verzichten wir in der Klassifizierungsfunktion $f(.)$ auf $sgn(.)$ und verwenden stattdessen nur das Argument, dann können wir SVM auch auf Regressions-Probleme anwenden. Wir wollen dabei eine Funktion $f(\vec{x})$ finden mit möglichst geringem Fehler $|f(\vec{x})-y|$ bei Anwendung auf den Testdaten. Dabei besteht die Gefahr von Overfitting, nämlich dass wir den Schätzer zu gut an die Besonderheiten in den verwendeten Trainingsdaten anpassen und gleichzeitig die Prognosequalität bei Anwendung auf neue unbekannte Eingabewerte sinkt (schlechte Veralgemeinerung). Um diesen Interessenskonflikt zu lösen, führt man in der später durchgeführten $\epsilon$-Regression einen Toleranzbereich $\epsilon$ ein, innerhalb dessen wir Abweichungen nicht bestrafen. Mathematisch ausgedrückt gilt für die Loss-Funktion $L_\epsilon=0$ für $|f(\vec{x})-y|\le\epsilon$.
-
-Als freie Parameter haben wir also $C$ ("cost") und $\epsilon$, die es zu optimieren gilt. Dafür verwenden wir später eine Funktion zum Tuning der Hyperparameter. Daneben haben wir in unserem rbf-Kernel noch den Parameter $\gamma$, der üblicherweise als Kehrwert der Anzahl der Eingabeparameter festgelegt wird.
-
-Die SVM-Funktionalitäten sind im R-Paket "e1071" implementiert.
 
 ## 8.2 Datenaufbereitung
 
@@ -7181,29 +7839,9 @@ Wir untersuchen nun, ob wir mit Deep Learning Methoden noch bessere Ergebnisse e
 
 # 9 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
-## 9.1 Vorhaben und Theorie
+## 9.1 Vorhaben
 
-Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Ein Perpeptron bezeichnet dabei die Grundeinheit (unit) unseres Netzes und ist eine vereinfachte künstliche Nervenzelle.
-
-Die Abbildung zeigt ein solches Perceptron mit zwei Eingabewerten $x_1$ und $x_2$, sowie Gewichten $w_1$, $w_2$ und einer Schwelle $\theta$. Der Ausgabewert $y$ ergibt sich durch Anwendung einer sogenannten Aktivierungsfunktion $f(.)$ auf die Summe der gewichteten Eingabewerte abzüglich Schwellwert. Dabei wird häufig $b=-\theta$ gesetzt: $y=f(h)=f(\vec{x}\cdot\vec{w}+b)$, wobei mit $h$ das postsynaptische Potential bezeichnet wird. Beispiele für Aktivierungsfunktionen sind die Heaviside-Stufenfunktion, einfache lineare Funktionen $f(h)=h$, gerichtete lineare Funktionen ("relu" = rectified linear units) $f(h)=max(h,0)$ oder sigmoide Funktionen $f(h)=\frac{1}{1+e^{-h}}$.
-
-![](MLP_bild0.PNG)
-
-Mehrere Perceptrons bilden eine Schicht eines neuronalen Netzes. Und ein Netz besteht in der Regel aus einer Eingabeschicht (input layer), einer Ausgabeschicht (output layer) und optional Zwischenschichten (hidden layers), wie im Bild skizziert:
-
-![](MLP_bild1.PNG)
-
-Wir haben in dieser Arbeit nur sogenannte Feedforward-Netze benutzt, bei denen die Signalrichtung immer nur von einer zur nächsten Schicht zeigt. Im Grundzustand ist jede Einheit einer Schicht mit jeder Einheit der nächsten Schicht verbunden und die Verbindung erhält ein Gewicht $w$. 
-
-Für eine Kombination von Eingabewerten lässt sich der Ausgabewert in einem Feedforward-Netz sehr einfach berechnen. In unserem Fall haben wir eine Reihe von Trainingsdaten und kennen für gewisse Eingabeparameter die gewünschten Ausgabewerte, nämlich Umsätze je Warengruppe. In der Trainingsphase berechnen wir den Fehler (die sogenannte "Loss"-Funktion) $L$ aus der Differenz des berechneten Ausgabewertes zum erwarteten Umsatz.
-
-Um den Fehler zu minimieren, müssen die Gewichte und Schwellwerte rückwirkend angepasst werden, man spricht hierbei von "backpropagation", weil man nur die Schichten bis zurück zur Eingabeschicht durchwandert. Die nötige Anpassung der Gewichte und Schwellwerte berehnet man bspw. mithilfe des Gradienten der Loss-Funktionen in Bezug auf die postsynaptischen Potentiale. Ein Standard-Verfahren ist das Gradient-Descent-Verfahren. Werden zusätzlich die Gewichte und Schwellwerte mit zufälligen Werten initialisiert, spricht man vom Stochastic-Gradient-Descent-Verfahren (SGD). Bei diesem iterativen Lernalgorithmus versucht man den Fehler zu minimieren und sich so schrittweise an ein lokales oder sogar an das globale Minimum anzunähern. Neben SGD gibt es zahlreiche weitere Optimierungsstrategien. 
-
-Eine Erweiterung des klassischen SGD-Verfahrens ist "Adam": Dabei wird nicht nur der aktuelle Gradient für die Anpassung der Gewichte und Schwellwerte herangezogen, sondern eine Sequenz von Gradienten. Wenn mehrere aufeinanderfolgende Anpassungen in die gleiche Richtung vorgenommen werden, erhöht sich somit die Lerngeschwindigkeit, man spricht von Lernen mit Momentum. Für klassisches SGD hingegen ist die Lernrate konstant.
-
-Ein Modell wird üblicherweise über viele Epochen trainiert. In jeder Epoche kommt jeder Trainings-Input zum Einsatz. Die Anpassung der Gewichte und Schwellwerte kann nach jedem Input vorgenommen werden ("online learning") oder erst am Ende einer Epoche, nachdem alle Ausgabewerte für alle Eingabekombinationen berechnet wurden ("batch learning"). In der Praxis verwendet man als Kompromiss häufig sogenannte mini-batches und verwendet dabei eine gewisse Anzahl an Trainings-Inputs, bevor die Gewichte und Schwellwerte angepasst werden.
-
-Wir haben unsere neuronalen Netze in Python programmiert. Dabei verwenden wir das von Google entwickelte open-source Framework Tensonflow, das für die datenstromorientierte Programmierung konzipiert wurde und im Bereich Deep Learning weit verbreitet ist. Darüberhinaus verwenden wir Keras als open-source Deep-Learning-Bibliothek. Unser Quellcode befindet sich im Python-Skript MLP.py.
+Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Wir verwenden dafür ein Python-Skript (MLP.py).
 
 ## 9.2 Datenaufbereitung
 
@@ -7768,17 +8406,17 @@ Die Parameter - wie bspw. die Lernrate, die Anzahl der hidden layers und der Anz
 
 Insgesamt stellen wir fest, dass die so gebauten MLP Modelle dem Problem nicht gerecht werden. Vermutlich würde man mit rekursiven Netzen und/oder dem Einsatz von long-short-term-memory (LSTM) Einheiten deutlich bessere Ergebnisse erzielen. Das sprengt jedoch den Umfang dieser Projektarbeit und wird daher nicht weiter betrachtet. 
 
-Wir hatten gesehen, dass das komplexe Modell (mod2) für die Warengruppe 2 in Bezug auf den WAPE gute Ergebnisse liefert. Ein Ansatz ist, das Modell gezielt für diese Warengruppe noch zu erweitern. Wir haben dazu ein Kompromiss-Modell (mod3) getestet, das nur die Variablen SommerferienSH, Feiertag, Silvester_ext, Samstag, Sonntag, Juli und August enthält. Und dieses Modell haben wir versucht, für Warengruppe 2 zu optimieren durch Variation der Units im hidden layer, Anwendung anderer Lernalgorithmen (Adam) oder Hinzunahme eines weiteren hidden layers - ohne Erfolg.
+Wir hatten gesehen, dass das komplexe Modell (mod2) für die Warengruppe 2 in Bezug auf den WAPE gute Ergebnisse liefert. Ein Ansatz ist, das Modell gezielt für diese Warengruppe noch zu erweitern. Hier haben wir versucht, einen zweiten hidden layer mit 20 Einheiten in das Modell zu integrieren. Allerdings verschlechterten sich dadurch die Prognose-Ergebnisse, so dass wir den Ansatz nicht weiter verfolgt haben. Alternativ haben wir ein Kompromiss-Modell (mod3) getestet, das nur die Variablen SommerferienSH, Feiertag, Silvester_ext, Samstag, Sonntag, Juli und August enthält. Und dieses Modell haben wir versucht, für Warengruppe 2 zu optimieren durch Variation der Units im hidden layer, Anwendung anderer Lernalgorithmen (Adam) oder Hinzunahme eines weiteren hidden layers - ohne Erfolg.
 
-Auch könnte man das Modell gezielt auf die Feiertags-Effekte trainieren, um dafür bessere Ergebnisse zu erzielen. Konkret könnte man in der Trainingsphase besonderen Schwerpunkt auf die Eingabekombinationen legen, für die der Schätzer stark vom tatsächlichen Umsatz abweicht. Diese Idee stellt eine Ausbaustufe dar, die wir hier nicht umgesetzt haben.
+Auch könnte man das Modell gezielt auf die Feiertags-Effekte trainieren, um dafür bessere Ergebnisse zu erzielen. Diese Idee stellt eine Ausbaustufe dar, die wir hier nicht umgesetzt haben.
 
 Insgesamt ging es hier eher darum, Erfahrungswerte in der praktischen Anwendung von DL-Verfahren zu sammeln und das ist in der Tat sehr gut gelungen.
 
 ## 9.6 Zugabe
 
-Weil wir uns vom MLP bessere Ergebnisse erhofft hatten, haben wir nachträglich doch noch einen drauf gesetzt und noch ein viertes MLP (mod4) getestet. Dafür haben wir den vollständigen SVM-Datensatz verwendet mit allen Inputvariablen und skalierten Wettervariablen sowie skaliertem Umsatz.
+Weil wir uns vom MLP bessere Ergebnisse erhofft hatten, haben wir noch einen drauf gesetzt und noch ein viertes MLP (mod4) getestet. Dafür haben wir den vollständigen SVM-Datensatz verwendet mit allen Inputvariablen und skalierten Wettervariablen sowie skaliertem Umsatz.
 
-Getestet haben wir wieder sequentielle MLP-Modelle, diesmal aber gezielt mit mehreren hidden layers. Die besten Ergebnisse lieferte ein Modell mit zwei hidden layers, bestehend aus 100 bzw. 50 Einheiten, jeweils mit 'relu' Aktivierungsfunktionen. Als Lernalgorithmus haben wir dabei 'Adam' angewendet mit einer Lernrate von 0.001, gleichzeitig haben wir online learning (batch_size = 1) angewendet und das Modell über 20 Epochen trainiert.
+Getestet haben wir wieder sequentielle MLP-Modelle, diesmal aber gezielt mit mehreren hidden layers. Die besten Ergebnisse lieferte ein MOdell mit zwei hidden layers, bestehend aus 100 bzw. 50 Einheiten, jeweils mit 'relu' Aktivierungsfunktionen. Als Lernalgorithmus haben wir dabei 'Adam' angewendet mit einer Lernrate von 0.001, gleichzeitig haben wir online learning (batch_size = 1) angewendet und das Modell über 20 Epochen trainiert.
 
 Diese Parametereinstellungen lieferten die besten Ergebnisse (df_MLP_test_mod4_WG2_pred.csv). Verlängert man die Trainingsphase um weitere 20 Epochen (df_MLP_test_mod4_WG2_pred2.csv), verschlechtert sich die Prognosegüte bei Anwendung des Modells auf die Testdaten. Ein dritter hidden layer mit 25 Einheiten (df_MLP_test_mod4_WG2_pred3.csv) bringt keinen Mehrwert. Und auch wenn man die Anzahl der Einheiten im ersten hidden layer verdoppelt (df_MLP_test_mod4_WG2_pred4.csv), erzielt man keine genaueren Schätzwerte.
 
@@ -7944,6 +8582,61 @@ temp <- df_lm_test_WG5_8 %>%
 
 # Anfügen der Ergebnisse an die Vergleichstabelle
 modell_vergleich_WG <- rbind(modell_vergleich_WG, temp) 
+
+# bester Entscheidungsbaum: WG1
+temp <- df_dt_test_WG1 %>%
+  mutate(Verfahren="DT") %>%
+  mutate(Modell="WG1") %>%
+  mutate(Warengruppe=1) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
+
+# bester Entscheidungsbaum: WG2
+temp <- df_dt_test_WG2 %>%
+  mutate(Verfahren="DT") %>%
+  mutate(Modell="WG2") %>%
+  mutate(Warengruppe=2) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
+
+# bester Entscheidungsbaum: WG3
+temp <- df_dt_test_WG3 %>%
+  mutate(Verfahren="DT") %>%
+  mutate(Modell="WG32") %>%
+  mutate(Warengruppe=3) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
+
+# bester Entscheidungsbaum: WG4
+temp <- df_dt_test_WG4 %>%
+  mutate(Verfahren="DT") %>%
+  mutate(Modell="WG4") %>%
+  mutate(Warengruppe=4) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
+
+# bester Entscheidungsbaum: WG5
+temp <- df_dt_test_WG5 %>%
+  mutate(Verfahren="DT") %>%
+  mutate(Modell="WG5") %>%
+  mutate(Warengruppe=5) %>%
+  group_by(Verfahren, Modell, Warengruppe) %>%
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+
+# Anfügen der Ergebnisse an die Vergleichstabelle
+modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
 
 # bestes SVM Modell: WG1
 temp <- df_SVM_test_WG1 %>%
@@ -8131,6 +8824,15 @@ temp <- df_lm_test_WG1_21 %>%
 # Anfügen ans Ensemble
 ensemble_WG1 <- cbind(ensemble_WG1, temp)
 
+# bester DT
+temp <- df_dt_test_WG1 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_dt = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG1 <- cbind(ensemble_WG1, temp)
+
 # bestes SVM Modell
 temp <- df_SVM_test_WG1 %>%
   dplyr::select(Umsatz_WG1) %>%
@@ -8164,6 +8866,15 @@ ensemble_WG2 <- prog_naiv_glDS_4T_erw %>%
 temp <- df_lm_test_WG2_24 %>%
   dplyr::select(predicted) %>%
   mutate(Umsatz_lm = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG2 <- cbind(ensemble_WG2, temp)
+
+# bester DT
+temp <- df_dt_test_WG2 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_dt = predicted) %>%
   dplyr::select(-predicted)
 
 # Anfügen ans Ensemble
@@ -8207,6 +8918,15 @@ temp <- df_lm_test_WG3_30 %>%
 # Anfügen ans Ensemble
 ensemble_WG3 <- cbind(ensemble_WG3, temp)
 
+# bester DT
+temp <- df_dt_test_WG3 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_dt = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG3 <- cbind(ensemble_WG3, temp)
+
 # bestes SVM Modell
 temp <- df_SVM_test_WG3 %>%
   dplyr::select(Umsatz_WG3) %>%
@@ -8240,6 +8960,15 @@ ensemble_WG4 <- prog_naiv_glDS_4T_erw %>%
 temp <- df_lm_test_WG4_1 %>%
   dplyr::select(predicted) %>%
   mutate(Umsatz_lm = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG4 <- cbind(ensemble_WG4, temp)
+
+# bester DT
+temp <- df_dt_test_WG4 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_dt = predicted) %>%
   dplyr::select(-predicted)
 
 # Anfügen ans Ensemble
@@ -8283,6 +9012,15 @@ temp <- df_lm_test_WG5_8 %>%
 # Anfügen ans Ensemble
 ensemble_WG5 <- cbind(ensemble_WG5, temp)
 
+# bester DT
+temp <- df_dt_test_WG5 %>%
+  dplyr::select(predicted) %>%
+  mutate(Umsatz_dt = predicted) %>%
+  dplyr::select(-predicted)
+
+# Anfügen ans Ensemble
+ensemble_WG5 <- cbind(ensemble_WG5, temp)
+
 # bestes SVM Modell
 temp <- df_SVM_test_WG5 %>%
   dplyr::select(Umsatz_WG5) %>%
@@ -8308,7 +9046,7 @@ Wir bilden nun den Ensemble-Schätzer als Mittelwert der besten Einzelschätzer.
 # Warengruppe 1
 # bilde Ensemble-Umsatz
 ensemble_WG1 <- ensemble_WG1 %>% 
-  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_SVM + Umsatz_MLP) / 4)
+  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_dt + Umsatz_SVM + Umsatz_MLP) / 5)
 
 # bilde Hilfsgrößen für die spätere Ermittlung der Gütemaße
 ensemble_WG1 <- ensemble_WG1 %>%
@@ -8340,7 +9078,7 @@ ensemble_WG_vgl <- ensemble_WG1 %>%
 # Warengruppe 2
 # bilde Ensemble-Umsatz
 ensemble_WG2 <- ensemble_WG2 %>% 
-  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_SVM + Umsatz_MLP) / 4)
+  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_dt + Umsatz_SVM + Umsatz_MLP) / 5)
 
 # bilde Hilfsgrößen für die spätere Ermittlung der Gütemaße
 ensemble_WG2 <- ensemble_WG2 %>%
@@ -8375,7 +9113,7 @@ ensemble_WG_vgl <- rbind(ensemble_WG_vgl, temp)
 # Warengruppe 3
 # bilde Ensemble-Umsatz
 ensemble_WG3 <- ensemble_WG3 %>% 
-  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_SVM + Umsatz_MLP) / 3)
+  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_dt + Umsatz_SVM + Umsatz_MLP) / 5)
 
 # bilde Hilfsgrößen für die spätere Ermittlung der Gütemaße
 ensemble_WG3 <- ensemble_WG3 %>%
@@ -8410,7 +9148,7 @@ ensemble_WG_vgl <- rbind(ensemble_WG_vgl, temp)
 # Warengruppe 4
 # bilde Ensemble-Umsatz
 ensemble_WG4 <- ensemble_WG4 %>% 
-  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_SVM + Umsatz_MLP) / 3)
+  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_dt + Umsatz_SVM + Umsatz_MLP) / 5)
 
 # bilde Hilfsgrößen für die spätere Ermittlung der Gütemaße
 ensemble_WG4 <- ensemble_WG4 %>%
@@ -8445,7 +9183,7 @@ ensemble_WG_vgl <- rbind(ensemble_WG_vgl, temp)
 # Warengruppe 5
 # bilde Ensemble-Umsatz
 ensemble_WG5 <- ensemble_WG5 %>% 
-  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_SVM + Umsatz_MLP) / 4)
+  mutate(Umsatz_ensemble = (Umsatz_naiv + Umsatz_lm + Umsatz_dt + Umsatz_SVM + Umsatz_MLP) / 5)
 
 # bilde Hilfsgrößen für die spätere Ermittlung der Gütemaße
 ensemble_WG5 <- ensemble_WG5 %>%
