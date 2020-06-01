@@ -2004,7 +2004,7 @@ prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>%
 
 ```
 
-Wir müssen die Tabelle noch pivotieren (pivot_longer), als Vorbereitung für den anschließenden Plot:
+Wir müssen die Tabelle noch pivotisieren (pivot_longer), als Vorbereitung für den anschließenden Plot:
 ```{r}
 prog_naiv_vgl_relAbw <- prog_naiv_vgl_relAbw %>% 
   pivot_longer(cols=-c("Datum", "Warengruppe", "Jahr", "Wochentag", "Wochentag_c", "SommerferienSH", "Feiertag"), names_to="Modell", values_to="Abweichung_rel")
@@ -6436,7 +6436,7 @@ Es gibt viele Methoden zur Konstruktion von Entscheidungsbäumen, aber eine der 
 
 Nehmen wir zum Beispiel an, wir möchten die Umsatz pro Tag einer Bäckereifiliale basierend auf Wochentagen, Jahreszeit, Ferien, ... vorhersagen. Alle Beobachtungen gehen durch diesen Baum, werden an einem bestimmten Knoten bewertet und gehen nach links, wenn die Antwort "Ja" lautet, oder nach rechts, wenn die Antwort "Nein" lautet. Alle Beobachtungen mit Samstag oder Sonntag gehen also zum linken Zweig, alle anderen Beobachtungen zum rechten Zweig. Als nächstes wird der linke Zweig weiter nach der Jahreszeit aufgeteilt. Diese Samstag- oder Sonntag-Beobachtungen mit der Jahreszeit Sommer gehen zum linken Zweig über, diejenigen mit Frühling, Herbst oder Winter gehen nach rechts. Und so weiter. Diese Zweige führen abschließend zu Endknoten oder Blättern, die unseren vorhergesagten Umsatz pro Tag enthalten. 
 
-## Laden notwendiger packages
+**Laden notwendiger packages**
 
 Für das Vorhaben werden die nachfolgenden packages benötigt und somit geladen. Die meisten dieser packages/Pakete spielen eine unterstützende Rolle, während der Schwerpunkt auf dem `rpart`-package liegt.
 
@@ -6496,9 +6496,12 @@ df_dt_test_WG4 <- df_dt_test %>% filter(Warengruppe==4)
 df_dt_test_WG5 <- df_dt_test %>% filter(Warengruppe==5)
 ```
 
-## 7.3 Grundlegende Implementierung
+## 7.3 Grundlegende Implementierung und Tuning
+
 
 Wir können einen Regressionsbaum mit `rpart` anpassen und ihn dann mit `rpart.plot` visualisieren. Der Anpassungsprozess und die visuelle Ausgabe von Regressionsbäumen und Klassifizierungsbäumen sind sehr ähnlich. Beide verwenden die Formelmethode zum Ausdrücken des Modells (ähnlich wie `lm`). Wenn wir jedoch einen Regressionsbaum anpassen, müssen wir `method = "anova"` setzen. Standardmäßig errät `rpart` auf intelligente Weise, welcher Methodenwert auf dem Datentyp Ihrer Antwortspalte basieren soll. Es wird jedoch empfohlen, die Methode aus Gründen der Reproduzierbarkeit explizit festzulegen.
+
+**Grundlegende Implementierung - Warengruppe 1**
 
 Wir beginnen mit Warengruppe 1:
 
@@ -6542,7 +6545,7 @@ In diesem Beispiel finden wir abnehmende Renditen nach 12 Endknoten, wie in der 
 dt1_WG1$cptable
 ```
 
-## 7.4 Tuning
+**Tuning - Warengruppe 1**
 
 Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
 
@@ -6686,6 +6689,8 @@ dt_vgl_kennz <- temp
 dt_vgl_kennz
 ```
 
+**Grundlegende Implementierung - Warengruppe 2**
+
 Wir führen unsere Modellierung fort mit Warengruppe 2:
 
 ```{r}
@@ -6726,7 +6731,7 @@ Die gestrichelte Linie, die zwischen den Punkten | T | = 8 und 9 verläuft, deut
 dt1_WG2$cptable
 ```
 
-## 7.4 Tuning
+**Tuning - Warengruppe 2**
 
 Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
 
@@ -6855,6 +6860,8 @@ dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
 dt_vgl_kennz
 ```
 
+**Grundlegende Implementierung - Warengruppe 3**
+
 Nachfolgend wird Warengruppe 3 behandelt.
 
 ```{r}
@@ -6895,7 +6902,7 @@ Die gestrichelte Linie, die durch den Punkt | T | = 9 verläuft, deutet abermals
 dt1_WG3$cptable
 ```
 
-## 7.4 Tuning
+**Tuning - Warengruppe 3**
 
 Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
 
@@ -7024,6 +7031,8 @@ dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
 dt_vgl_kennz
 ```
 
+**Grundlegende Implementierung - Warengruppe 4**
+
 Da ganze Procedere wird nun auf Warengruppe 4 angewendet.
 
 ```{r}
@@ -7064,7 +7073,7 @@ Die gestrichelte Linie, die etwa durch den Punkt | T | = 8 verläuft, deutet abe
 dt1_WG4$cptable
 ```
 
-## 7.4 Tuning
+**Tuning - Warengruppe 4**
 
 Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
 
@@ -7193,6 +7202,8 @@ dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
 dt_vgl_kennz
 ```
 
+**Grundlegende Implementierung - Warengruppe 5**
+
 Abschließend wird nun noch ein Entscheidungsbaum für Warengruppe 5 erstellt.
 
 ```{r}
@@ -7233,7 +7244,7 @@ Die gestrichelte Linie verläuft hier durch keinen Punkt. Ein Baum mit 8 Knoten 
 dt1_WG5$cptable
 ```
 
-## 7.4 Tuning
+**Tuning - Warengruppe 5**
 
 Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
 
@@ -7792,7 +7803,7 @@ prog_SVM_vgl_kennz <- rbind(prog_SVM_vgl_kennz, temp)
 prog_SVM_vgl_kennz
 ```
 
-Nun wollen wir und noch die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_SVM_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+Nun wollen wir und noch die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_SVM_vgl_relAbw`. Diese müssen wir dann noch pivotisieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
 ```{r}
 # füge die relativen Abweichungen für WG1 an und benenne die Spalte um
@@ -7815,7 +7826,7 @@ colnames(prog_SVM_vgl_relAbw)[5]="WG4"
 prog_SVM_vgl_relAbw <- left_join(prog_SVM_vgl_relAbw, df_SVM_test_WG5 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
 colnames(prog_SVM_vgl_relAbw)[6]="WG5"
 
-# pivotieren
+# pivotisieren
 prog_SVM_vgl_relAbw <- prog_SVM_vgl_relAbw %>% 
   pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
 
@@ -8149,7 +8160,7 @@ Das einfache Modell (mod1), das für die Umsatzschätzung nur SommerferienSH, Fe
 
 Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch für das beste naive und lineare Schätzmodell einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11 bzw 12). Und auch unser SVM-Modell lag für die Warengruppe in der Größenordnung.
 
-Trotzdem wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+Trotzdem wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw`. Diese müssen wir dann noch pivotisieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
 ```{r}
 # füge die relativen Abweichungen für WG1 an und benenne die Spalte um
@@ -8172,7 +8183,7 @@ colnames(prog_MLP_vgl_relAbw)[5]="mod1_WG4"
 prog_MLP_vgl_relAbw <- left_join(prog_MLP_vgl_relAbw, df_MLP_test_mod1_WG5 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
 colnames(prog_MLP_vgl_relAbw)[6]="mod1_WG5"
 
-# pivotieren
+# pivotisieren
 prog_MLP_vgl_relAbw <- prog_MLP_vgl_relAbw %>% 
   pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
 
@@ -8359,7 +8370,7 @@ Das erweiterte Modell (mod2) liefert im Gegensatz zum einfachen Modell (mod1) ei
 
 Und der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppen 2 und 5 die niedrigsten Fehler. Gleiches hatten wir bei den besten naiven und linearen Modellen sowie unserem SVM-Modell gefunden. Zum Vergleich: Für das beste naive Schätzmodell (glDS_4T_erw) hatten wir für Warengruppe 2 sogar einen etwas niedrigeren WAPE = 11 gesehen.
 
-Als nächstes wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw_mod2`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+Als nächstes wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw_mod2`. Diese müssen wir dann noch pivotisieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
 ```{r}
 # füge die relativen Abweichungen für WG1 an und benenne die Spalte um
@@ -8382,7 +8393,7 @@ colnames(prog_MLP_vgl_relAbw_mod2)[5]="mod2_WG4"
 prog_MLP_vgl_relAbw_mod2 <- left_join(prog_MLP_vgl_relAbw_mod2, df_MLP_test_mod2_WG5 %>% dplyr::select(Datum, Abweichung_rel),by="Datum")
 colnames(prog_MLP_vgl_relAbw_mod2)[6]="mod2_WG5"
 
-# pivotieren
+# pivotisieren
 prog_MLP_vgl_relAbw_mod2 <- prog_MLP_vgl_relAbw_mod2 %>% 
   pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
 
@@ -8505,12 +8516,13 @@ Unsere Hoffnung hat sich jedoch nicht erfüllt: Der WAPE ist schlechter als für
 
 Wir wollen nun eine Gesamttabelle aller Vergleichskennzahlen erstellen. Wir beschränken uns dabei auf die Anwendung der Modelle auf die Testdaten, betrachten also die Testfehler.
 
-Wir hatten vier verschiedene Verfahren angewendet: Naive Modelle ("naiv"), lineare Regressionsmodelle ("lm"), Support Vector Machines ("SVM") und Multilayer Perceptrons ("MLP").
+Wir hatten fünf verschiedene Verfahren angewendet: Naive Modelle ("naiv"), lineare Regressionsmodelle ("lm"), Entscheidungsbäume ("DT"), Support Vector Machines ("SVM") und Multilayer Perceptrons ("MLP").
 
 Innerhalb der Verfahren haben wir bereits die besten Modelle identifiziert:
 
 - Bei den naiven Modellen lieferte der erweiterte gleitende Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage (glDS_4T_erw) die besten Schätzer. 
-- Für die linearen Regressionsmodelle hatten wir gesehen, dass die Modelle mit 36 (best36), 30 (best30) bzw. 16 (best16) die besten Schätzer für die Warengruppen 1, 2 bzw. 5 lieferten.
+- Für die linearen Regressionsmodelle hatten wir gesehen, dass die Modelle mit 21 (best21), 24 (best24), 30 (best30), 1 (best1) und 8 (best8) die besten Schätzer für die Warengruppen 1 bis 5 lieferten.
+- Bei den Entscheidungsbäumen (bzw. Regression trees) hatten wir für jede Warengruppe (WG1 bis WG5) ein optimales Modell berchnet.
 - Bei den Support Vector Machines hatten wir für jede Warengruppe genau ein Modell (WG1 bis WG5) optimiert.
 - Und bei den Multilayer Perceptronen hatten wir mit Modell 2 (mod2) gute Ergebnisse erzielt. Und für die Warengruppe 2 hatte unser Zugabe-Modell (mod4) die besten Ergebnisse geliefert.
 
@@ -8752,9 +8764,9 @@ modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
 
 Jetzt wollen wir für jede Warengruppe prüfen, welches Verfahren mit welchem Modell die besten Prognosen liefert. Und zwar bewerten wir das anhand der folgenden drei Güte-Kennzahlen:
 
-- MPE: Die mittlere relative Abweichung gibt uns ein Indiz dafür, ob unser Modell die Umsätze systematisch zu hoch oder zu niedrig schätzt. Wir wollen natürlich möglichst einen Mittelwert nahe Null erzielen. Falls ein Modell jedoch den Umsatz systematisch zu hoch oder zu niedrig schätzt und ansonsten hervoragende Güte-Kennzahlen aufweist, kann man die Schätzwerte mit einem Offset korrigieren um eben diese mittlere relative Abweichung.
-- WAPE: Der gewichtete Mittelwert des Absolutwertes der relativen Abweichung ist für das wichtigste Bewertungskriterium, weil es die Prognosegüte insgesamt am besten misst. Dabei gilt: Je kleiner, desto besser.
-- rRMSE: Der Mittelwert der Wurzel der quadratischen Abweichung - ins Verhältnis gesetzt zum mittleren Umsatz - liefert uns Anhaltspunkte, ob vermehrt größere Abweichungen zwischen geschätztem und tatsächlichem Umsatz vorliegen. Wir wollen also hier möglichst niedrige Werte finden.
+- MPE (Mean Percentage Error): Die mittlere relative Abweichung gibt uns ein Indiz dafür, ob unser Modell die Umsätze systematisch zu hoch oder zu niedrig schätzt. Wir wollen natürlich möglichst einen Mittelwert nahe Null erzielen. Falls ein Modell jedoch den Umsatz systematisch zu hoch oder zu niedrig schätzt und ansonsten hervoragende Güte-Kennzahlen aufweist, kann man die Schätzwerte mit einem Offset korrigieren um eben diese mittlere relative Abweichung.
+- WAPE (Weighted Absolute Percent Error): Der gewichtete Mittelwert des Absolutwertes der relativen Abweichung ist für das wichtigste Bewertungskriterium, weil es die Prognosegüte insgesamt am besten misst. Dabei gilt: Je kleiner, desto besser.
+- rRMSE (relative Root Mean Square Error): Der Mittelwert der Wurzel der quadratischen Abweichung - ins Verhältnis gesetzt zum mittleren Umsatz - liefert uns Anhaltspunkte, ob vermehrt größere Abweichungen zwischen geschätztem und tatsächlichem Umsatz vorliegen. Wir wollen also hier möglichst niedrige Werte finden.
 
 ```{r}
 modell_vergleich_WG %>%
@@ -8762,7 +8774,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für die Warengruppe 1 liefert das lineare Modell den besten Schätzer und zwar in Sachen MPE, WAPE und rRMSE.
+Für die Warengruppe 1 liefert das lineare Modellinsgesamt betrachtet den besten Schätzer. MAPE, WAPE und rRMSE sind bei diesem Modell am niedrigsten. Der MPE ist zwar am zweitschlechtesten, doch wie angeführt, könnte man die Schätzwerte mit einem Offset korrigieren.
 
 
 ```{r}
@@ -8780,7 +8792,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 3 gewinnt ebenfalls das naive Modell. (Hinweis: Für diese Warengruppe hatten wir kein lineares Modell erstellt.)
+Für Warengruppe 3 gewinnt sehr deutlich das naive Modell. 
 
 ```{r}
 modell_vergleich_WG %>%
@@ -8788,7 +8800,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 4 gewinnt wieder das naive Modell. (Hinweis: Für diese Warengruppe hatten wir kein lineares Modell erstellt.)
+Für Warengruppe 4 gewinnt wieder das naive Modell, wenngleich auch der DT und das MLP nicht schlecht performen. Bei diesen Modellen ist jedoch ein vergleichsweise hoher rRMSE zu beobachten.
 
 ```{r}
 modell_vergleich_WG %>%
@@ -8796,7 +8808,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 5 gewinnt das lineare Modell knapp vor dem naiven Modell.
+Für Warengruppe 5 gewinnt das lineare Modell, gefolgt vom DT, der jedoch einen deutlich schlechteren rRMSE aufweist.
 
 # 11 Ensemble Methoden
 
@@ -9229,7 +9241,9 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für die Warengruppe 1 liefert das lineare Modell immer noch den besten Schätzer, knapp vor dem Ensemble-Modell.
+Für die Warengruppe 1 liefert das Ensemble den besten Schätzer und hat das lineare Modell auf den 2. Platz verwiesen, zumindest was den WAPE anbelangt, den wir als Kriterium für die Rangfolge festgelegt haben.In Sachen rRMSE performt das lineare Modell weiterhin besser.
+
+Für Warengruppe 1 konnten wir durch die Ensemble-Bildung den Schätzer also noch verbessern.
 
 
 ```{r}
@@ -9238,7 +9252,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 2 konnten wir durch die Ensemble-Bildung den Schätzer noch verbessern.
+Für Warengruppe 2 erreicht das Ensemble den zweiten Platz, bleibt aber hinter dem MLP zurück.
 
 ```{r}
 modell_vergleich_WG %>%
@@ -9246,7 +9260,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 3 liefert nach wie vor das naive Modell die besten Schätzer, allerdings nur hauchdünn vor dem Ensemble-Modell. (Hinweis: Für diese Warengruppe hatten wir kein lineares Modell erstellt.)
+Für Warengruppe 3 liefert nach wie vor das naive Modell die besten Schätzer, allerdings nur knapp vor dem Ensemble-Modell. 
 
 ```{r}
 modell_vergleich_WG %>%
@@ -9254,7 +9268,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 4 können wir mit dem Ensemble die Prognosegüte noch minimal verbessern. (Hinweis: Für diese Warengruppe hatten wir kein lineares Modell erstellt.)
+Für Warengruppe 4 können wir mit dem Ensemble die Prognosegüte noch minimal verbessern. 
 
 ```{r}
 modell_vergleich_WG %>%
@@ -9264,7 +9278,7 @@ modell_vergleich_WG %>%
 
 Für Warengruppe 5 gewinnt das lineare Modell, jetzt knapp vor dem Ensemble-Modell.
 
-Insgesamt gelingt die Umsatzschätzung für die Warengruppe 2 (= Brötchen) am besten. Wir wollen uns exemplarisch für diese Warengruppe daher noch die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `ensemble_WG2_vgl_relAbw`. Diese müssen wir dann noch pivotieren (pivot_longer) als Vorbereitung auf den Boxplot:
+Insgesamt gelingt die Umsatzschätzung für die Warengruppe 2 (= Brötchen) am besten. Wir wollen uns exemplarisch für diese Warengruppe daher noch die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `ensemble_WG2_vgl_relAbw`. Diese müssen wir dann noch pivotisieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
 ```{r}
 # füge die relativen Abweichungen für das naive Modell an
@@ -9277,6 +9291,11 @@ ensemble_WG2_vgl_relAbw <- ensemble_WG2 %>%
 ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
   group_by() %>% mutate(lm = (Umsatz_lm - Umsatz) / Umsatz) %>%
   dplyr::select(Datum, lm),by="Datum")
+
+# füge die relativen Abweichungen für das DT Modell an
+ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
+  group_by() %>% mutate(dt = (Umsatz_dt - Umsatz) / Umsatz) %>%
+  dplyr::select(Datum, dt),by="Datum")
 
 # füge die relativen Abweichungen für das SVM Modell an
 ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>% 
@@ -9293,7 +9312,7 @@ ensemble_WG2_vgl_relAbw <- left_join(ensemble_WG2_vgl_relAbw, ensemble_WG2 %>%
   group_by() %>% mutate(Ensemble = (Umsatz_ensemble - Umsatz) / Umsatz) %>%
   dplyr::select(Datum, Ensemble),by="Datum")
 
-# pivotieren
+# pivotisieren
 ensemble_WG2_vgl_relAbw <- ensemble_WG2_vgl_relAbw %>% 
   pivot_longer(cols=-c("Datum"), names_to="Modell", values_to="Abweichung_rel")
 
@@ -9311,13 +9330,17 @@ Wir sehen inder Tat, dass sich die Umsätze für die Warengruppe 2 sehr gut prog
 
 # 12 Zusammenfassung und Ausblick
 
-Im Vergleich der besten Einzelmodelle finden wir ein Kopf-an-Kopf-Rennen zwischen dem besten naiven Modell und den linearen Modellen, aber auch das MLP ist bei den besten Schätzern vertreten, zumindest für eine Warengruppe. Die Support Vector Machines liefern insgesamt etwas schlechtere Ergebnisse. Das zeigt zum einen, dass es sehr viel Erfahrung braucht, um diese komplexen Modelle zu optimieren. Diese Erfahrung fehlt uns.
+Die nachfolgende Tabelle ermöglicht einen Vergleich der angewendeten Modelle für alle Warengruppen:
+
+![](Modellvergleich_final.png)
+
+Im Vergleich der besten Einzelmodelle finden wir ein Kopf-an-Kopf-Rennen zwischen dem besten naiven Modell und den linearen Modellen, aber auch das MLP ist bei den besten Schätzern vertreten, zumindest für eine Warengruppe. Die Entscheidungsbäume performen für die Warengruppen 1, 2 und 3 eher schlecht, für die Warengruppen 4 und 5 jedoch sehr gut (jeweils Platz 2). Die Support Vector Machines liefern insgesamt etwas schlechtere Ergebnisse. Das zeigt zum einen, dass es sehr viel Erfahrung braucht, um diese komplexen Modelle zu optimieren. Diese Erfahrung fehlt uns.
 
 Auf der anderen Seite lassen sich die Umsätze mit unserem Datenmodell vielleicht auch gar nicht besser schätzen. Möglicherweise bringt erst die Berücksichtigung weiterer Einflussfaktoren genauere Schätzergebnisse, hier aber nicht weiter vertieft.
 
-Durch einfache Ensemble-Bildung als Mittelwert der besten Einzelschätzer können wir für einige Warengruppen die Prognosegüte noch verbessern.
+Durch einfache Ensemble-Bildung als Mittelwert der besten Einzelschätzer konnten wir für die Warengruppen 1 und 4 die Prognosegüte noch verbessern. Bei den anderen Warengruppen reicht es zwar "nur" für den 2. Platz, aber es wird deutlich, dass schon durch eine solch einfache Ensemble-Bildung sichtbar Verbesserungen gegenüber Einzelmodellen erzielt werden können.
 
-Und insgesamt lassen sich die Umsätze für die Warengruppe 2 (= Brötchen) am treffsichersten voraussagen. Brötchen scheinen also eine "Konstante" im Leben vieler Menschen hierzulande zu sein.
+Insgesamt lassen sich die Umsätze für die Warengruppe 2 (= Brötchen) am treffsichersten voraussagen. Brötchen scheinen also eine "Konstante" im Leben vieler Menschen hierzulande zu sein.
 
 # Management Summary
 
