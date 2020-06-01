@@ -6414,7 +6414,7 @@ In Anlehnung an gängiges vorgehen in der Praxis wurde jeweils das einfachste Mo
 
 Dann fällt auf, dass die Schätzer für die Warengruppe 1 und 3 offenbar systematisch zu niedrig sind, weil die mittlere relative Abweichung bei -8% liegt. Warengruppe 4 wird dagegen konsequent zu hoch geschätzt. Für die Warengruppen 2 und 5 liegt der Wert näher an Null bzw. ist gleich 0.
 
-Und der mittlere gewichtete Absolutwert der relativen Abweichung (WAPE), den wir vorrangig als Güte-Kriterium im Auge haben, zeigt den niedrigsten Wert für Warengruppe 2, gefolgt von Warengruppe 5. Ähnliche Ergebnisse hatten wir auch mit dem besten naiven Modell erzielt: Dort konnten mit dem erweiterten gleitenden Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse für die Warengruppen insgesamt erzielt werden und für die Warengruppe 2 lag der WAPE mit nur 11 sogar knapp unter dem Wert des besten linearen Modells (12).
+Und der mittlere gewichtete Absolutwert der relativen Abweichung (WAPE), den wir vorrangig als Güte-Kriterium im Auge haben, zeigt den niedrigsten Wert für Warengruppe 2, gefolgt von Warengruppe 5. Ähnliche Ergebnisse hatten wir auch mit dem besten naiven Modell erzielt: Dort konnten mit dem erweiterten gleitenden Durchschnitt der letzten 4 Wochen- bzw. Wochenendtage die besten Ergebnisse für die Warengruppen insgesamt erzielt werden und für die Warengruppe 2 lag der WAPE ebenfalls bei 11.
 
 Wir widmen uns nun den Verfahren aus dem Bereich Machine Learning und Deep Learning und wollen rausfinden, ob sich damit noch bessere Ergebnisse erzielen lassen.
 
@@ -7376,9 +7376,51 @@ dt_vgl_kennz
 
 # 8 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
-## 8.1 Vorhaben
+## 8.1 Vorhaben und Theorie
 
 Wir testen nun ein anerkanntes Verfahren aus dem Bereich Machine Learning (ML), nämlich Support Vector Machines (SVM). Dieses Verfahren wird häufig für die Klassifizierung verwendet, kann jedoch auch zur Lösung von Regressions-Problemen verwendet werden. Genau das wollen wir tun.
+
+### Lineare SVM zur Klassifizierung
+
+In der einfachsten Form hat man ein Trainingsset $D=\{(\vec{x}^{(1)},y^{(1)}),...,(\vec{x}^{(p)},y^{(p)})\}$ bestehend aus $p$ Eingabevektoren $\vec{x}$ mit zugehörigem Label $y$, beispielsweise $+1$ und $-1$.
+
+![](SVM_bild1.PNG)
+
+Im Bild sehen wir ein Beispiel in zwei Dimensionen: Die roten Quadrate haben Label $+1$, die grünen Kreise $-1$. Man sucht dann die Trennlinie (durchgezogene Linie), die den Sicherheitsabstand ("Marge" oder engl. "margin") maximiert. Dir Grenzen der Sicherheitszone sind durch die gestrichelten Linien gezeigt. Die Datenpunkte, die direkt auf den getrennten Linien liegen haben als Abstand gerade die doppelte Marge und werden als Support-Vektoren bezeichnet. Für die Lösung des Problems sind nämlich gerade die Support-Vektoren entscheidend.
+
+Die Trennlinie (in höheren Dimensionen Hyperebene) lässt sich beschreiben als $H=\{\vec{x}|\vec{w}^T\cdot\vec{x}+b=0\}$. Dabei bezeichnet $\vec{w}$ den Normal-Vektor der Hyperebene. Und als Lösung erhalten wir eine Klassifizierungsfunktion $f(\vec{x})=sgn(\vec{w}^T\cdot\vec{x}+b)$. Dieser Klassifizierer ist unsere Support Vector Machine.
+
+Das Problem ist, dass die Hyperebene durch $\vec{w}$ nicht eindeutig bestimmt ist. Wir legen daher durch Normierung die sogenannte kanonische Hyperebene fest. Konkret erreichen wir das durch die Nebenbedingungen $(*)$: $\vec{w}^T\cdot\vec{x}+b \ge +1$ für Support-Vektoren mit Label $+1$ und $\vec{w}^T\cdot\vec{x}+b \le -1$ für Support-Vektoren mit Label $-1$. Damit ergibt sich der Sicherheitsabstand zwischen den beiden gestrichelten Linien zu $\frac{2}{||\vec{w}||}$.
+
+Jetzt haben wir ein Optimierungsproblem und müssen $||\vec{w}||$ minimieren, um den Sicherheitsabstand zu maximieren, unter den Nebenbedingungen $(*)$. Bei der Lösung kommen Lagrange-Multiplikatoren $\alpha_\mu\ge0$ ins Spiel und liefern als Lösung die optimalen Werte $\vec{w}^*$ und $b^*$ mit $\vec{w}^*=\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\vec{x}^{(\mu)}$. Die Details sparen wir an dieser Stelle aus.
+
+Damit erhalten wir die Klassifizierungsfunktion $f(\vec{x})=sgn(\vec{w}^{*T}\cdot\vec{x}+b^*)=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\vec{x}^{(\mu)T}\cdot\vec{x}+b^*)$.
+
+### Klassifizierung von linear nicht trennbaren Datensätzen
+
+SVM kann auch angewendet werden, wenn keine scharfe Trennung zwischen den Klassen möglich ist. In solchen Fällen verwendet man die sogenannte Soft-Margin-Klassifizierung. Ziel dabei ist eine Trennlinie zu finden, die die Anzahl der Punkte innerhalb des Sicherheitsabstandes minimiert bzw. die Anzahl der falsch klassifizierten Datenpunkte minimiert. Durch diese Nebenbedingung kommt ein weiterer Parameter $C$ ("cost") ins Spiel.
+
+### Nicht-lineare SVM zur Klassifizierung
+
+Bislang haben skizziert, wie man SVM auf linear trennbare Datensätze anwendet - abgesehen von einigen Überlappungen der Daten unterschiedlicher Klassen. Aber SVM kann noch mehr:
+
+![](SVM_bild2.PNG)
+
+Im oberen Teil der Abbildung sehen wir Daten zweier Klassen (rote und blaue Kreise), die in einer Dimension linear nicht trennbar sind. Transformiert man die Daten jedoch in eine höhere Dimension (hier 2D) durch eine Funktion $\vec{x}\rightarrow\Phi(\vec{x})$, sieht man, dass die Klassen nun linear trennbar sind. Man spricht von einer Transformation in den höher-dimensionalen "Feature-Raum" und führt dann SVM eben in diesem Feature-Raum durch.
+
+Dabei nutzt man aus, dass die transformierten Eingabevektoren $\Phi(\vec{x})$ nur in Form von Skalarprodukten auftauchen und definiert eine sogenannte Kernel-Funktion $k(.,.)$, um den Zusammenhang zwischen Eingabevektoren und transformierten Eingabevektoren im Feature-Raum zu vereinfachen: $k(\vec{x},\vec{y})=\Phi(\vec{x})^T\cdot\Phi(\vec{y})$. 
+
+Wir verwenden später als Kernel $k(\vec{x},\vec{y})=exp(-\gamma(\vec{x}-\vec{y})^2)$, also eine Gauss-Funktion, die man auch als "Radial-Basis-Funktion" (rbf) bezeichnet. Unsere Klassifizierungsfunktion wird dann zu:
+
+$f(\vec{x})=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}\Phi(\vec{x}^{(\mu)})^T\cdot\Phi(\vec{x})+b^*)=sgn(\sum_{\mu=1}^{p}\alpha_\mu y^{(\mu)}k(\vec{x}^{(\mu)},\vec{x})+b^*)$.
+
+### SVM zur Regression
+
+Verzichten wir in der Klassifizierungsfunktion $f(.)$ auf $sgn(.)$ und verwenden stattdessen nur das Argument, dann können wir SVM auch auf Regressions-Probleme anwenden. Wir wollen dabei eine Funktion $f(\vec{x})$ finden mit möglichst geringem Fehler $|f(\vec{x})-y|$ bei Anwendung auf den Testdaten. Dabei besteht die Gefahr von Overfitting, nämlich dass wir den Schätzer zu gut an die Besonderheiten in den verwendeten Trainingsdaten anpassen und gleichzeitig die Prognosequalität bei Anwendung auf neue unbekannte Eingabewerte sinkt (schlechte Veralgemeinerung). Um diesen Interessenskonflikt zu lösen, führt man in der später durchgeführten $\epsilon$-Regression einen Toleranzbereich $\epsilon$ ein, innerhalb dessen wir Abweichungen nicht bestrafen. Mathematisch ausgedrückt gilt für die Loss-Funktion $L_\epsilon=0$ für $|f(\vec{x})-y|\le\epsilon$.
+
+Als freie Parameter haben wir also $C$ ("cost") und $\epsilon$, die es zu optimieren gilt. Dafür verwenden wir später eine Funktion zum Tuning der Hyperparameter. Daneben haben wir in unserem rbf-Kernel noch den Parameter $\gamma$, der üblicherweise als Kehrwert der Anzahl der Eingabeparameter festgelegt wird.
+
+Die SVM-Funktionalitäten sind im R-Paket "e1071" implementiert.
 
 ## 8.2 Datenaufbereitung
 
@@ -7850,9 +7892,29 @@ Wir untersuchen nun, ob wir mit Deep Learning Methoden noch bessere Ergebnisse e
 
 # 9 Anwendung von DL Verfahren: Multilayer Perceptron (MLP)
 
-## 9.1 Vorhaben
+## 9.1 Vorhaben und Theorie
 
-Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Wir verwenden dafür ein Python-Skript (MLP.py).
+Wir wollen in diesem Abschnitt ein Verfahren aus dem Bereich Deep Learning (DL) testen. Genauer gesagt wollen wir ein künstliches neuronales Netz (kNN) in Form eines einfach Multilayer Perceptrons aufbauen. Ein Perpeptron bezeichnet dabei die Grundeinheit (unit) unseres Netzes und ist eine vereinfachte künstliche Nervenzelle.
+
+Die Abbildung zeigt ein solches Perceptron mit zwei Eingabewerten $x_1$ und $x_2$, sowie Gewichten $w_1$, $w_2$ und einer Schwelle $\theta$. Der Ausgabewert $y$ ergibt sich durch Anwendung einer sogenannten Aktivierungsfunktion $f(.)$ auf die Summe der gewichteten Eingabewerte abzüglich Schwellwert. Dabei wird häufig $b=-\theta$ gesetzt: $y=f(h)=f(\vec{x}\cdot\vec{w}+b)$, wobei mit $h$ das postsynaptische Potential bezeichnet wird. Beispiele für Aktivierungsfunktionen sind die Heaviside-Stufenfunktion, einfache lineare Funktionen $f(h)=h$, gerichtete lineare Funktionen ("relu" = rectified linear units) $f(h)=max(h,0)$ oder sigmoide Funktionen $f(h)=\frac{1}{1+e^{-h}}$.
+
+![](MLP_bild0.PNG)
+
+Mehrere Perceptrons bilden eine Schicht eines neuronalen Netzes. Und ein Netz besteht in der Regel aus einer Eingabeschicht (input layer), einer Ausgabeschicht (output layer) und optional Zwischenschichten (hidden layers), wie im Bild skizziert:
+
+![](MLP_bild1.PNG)
+
+Wir haben in dieser Arbeit nur sogenannte Feedforward-Netze benutzt, bei denen die Signalrichtung immer nur von einer zur nächsten Schicht zeigt. Im Grundzustand ist jede Einheit einer Schicht mit jeder Einheit der nächsten Schicht verbunden und die Verbindung erhält ein Gewicht $w$. 
+
+Für eine Kombination von Eingabewerten lässt sich der Ausgabewert in einem Feedforward-Netz sehr einfach berechnen. In unserem Fall haben wir eine Reihe von Trainingsdaten und kennen für gewisse Eingabeparameter die gewünschten Ausgabewerte, nämlich Umsätze je Warengruppe. In der Trainingsphase berechnen wir den Fehler (die sogenannte "Loss"-Funktion) $L$ aus der Differenz des berechneten Ausgabewertes zum erwarteten Umsatz.
+
+Um den Fehler zu minimieren, müssen die Gewichte und Schwellwerte rückwirkend angepasst werden, man spricht hierbei von "backpropagation", weil man nur die Schichten bis zurück zur Eingabeschicht durchwandert. Die nötige Anpassung der Gewichte und Schwellwerte berehnet man bspw. mithilfe des Gradienten der Loss-Funktionen in Bezug auf die postsynaptischen Potentiale. Ein Standard-Verfahren ist das Gradient-Descent-Verfahren. Werden zusätzlich die Gewichte und Schwellwerte mit zufälligen Werten initialisiert, spricht man vom Stochastic-Gradient-Descent-Verfahren (SGD). Bei diesem iterativen Lernalgorithmus versucht man den Fehler zu minimieren und sich so schrittweise an ein lokales oder sogar an das globale Minimum anzunähern. Neben SGD gibt es zahlreiche weitere Optimierungsstrategien. 
+
+Eine Erweiterung des klassischen SGD-Verfahrens ist "Adam": Dabei wird nicht nur der aktuelle Gradient für die Anpassung der Gewichte und Schwellwerte herangezogen, sondern eine Sequenz von Gradienten. Wenn mehrere aufeinanderfolgende Anpassungen in die gleiche Richtung vorgenommen werden, erhöht sich somit die Lerngeschwindigkeit, man spricht von Lernen mit Momentum. Für klassisches SGD hingegen ist die Lernrate konstant.
+
+Ein Modell wird üblicherweise über viele Epochen trainiert. In jeder Epoche kommt jeder Trainings-Input zum Einsatz. Die Anpassung der Gewichte und Schwellwerte kann nach jedem Input vorgenommen werden ("online learning") oder erst am Ende einer Epoche, nachdem alle Ausgabewerte für alle Eingabekombinationen berechnet wurden ("batch learning"). In der Praxis verwendet man als Kompromiss häufig sogenannte mini-batches und verwendet dabei eine gewisse Anzahl an Trainings-Inputs, bevor die Gewichte und Schwellwerte angepasst werden.
+
+Wir haben unsere neuronalen Netze in Python programmiert. Dabei verwenden wir das von Google entwickelte open-source Framework Tensonflow, das für die datenstromorientierte Programmierung konzipiert wurde und im Bereich Deep Learning weit verbreitet ist. Darüberhinaus verwenden wir Keras als open-source Deep-Learning-Bibliothek. Unser Quellcode befindet sich im Python-Skript MLP.py.
 
 ## 9.2 Datenaufbereitung
 
@@ -8158,7 +8220,7 @@ prog_MLP_vgl_kennz
 
 Das einfache Modell (mod1), das für die Umsatzschätzung nur SommerferienSH, Feiertag und Wochentage (Mo - So) als Inputvariablen einbezieht, liefert unterschiedliche Ergebnisse für die verschiedenen Warengruppen: Zunächst fällt auf, dass die mittlere relative Abweichung (MPE) für die Warengruppen 1, 2 und 3 nahe Null ist, während wir für die beiden Warengruppen 4 und 5 offenbar den Umsatz systematisch zu hoch schätzen. 
 
-Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch für das beste naive und lineare Schätzmodell einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11 bzw 12). Und auch unser SVM-Modell lag für die Warengruppe in der Größenordnung.
+Der gewichtete mittlere Absolutwert der relativen Abweichung (WAPE) zeigt für die Warengruppe 2 den niedrigsten Fehler. Wir hatten jedoch für das beste naive und lineare Schätzmodell einen deutlich niedrigeren Fehler gesehen für Warengruppe 2 (WAPE = 11). Und auch unser SVM-Modell lag für die Warengruppe in der Größenordnung.
 
 Trotzdem wollen wir uns die Verteilung der relativen Abweichungen der Umsatzschätzung vom tatsächlichen Umsatz angucken und erstellen dafür eine weitere Vergleichstabelle `prog_MLP_vgl_relAbw`. Diese müssen wir dann noch pivotisieren (pivot_longer) als Vorbereitung auf den Boxplot:
 
@@ -8774,7 +8836,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für die Warengruppe 1 liefert das lineare Modellinsgesamt betrachtet den besten Schätzer. MAPE, WAPE und rRMSE sind bei diesem Modell am niedrigsten. Der MPE ist zwar am zweitschlechtesten, doch wie angeführt, könnte man die Schätzwerte mit einem Offset korrigieren.
+Für die Warengruppe 1 liefert das lineare Modell insgesamt betrachtet den besten Schätzer. MAPE, WAPE und rRMSE sind bei diesem Modell am niedrigsten. Der MPE ist zwar am zweitschlechtesten, doch wie angeführt, könnte man die Schätzwerte mit einem Offset korrigieren.
 
 
 ```{r}
@@ -8800,7 +8862,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 4 gewinnt wieder das naive Modell, wenngleich auch der DT und das MLP nicht schlecht performen. Bei diesen Modellen ist jedoch ein vergleichsweise hoher rRMSE zu beobachten.
+Für Warengruppe 4 gewinnt wieder das naive Modell, wenngleich auch der DT und das MLP gut performen. Bei diesen Modellen ist jedoch ein vergleichsweise hoher rRMSE zu beobachten.
 
 ```{r}
 modell_vergleich_WG %>%
@@ -9052,7 +9114,7 @@ temp <- df_MLP_test_mod2_WG5 %>%
 ensemble_WG5 <- cbind(ensemble_WG5, temp)
 ```
 
-Wir bilden nun den Ensemble-Schätzer als Mittelwert der besten Einzelschätzer. Und anschließend ermittelns wir die Gütekennzahlen. Die Ergebnisse für die Warengruppen sammeln wir in einer gemeinsamen Tabelle `ensemble_WG_vgl`. HINWEIS: Solange wir noch kein lineares Modell für die Warengruppen 3 und 4 haben, wird der Ensemble-Schätzer für diese beiden Warengruppen nur aus dem naiven Schätzer, dem SVM und dem MLP Modell gebildet.
+Wir bilden nun den Ensemble-Schätzer als Mittelwert der besten Einzelschätzer. Und anschließend ermittelns wir die Gütekennzahlen. Die Ergebnisse für die Warengruppen sammeln wir in einer gemeinsamen Tabelle `ensemble_WG_vgl`.
 
 ```{r}
 # Warengruppe 1
@@ -9252,7 +9314,7 @@ modell_vergleich_WG %>%
   arrange(WAPE)
 ```
 
-Für Warengruppe 2 erreicht das Ensemble den zweiten Platz, bleibt aber hinter dem MLP zurück.
+Für Warengruppe 2 erreicht das Ensemble den zweiten Platz und bleibt damit knapp hinter dem MLP zurück.
 
 ```{r}
 modell_vergleich_WG %>%
