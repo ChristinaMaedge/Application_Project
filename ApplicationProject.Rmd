@@ -7389,6 +7389,11 @@ dt_vgl_kennz <- rbind(dt_vgl_kennz, temp)
 dt_vgl_kennz
 ```
 
+## 7.4 Fazit Decision Trees
+
+Die Decision Trees liefern vergleichsweise gute Schätzwerte für die Warengruppen 4 (= Konditorei) und 5 (= Kuchen). Für Warengruppe 4 performt der Entscheidungsbaum insgesamt (deutlich) besser als das lineare Modell, aber immer noch schlechter als das naive. Das naive Modell liefert dabei insbesondere bessere Werte für den MPE, den WAPE sowie RMSE und rRMSE. Was Warengruppe 5 anbelangt, bleibt der Entscheidungsbaum knapp hinter dem linearen Modell zurück, was vor allem auf deutlich höhere Werte bei den Kennzahlen MSE, RMSE sowie rRMSE zurückzuführen ist.
+
+Anders sieht es bei den verbleibenden Warengruppen 1, 2, und 3 aus. Zwar liefert der Entscheidungsbaum für Warengruppe 1 bessere Werte als das naive Modell, performt aber andereseits deutlich schlechter als das lineare Modell. In den anderen Warengruppen 2 und 3 landen die Entscheidungsbäume hinter den anderen getesteten Modellen. Am schlechtesten scheinen Entscheidungsbäume für die Prognose der Umsätze in der Warengruppe 3 zu sein. Für diese Warengruppe ergeben sich deutlich schlechtere Werte bei nahezu allen Gütekennzahlen (Ausnahme: der MPE, der beim lm -8 und beim DT -7 beträgt).
 
 # 8 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
