@@ -13,6 +13,22 @@ library(GGally) # Wird benötigt für die Erstellung des correlograms
 library(e1071) # Wird für Support Vector Machines benötigt
 ```
 
+# Management Summary
+
+In dieser Projektarbeit wird ein Prognosemodell entwickelt. Wir wollen damit für eine Bäckereifiliale den **täglichen Umsatz pro Warengruppe** schätzen.
+
+Als **Datenbasis** stehen uns die historischen Umsätze für diese Filiale zur Verfügung. Den Zeitraum 2015 bis 2017 nutzen wir als Trainingsdaten für unsere Modelle. Die Prognosegüte bewerten wir dann anhand der 2018er Daten. Wir kennen die täglichen Umsätze für fünf Warengruppen: (1) Brot, (2) Brötchen, (3) Croissants, (4) Konditorei und (5) Kuchen.
+
+Neben den Umsatzdaten binden wir Wetterdaten (Temperatur, Wind und Bewölkung), Veranstaltungsdaten (Kieler Woche) und **weitere Einflussfaktoren** (Feiertage, Ferien) in die Modellierung ein.
+
+Wir testen **Modelle aus insgesamt 5 verschiedenen Bereichen**: Naive Modelle, die auf einfache Heuristiken zurück greifen, lineare Regressionsmodelle, Entscheidungsbäume, Support Vector Machines und Multilayer Perceptrons. Als sechstes Modell betrachten wir ein Ensemble, gebildet aus dem Mittelwert dieser Modelle.
+
+Für die **Bewertung der Modelle** konzentrieren wir uns auf drei **Gütekennzahlen**: Die mittlere relative Abweichung (MPE) gibt uns Anhaltspunkte, ob ein Modell den Umsatz systematisch zu hoch oder zu niedrig schätzt. Solche Abweichungen können jedoch einfach mithilfe eines Offsets korrigiert werden. Ausschlaggebend ist der umsatzgewichtete Absolutwert der relativen Abweichung (WAPE) als Hauptkriterium für die Treffsicherheit eines Schätzers. Und daneben spielt die relative quadratische Abweichung eine Rolle bei der Bewertung der Prognosegüte, die besonders starke Schätzfehler misst und bewertet, die in der Praxis großen Einfluss auf den Gewinn / Verlust der Filiale haben.
+
+Die verschiedenen Modelle schneiden für die einzelnen Warengruppe unterschiedlich ab. Für die Warengruppen 1 und 4 hat das Ensemble die Nase vorn. Aber auch jeweils ein Multilayer Perceptron, ein naives und ein lineares Modell liefert die besten Schätzwerte für die Warengruppen 2, 3 bzw. 5. Es gibt also kein klares **Gewinnermodell**.
+
+Die **besten Ergebnisse** erzielen wir für die Warengruppen 2 (Brötchen) und 5 (Kuchen), die gleichzeitig die umsatzstärksten Warengruppen darstellen. Bei der Schätzung des täglichen Brötchen-Umsatzes liegen wir mit unserem Modell im Durchschnitt gut 10% daneben. Das ist unter Berücksichtigung der verwendeten Daten ein sehr gutes Ergebnis. Für die übrigen Warengruppen gibt es noch Verbesserungsbedarf. Möglicherweise kann man insbesondere die komplexen Modelle (Support Vector Machines und Multilayer Perceptrons) noch weiter verfeinern. Dafür fehlt uns jedoch die Erfahrung und hier ging es in erster Linie um die Anwendung dieser Modelle.
+
 # 1 Allgemeine Projektinformationen
 
 ## 1.1 Ausgangslage
@@ -9404,6 +9420,4 @@ Durch einfache Ensemble-Bildung als Mittelwert der besten Einzelschätzer konnte
 
 Insgesamt lassen sich die Umsätze für die Warengruppe 2 (= Brötchen) am treffsichersten voraussagen. Brötchen scheinen also eine "Konstante" im Leben vieler Menschen hierzulande zu sein.
 
-# Management Summary
 
-Fehlt noch! Und dann an den Anfang stellen!
