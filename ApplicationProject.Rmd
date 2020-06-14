@@ -6459,6 +6459,24 @@ Es gibt viele Methoden zur Konstruktion von Entscheidungsbäumen, aber eine der 
 
 Nehmen wir zum Beispiel an, wir möchten die Umsatz pro Tag einer Bäckereifiliale basierend auf Wochentagen, Jahreszeit, Ferien, ... vorhersagen. Alle Beobachtungen gehen durch diesen Baum, werden an einem bestimmten Knoten bewertet und gehen nach links, wenn die Antwort "Ja" lautet, oder nach rechts, wenn die Antwort "Nein" lautet. Alle Beobachtungen mit Samstag oder Sonntag gehen also zum linken Zweig, alle anderen Beobachtungen zum rechten Zweig. Als nächstes wird der linke Zweig weiter nach der Jahreszeit aufgeteilt. Diese Samstag- oder Sonntag-Beobachtungen mit der Jahreszeit Sommer gehen zum linken Zweig über, diejenigen mit Frühling, Herbst oder Winter gehen nach rechts. Und so weiter. Diese Zweige führen abschließend zu Endknoten oder Blättern, die unseren vorhergesagten Umsatz pro Tag enthalten. 
 
+**Über Splits entscheiden**
+
+Erstens ist es wichtig zu erkennen, dass die Partitionierung von Variablen von oben nach unten erfolgt. Dies bedeutet, dass sich eine früher in der Baumstruktur ausgeführte Partition nicht aufgrund späterer Partitionen ändert. 
+
+Aber wie werden diese Partitionen hergestellt? Das Modell beginnt mit dem gesamten Datensatz $S$ und durchsucht jeden einzelnen Wert jeder Eingabevariablen, um den Prädiktor und den Teilungswert zu finden, der die Daten in zwei Regionen unterteilt ($R_1$ und $R_2$) derart, dass die Gesamtsummen der Fehlerquadrate minimiert werden:
+
+$minimiere(SSE = \sum_{i \epsilon R_1}(y_i-c_1)^2+\sum_{i \epsilon R_2}(y_i-c_2)^2$
+
+Nachdem wir die beste Aufteilung gefunden haben, teilen wir die Daten in die beiden resultierenden Regionen auf und wiederholen den Aufteilungsprozess für jede der beiden Regionen. Dieser Vorgang wird fortgesetzt, bis ein Stoppkriterium erreicht ist. Das Ergebnis ist in der Regel ein sehr tiefer, komplexer Baum, der zwar gute Vorhersagen für den Trainingssatz liefert, die Daten jedoch wahrscheinlich überpasst, was zu einer schlechten Leistung bei unsichtbaren Daten führt.
+
+Durch Beschneiden dieser Entscheidungsknoten auf niedrigerer Ebene können wir ein wenig Verzerrung in unser Modell einbringen, die zur Stabilisierung von Vorhersagen beiträgt und dazu neigt, besser auf neue, unsichtbare Daten zu verallgemeinern.
+
+**Kostenkomplexitätskriterium**
+
+In der Tiefe und Komplexität des Baums muss häufig ein Gleichgewicht erreicht werden, um die Vorhersageleistung für einige unsichtbare Daten zu optimieren. Um dieses Gleichgewicht zu finden, bilden wir normalerweise einen sehr großen Baum, wie im vorherigen Abschnitt definiert, und beschneiden ihn dann, um einen optimalen Teilbaum zu finden. Wir finden den optimalen Teilbaum unter Verwendung eines Kostenkomplexitätsparameters ($\alpha$), der unsere Zielfunktion (s. o.) für die Anzahl der Endknoten des Baumes (T) "bestraft":
+
+$minimiere(SSE + \alpha|T|)}$
+
 **Laden notwendiger packages**
 
 Für das Vorhaben werden die nachfolgenden packages benötigt und somit geladen. Die meisten dieser packages/Pakete spielen eine unterstützende Rolle, während der Schwerpunkt auf dem `rpart`-package liegt.
@@ -7401,6 +7419,24 @@ dt_vgl_kennz
 Die Decision Trees liefern vergleichsweise gute Schätzwerte für die Warengruppen 4 (= Konditorei) und 5 (= Kuchen). Für Warengruppe 4 performt der Entscheidungsbaum insgesamt (deutlich) besser als das lineare Modell, aber immer noch schlechter als das naive. Das naive Modell liefert dabei insbesondere bessere Werte für den MPE, den WAPE sowie RMSE und rRMSE. Was Warengruppe 5 anbelangt, bleibt der Entscheidungsbaum knapp hinter dem linearen Modell zurück, was vor allem auf deutlich höhere Werte bei den Kennzahlen MSE, RMSE sowie rRMSE zurückzuführen ist.
 
 Anders sieht es bei den verbleibenden Warengruppen 1, 2, und 3 aus. Zwar liefert der Entscheidungsbaum für Warengruppe 1 bessere Werte als das naive Modell, performt aber andereseits deutlich schlechter als das lineare Modell. In den anderen Warengruppen 2 und 3 landen die Entscheidungsbäume hinter den anderen getesteten Modellen. Am schlechtesten scheinen Entscheidungsbäume für die Prognose der Umsätze in der Warengruppe 3 zu sein. Für diese Warengruppe ergeben sich deutlich schlechtere Werte bei nahezu allen Gütekennzahlen (Ausnahme: der MPE, der beim lm -8 und beim DT -7 beträgt).
+
+Allgemein betrachtet noch folende Ergänzungen:
+
+**Stärken und Schwächen**
+
+Regressionsbäume bieten mehrere Vorteile:
+
+* Sie sind sehr gut / einfach interpretierbar.
+* Vorhersagen zu treffen geht vglw. schnell (keine komplizierten Berechnungen, nur nach Konstanten im Baum suchen).
+* Es ist leicht zu verstehen, welche Variablen für die Vorhersage wichtig sind. Die internen Knoten (Splits) sind diejenigen Variablen, die die SSE am stärksten reduziert haben.
+* Wenn einige Daten fehlen, können wir möglicherweise nicht den ganzen Weg den Baum hinunter zu einem Blatt gehen, aber wir können trotzdem eine Vorhersage treffen, indem wir alle Blätter in dem Teilbaum mitteln, den wir erreichen.
+* Das Modell bietet eine nichtlineare „gezackte“ Antwort, sodass es funktionieren kann, wenn die wahre Regressionsfläche nicht "glatt" ist. Wenn es jedoch glatt ist, kann die stückweise konstante Oberfläche es beliebig genau annähern (mit genügend Blättern).
+* Es gibt schnelle und zuverlässige Algorithmen, um diese Bäume zu lernen.
+
+Es gibt aber auch einige wesentliche Schwächen:
+
+* Einzelne Regressionsbäume weisen eine hohe Varianz auf, was zu instabilen Vorhersagen führt (eine alternative Teilstichprobe von Trainingsdaten kann die Endknoten erheblich verändern).
+* Aufgrund der hohen Varianz weisen einzelne Regressionsbäume eine schlechte Vorhersagegenauigkeit auf.
 
 # 8 Anwendung von ML Verfahren: Support Vector Machines (SVM)
 
