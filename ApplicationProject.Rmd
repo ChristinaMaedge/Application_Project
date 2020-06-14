@@ -2664,7 +2664,7 @@ df_lm_test_WG1 <- df_lm_test_WG1 %>% dplyr::select(-Warengruppe)
 
 **Beste Teilmengenauswahl ("Best subset selection")**
 
-Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Kombination der p-Prädiktoren eine separate Regression der kleinsten Quadrate an. Das heißt, wir passen alle p-Modelle an, die genau einen Prädiktor enthalten, alle (p2) = p (p - 1) / 2-Modelle, die genau zwei Prädiktoren enthalten, und so weiter. Wir betrachten dann alle resultierenden Modelle mit dem Ziel, das beste zu identifizieren.
+Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Kombination der p-Prädiktoren eine separate Regression der kleinsten Quadrate an. Das heißt, wir passen alle p-Modelle an, die genau einen Prädiktor enthalten, alle $(p_2) = p (p - 1) / 2$-Modelle, die genau zwei Prädiktoren enthalten, und so weiter. Wir betrachten dann alle resultierenden Modelle mit dem Ziel, das beste zu identifizieren.
 
 Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfasst:
 
@@ -2672,8 +2672,8 @@ Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfas
 
 **Schritt 2**: Für $k = 1,2,… p$:
 
-* Fit alle (pk) Modelle, die genau $k$ Prädiktoren enthalten.
-* Wähle die besten unter diesen (pk) Modelle, und nenne es $M_k$. Hier wird "beste Modelle" in der Form definiert, dass diese die kleinsten RSS oder äquivalent die größten $R^2$ haben.
+* Passe alle ($p_k$) Modelle an, die genau $k$ Prädiktoren enthalten.
+* Wähle die besten unter diesen ($p_k$) Modelle, und nenne es $M_k$. Hier wird "beste Modelle" in der Form definiert, dass diese die kleinsten RSS oder äquivalent die größten $R^2$ haben.
 
 **Schritt 3**: Wähle aus $M_0, .. , M_p$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers (cross validated prediction error), $Cp$, $AIC$, $BIC$ oder adjustiertem $R^2$.
 
@@ -2709,9 +2709,9 @@ Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
 **Schritt 2**: Für $k = 0,…, p - 1$:
 
 * Betrachte alle $p - k$- Modelle, die die Prädiktoren in $M_k$ mit einem zusätzlichen Prädiktor erweitern. 
-* Wähle das beste unter diesen $p - k$-Modellen aus und nenne es $M_[_k_+_1]$. Hier wird das beste Modell als das mit dem kleinsten $RSS$ oder dem höchstes $R^2$ definiert.
+* Wähle das beste unter diesen $p - k$-Modellen aus und nenne es $M_\(k_+_1)$. Hier wird das beste Modell als das mit dem kleinsten $RSS$ oder dem höchstes $R^2$ definiert.
 
-*+Schritt 3**: Wähle aus $M_0,..., M_p$ unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_p$, $AIC$, $BIC$ oder dem adjustierten $R^2$ ein einzelnes bestes Modell aus.
+**Schritt 3**: Wähle aus $M_0,..., M_p$ unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_p$, $AIC$, $BIC$ oder dem adjustierten $R^2$ ein einzelnes bestes Modell aus.
 
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
@@ -3173,14 +3173,15 @@ df_lm_test_WG1_27 <-df_lm_test_WG1_27 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG1_27 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best27_WG1")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 lm_vgl_kennz <- temp
-lm_vgl_kennz
+lm_vgl_kennz %>%
+  arrange(WAPE)
 ```
 
 
@@ -3320,14 +3321,15 @@ df_lm_test_WG1_31 <-df_lm_test_WG1_31 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG1_31 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best31_WG1")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
-lm_vgl_kennz
+lm_vgl_kennz %>%
+  arrange(desc(WAPE))
 ```
 
 **Teilmengenauswahl für das 21-Variablen-Modell gemäß backward stepwise**
@@ -3455,14 +3457,15 @@ df_lm_test_WG1_21 <-df_lm_test_WG1_21 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG1_21 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best21_WG1")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
-lm_vgl_kennz
+lm_vgl_kennz %>%
+  arrange(WAPE)
 ```
 
 
@@ -3512,14 +3515,15 @@ df_lm_test_WG1_21 <-df_lm_test_WG1_21 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG1_21 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best21_inter_WG1")
 
 # füge die Kennzahlen nun an die Vergleichstabelle
 lm_vgl_kennz <- rbind(lm_vgl_kennz, temp)
-lm_vgl_kennz
+lm_vgl_kennz %>%
+  arrange(WAPE)
 ```
 
 
@@ -4100,35 +4104,35 @@ lm_vgl_kennz
 
 Die 29 Variablen nach **best subset selection** sind die folgenden:
 
-•	KielerWoche
-•	Bewoelkung
-•	Windgeschwindigkeit
-•	Wochentag_cFreitag
-•	Wochentag_cSamstag
-•	Wochentag_cSonntag
-•	Monat_cAugust
-•	Monat_cDezember
-•	Monat_cJuli 
-•	Monat_cJuni
-•	Monat_cMai
-•	Monat_cNovember
-•	Monat_cOktober
-•	Monat_cSeptember
-•	SommerferienSH 
-•	SommerferienNRW
-•	SommerferienNDS
-•	SommerferienHE
-•	Feiertag
-•	Ostern_ext 
-•	ChristiHimmelfahrt_ext
-•	Pfingsten_ext
-•	Silvester_ext
-•	JahreszeitHerbst
-•	Wochentag_cMittwoch
-•	Monat_cFebruar
-•	Ostern
-•	JahreszeitSommer
-•	JahreszeitWinter
+*	KielerWoche
+*	Bewoelkung
+*	Windgeschwindigkeit
+*	Wochentag_cFreitag
+*	Wochentag_cSamstag
+*	Wochentag_cSonntag
+*	Monat_cAugust
+*	Monat_cDezember
+*	Monat_cJuli 
+*	Monat_cJuni
+*	Monat_cMai
+*	Monat_cNovember
+*	Monat_cOktober
+*	Monat_cSeptember
+*	SommerferienSH 
+*	SommerferienNRW
+*	SommerferienNDS
+*	SommerferienHE
+*	Feiertag
+*	Ostern_ext 
+*	ChristiHimmelfahrt_ext
+*	Pfingsten_ext
+*	Silvester_ext
+*	JahreszeitHerbst
+*	Wochentag_cMittwoch
+*	Monat_cFebruar
+*	Ostern
+*	JahreszeitSommer
+*	JahreszeitWinter
 
 Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -5134,17 +5138,17 @@ lm_vgl_kennz
 
 Die 11 Variablen sind die folgenden:
 
-•	Wochentag_cSamstag
-•	Wochentag_cSonntag
-•	Monat_cFebruar
-•	Monat_cJuli
-•	Monat_cJuni
-•	Feiertag
-•	Ostern 
-•	ChristiHimmelfahrt          
-•	Pfingsten
-•	TDE
-•	JahreszeitSommer
+*	Wochentag_cSamstag
+*	Wochentag_cSonntag
+*	Monat_cFebruar
+*	Monat_cJuli
+*	Monat_cJuni
+*	Feiertag
+*	Ostern 
+*	ChristiHimmelfahrt          
+*	Pfingsten
+*	TDE
+*	JahreszeitSommer
 
 Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -5259,26 +5263,26 @@ lm_vgl_kennz
 
 Die 20 Variablen sind die folgenden:
 
-•	Temperatur     
-•	Wochentag_cFreitag      
-•	Wochentag_cMontag     
-•	Wochentag_cSamstag
-•	Wochentag_cSonntag        
-•	Monat_cDezember         
-•	Monat_cFebruar            
-•	Monat_cJuli            
-•	Monat_cJuni
-•	Monat_cNovember         
-•	SommerferienSH               
-•	Feiertag
-•	Ostern
-•	ChristiHimmelfahrt
-•	Pfingsten
-•	TDE 
-•	ChristiHimmelfahrt_ext          
-•	Pfingsten_ext 
-•	JahreszeitHerbst
-•	JahreszeitSommer
+*	Temperatur     
+*	Wochentag_cFreitag      
+*	Wochentag_cMontag     
+*	Wochentag_cSamstag
+*	Wochentag_cSonntag        
+*	Monat_cDezember         
+*	Monat_cFebruar            
+*	Monat_cJuli            
+*	Monat_cJuni
+*	Monat_cNovember         
+*	SommerferienSH               
+*	Feiertag
+*	Ostern
+*	ChristiHimmelfahrt
+*	Pfingsten
+*	TDE 
+*	ChristiHimmelfahrt_ext          
+*	Pfingsten_ext 
+*	JahreszeitHerbst
+*	JahreszeitSommer
 
 Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -5392,24 +5396,24 @@ lm_vgl_kennz
 
 Die 18 Variablen sind die folgenden:
 
-•	Temperatur  
-•	Wochentag_cDonnerstag    
-•	Wochentag_cMittwoch     
-•	Wochentag_cSamstag
-•	Wochentag_cSonntag          
-•	Monat_cAugust         
-•	Monat_cFebruar            
-•	Monat_cJuni         
-•	Monat_cOktober
-•	Monat_cSeptember               
-•	Feiertag
-•	Ostern     
-•	ChristiHimmelfahrt              
-•	Pfingsten
-•	TDE 
-•	ChristiHimmelfahrt_ext          
-•	Pfingsten_ext          
-•	Silvester_ext
+*	Temperatur  
+*	Wochentag_cDonnerstag    
+*	Wochentag_cMittwoch     
+*	Wochentag_cSamstag
+*	Wochentag_cSonntag          
+*	Monat_cAugust         
+*	Monat_cFebruar            
+*	Monat_cJuni         
+*	Monat_cOktober
+*	Monat_cSeptember               
+*	Feiertag
+*	Ostern     
+*	ChristiHimmelfahrt              
+*	Pfingsten
+*	TDE 
+*	ChristiHimmelfahrt_ext          
+*	Pfingsten_ext          
+*	Silvester_ext
 
 Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -5523,21 +5527,21 @@ lm_vgl_kennz
 
 Die 15 Variablen sind die folgenden:
 
-•	Wochentag_cFreitag  
-•	Wochentag_cMontag 
-•	Wochentag_cSamstag 
-•	Wochentag_cSonntag     
-•	Monat_cFebruar
-•	Monat_cJuli        
-•	Monat_cJuni     
-•	SommerferienSH           
-•	Feiertag
-•	Ostern 
-•	ChristiHimmelfahrt
-•	Pfingsten
-•	TDE
-•	JahreszeitHerbst   
-•	JahreszeitSommer
+*	Wochentag_cFreitag  
+*	Wochentag_cMontag 
+*	Wochentag_cSamstag 
+*	Wochentag_cSonntag     
+*	Monat_cFebruar
+*	Monat_cJuli        
+*	Monat_cJuni     
+*	SommerferienSH           
+*	Feiertag
+*	Ostern 
+*	ChristiHimmelfahrt
+*	Pfingsten
+*	TDE
+*	JahreszeitHerbst   
+*	JahreszeitSommer
 
 Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -5945,28 +5949,28 @@ lm_vgl_kennz
 
 Die 22 Variablen sind die folgenden:
 
-•	Temperatur 
-•	Wochentag_cFreitag 
-•	Wochentag_cSamstag 
-•	Wochentag_cSonntag      
-•	Monat_cAugust
-•	Monat_cDezember     
-•	Monat_cFebruar        
-•	Monat_cJuli        
-•	Monat_cJuni         
-•	Monat_cMai     
-•	Monat_cOktober
-•	Monat_cSeptember     
-•	SommerferienSH           
-•	Feiertag
-•	Ostern 
-•	ChristiHimmelfahrt          
-•	Pfingsten
-•	TDE
-•	Ostern_ext 
-•	Silvester_ext   
-•	JahreszeitHerbst   
-•	JahreszeitWinter
+*	Temperatur 
+*	Wochentag_cFreitag 
+*	Wochentag_cSamstag 
+*	Wochentag_cSonntag      
+*	Monat_cAugust
+*	Monat_cDezember     
+*	Monat_cFebruar        
+*	Monat_cJuli        
+*	Monat_cJuni         
+*	Monat_cMai     
+*	Monat_cOktober
+*	Monat_cSeptember     
+*	SommerferienSH           
+*	Feiertag
+*	Ostern 
+*	ChristiHimmelfahrt          
+*	Pfingsten
+*	TDE
+*	Ostern_ext 
+*	Silvester_ext   
+*	JahreszeitHerbst   
+*	JahreszeitWinter
 
 Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -6081,33 +6085,33 @@ lm_vgl_kennz
 
 Die 27 Variablen sind die folgenden:
 
-•	KielerWoche         
-•	Bewoelkung         
-•	Temperatur 
-•	Wochentag_cFreitag  
-•	Wochentag_cMontag
-•	Wochentag_cSamstag 
-•	Wochentag_cSonntag      
-•	Monat_cAugust    
-•	Monat_cDezember     
-•	Monat_cFebruar        
-•	Monat_cJuli
-•	Monat_cJuni         
-•	Monat_cMai     
-•	Monat_cOktober   
-•	Monat_cSeptember     
-•	SommerferienSH    
-•	SommerferienNRW
-•	SommerferienNDS           
-•	Feiertag
-•	Ostern 
-•	ChristiHimmelfahrt 
-•	Pfingsten
-•	TDE
-•	Ostern_ext      
-•	Silvester_ext   
-•	JahreszeitHerbst   
-•	JahreszeitWinter
+*	KielerWoche         
+*	Bewoelkung         
+*	Temperatur 
+*	Wochentag_cFreitag  
+*	Wochentag_cMontag
+*	Wochentag_cSamstag 
+*	Wochentag_cSonntag      
+*	Monat_cAugust    
+*	Monat_cDezember     
+*	Monat_cFebruar        
+*	Monat_cJuli
+*	Monat_cJuni         
+*	Monat_cMai     
+*	Monat_cOktober   
+*	Monat_cSeptember     
+*	SommerferienSH    
+*	SommerferienNRW
+*	SommerferienNDS           
+*	Feiertag
+*	Ostern 
+*	ChristiHimmelfahrt 
+*	Pfingsten
+*	TDE
+*	Ostern_ext      
+*	Silvester_ext   
+*	JahreszeitHerbst   
+*	JahreszeitWinter
 
 Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -6276,35 +6280,35 @@ lm_vgl_kennz
 
 Die 29 Variablen sind die folgenden:
 
-•	KielerWoche         
-•	Bewoelkung         
-•	Temperatur 
-•	Wochentag_cFreitag  
-•	Wochentag_cMontag
-•	Wochentag_cSamstag 
-•	Wochentag_cSonntag      
-•	Monat_cAugust     
-•	Monat_cFebruar      
-•	Monat_cJanuar        
-•	Monat_cJuli
-•	Monat_cJuni         
-•	Monat_cMai        
-•	Monat_cMärz    
-•	Monat_cNovember     
-•	Monat_cOktober   
-•	Monat_cSeptember
-•	SommerferienSH    
-•	SommerferienNRW    
-•	SommerferienNDS           
-•	Feiertag
-•	Ostern
-•	ChristiHimmelfahrt
-•	Pfingsten
-•	TDE
-•	Ostern_ext      
-•	Silvester_ext   
-•	JahreszeitHerbst   
-•	JahreszeitWinter
+*	KielerWoche         
+*	Bewoelkung         
+*	Temperatur 
+*	Wochentag_cFreitag  
+*	Wochentag_cMontag
+*	Wochentag_cSamstag 
+*	Wochentag_cSonntag      
+*	Monat_cAugust     
+*	Monat_cFebruar      
+*	Monat_cJanuar        
+*	Monat_cJuli
+*	Monat_cJuni         
+*	Monat_cMai        
+*	Monat_cMärz    
+*	Monat_cNovember     
+*	Monat_cOktober   
+*	Monat_cSeptember
+*	SommerferienSH    
+*	SommerferienNRW    
+*	SommerferienNDS           
+*	Feiertag
+*	Ostern
+*	ChristiHimmelfahrt
+*	Pfingsten
+*	TDE
+*	Ostern_ext      
+*	Silvester_ext   
+*	JahreszeitHerbst   
+*	JahreszeitWinter
 
 Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
@@ -6426,7 +6430,10 @@ Wir haben jetzt die Gütekennzahlen für sämtliche Warengruppen für verschiede
 * Warengruppe 4: 1 Variablen
 * Warengruppe 5: 8 Variablen.
 
-In Anlehnung an gängiges vorgehen in der Praxis wurde jeweils das einfachste Modell gewählt, also das mit möglichst wenig Variablen. 
+![](Ergebnisvergleich_Lineare_Modelle.png)
+
+
+In Anlehnung an gängiges Vorgehen in der Praxis wurde jeweils das einfachste Modell gewählt, also das mit möglichst wenig Variablen. 
 
 Dann fällt auf, dass die Schätzer für die Warengruppe 1 und 3 offenbar systematisch zu niedrig sind, weil die mittlere relative Abweichung bei -8% liegt. Warengruppe 4 wird dagegen konsequent zu hoch geschätzt. Für die Warengruppen 2 und 5 liegt der Wert näher an Null bzw. ist gleich 0.
 
