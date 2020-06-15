@@ -3944,7 +3944,7 @@ df_lm_test_WG2_24 <-df_lm_test_WG2_24 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG2_24 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best24_WG2")
@@ -4089,7 +4089,7 @@ df_lm_test_WG2_32 <-df_lm_test_WG2_32 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG2_32 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best32_WG2")
@@ -4232,7 +4232,7 @@ df_lm_test_WG2_29 <-df_lm_test_WG2_29 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG2_29 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best29_bss_WG2")
@@ -4283,7 +4283,7 @@ df_lm_test_WG2_29 <-df_lm_test_WG2_29 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG2_29 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best29_back_WG2")
@@ -4655,7 +4655,7 @@ df_lm_test_WG3_20 <-df_lm_test_WG3_20 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG3_20 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best20_WG3")
@@ -4800,7 +4800,7 @@ df_lm_test_WG3_30 <-df_lm_test_WG3_30 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG3_30 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best30_WG3")
@@ -5124,7 +5124,7 @@ df_lm_test_WG4_1 <- df_lm_test_WG4_1 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG4_1 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best1_WG4")
@@ -5248,7 +5248,7 @@ df_lm_test_WG4_11 <- df_lm_test_WG4_11 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG4_11 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best11_WG4")
@@ -5382,7 +5382,7 @@ df_lm_test_WG4_20 <- df_lm_test_WG4_20 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG4_20 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best20_WG4")
@@ -5513,7 +5513,7 @@ df_lm_test_WG4_18 <- df_lm_test_WG4_18 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG4_18 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best18_WG4")
@@ -5641,7 +5641,7 @@ df_lm_test_WG4_15 <- df_lm_test_WG4_15 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG4_15 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best15_WG4")
@@ -5935,7 +5935,7 @@ df_lm_test_WG5_8 <- df_lm_test_WG5_8 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG5_8 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best8_bss_WG5")
@@ -6071,7 +6071,7 @@ df_lm_test_WG5_22 <- df_lm_test_WG5_22 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG5_22 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best22_bss_WG5")
@@ -6212,7 +6212,7 @@ df_lm_test_WG5_27 <- df_lm_test_WG5_27 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG5_27 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best27_bss_WG5")
@@ -6265,7 +6265,7 @@ df_lm_test_WG5_27 <- df_lm_test_WG5_27 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG5_27 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best27_forward_WG5")
@@ -6408,7 +6408,7 @@ df_lm_test_WG5_29 <- df_lm_test_WG5_29 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_lm_test_WG5_29 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "best29_backward_WG5")
@@ -6681,7 +6681,7 @@ hyper_grid %>%
 ##       92	       11	0.01	0.6165628	
 ```
 
-Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.605 gegenüber 0.643).
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.599 gegenüber 0.643).
 
 Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
 
@@ -6720,7 +6720,7 @@ df_dt_test_WG1 <- df_dt_test_WG1 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_dt_test_WG1 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "optimaltree_WG1")
@@ -6853,7 +6853,7 @@ hyper_grid %>%
   top_n(-5, wt = error)
 ```
 
-Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.2711664	 gegenüber 0.2886208).
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.2720379	 gegenüber 0.2886208).
 
 Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
 
@@ -6891,7 +6891,7 @@ df_dt_test_WG2 <- df_dt_test_WG2 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_dt_test_WG2 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "optimaltree_WG2")
@@ -7024,7 +7024,7 @@ hyper_grid %>%
   top_n(-5, wt = error)
 ```
 
-Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.2490572 gegenüber 0.2652715).
+Es ist erkennbar, dass das optimale Modell eine leichte Verbesserung gegenüber unserem früheren Modell darstellt (xerror von 0.2488002 gegenüber 0.2652715).
 
 Wenn die Ergebnisse zufriedenstellend sind, kann dieses endgültige optimale Modell angewendet werden und auf dem Testsatz vorhersagen. 
 
@@ -7062,7 +7062,7 @@ df_dt_test_WG3 <- df_dt_test_WG3 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_dt_test_WG3 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "optimaltree_WG3")
@@ -7233,7 +7233,7 @@ df_dt_test_WG4 <- df_dt_test_WG4 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_dt_test_WG4 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "optimaltree_WG4")
@@ -7404,7 +7404,7 @@ df_dt_test_WG5 <- df_dt_test_WG5 %>%
 # Prognosegüte: mittlere Abweichung, mittlere absolute / relative Abweichung, mittlere quadratische Abweichung
 temp <- df_dt_test_WG5 %>%
   group_by() %>%
-  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
+  summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz), 2), Umsatz_mittel = round(sum(Umsatz)/n(), 2), MAE = round(mean(Abweichung_abs), 2), MPE = round(mean(Abweichung_rel)*100, 2), MAPE = round(mean(Abweichung_rel_abs)*100, 2), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100, 2), MSE = round(mean(Abweichung_quad), 2), RMSE = round(sqrt(mean(Abweichung_quad)), 2), rRMSE = round(RMSE/Umsatz_mittel*100, 2))
 
 # füge das Modell hinzu
 temp <- temp %>% mutate(Modell = "optimaltree_WG5")
