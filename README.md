@@ -1,1 +1,15 @@
-# Application_Project
+# Application_Project FH Kiel in Kooperation mit [Analytix](https://analytix.de/)
+
+In dieser Projektarbeit werden Prognosemodelle zur Schätzung des **täglichen Umsatzes einer Bäckerei** entwickelt. Die Schätzung erfolgt dabei auf Warengruppenebene. 
+
+Als **Datenbasis** stehen die historischen Umsätze für diese Filiale aus den Jahren 2013 - 2019 zur Verfügung. Da die Jahre 2013 und 2019 unvollständig sind, beschränken sich die Analysen auf die Jahre 2015 - 2018. Die Daten aus dem Zeitraum 2015 bis 2017 dienen dabei als Trainingsdaten für die Modelle. Die Prognosegüte wird sodann anhand der 2018er Daten bewertet. Die täglichen Umsätze für fünf Warengruppen sind bekannt: (1) Brot, (2) Brötchen, (3) Croissants, (4) Konditorei und (5) Kuchen.
+
+Neben den Umsatzdaten werden Wetterdaten (Temperatur, Wind und Bewölkung), Veranstaltungsdaten (Kieler Woche) und **weitere Einflussfaktoren** (Feiertage, Ferien) in die Modellierung einbezogen.
+
+Es werden **Modelle insgesamt 5 aus verschiedenen Bereichen** getestet: Naive Modelle, die auf einfache Heuristiken zurück greifen, lineare Regressionsmodelle, Entscheidungsbäume, Support Vector Machines und Multilayer Perceptrons. Als sechstes Modell wird ein Ensemble betrachtet, gebildet aus dem Mittelwert dieser Modelle.
+
+Für die **Bewertung der Modelle** werden drei **Gütekennzahlen** fokussiert: Die mittlere relative Abweichung (MPE), die Anhaltspunkte liefert, ob ein Modell den Umsatz systematisch zu hoch oder zu niedrig schätzt. Solche Abweichungen können jedoch einfach mithilfe eines Offsets korrigiert werden. Ausschlaggebend ist der umsatzgewichtete Absolutwert der relativen Abweichung (WAPE) als Hauptkriterium für die Treffsicherheit eines Schätzers. Und daneben spielt die relative quadratische Abweichung eine Rolle bei der Bewertung der Prognosegüte, die besonders starke Schätzfehler misst und bewertet, die in der Praxis großen Einfluss auf den Gewinn / Verlust der Filiale haben.
+
+Die verschiedenen Modelle schneiden für die einzelnen Warengruppe unterschiedlich ab. Für die Warengruppen 1 und 4 hat das Ensemble die Nase vorn. Aber auch jeweils ein Multilayer Perceptron, ein naives und ein lineares Modell liefert die besten Schätzwerte für die Warengruppen 2, 3 bzw. 5. Es gibt also kein klares **Gewinnermodell**.
+
+Die **besten Ergebnisse** werden für die Warengruppen 2 (Brötchen) und 5 (Kuchen) erzielt, die gleichzeitig die umsatzstärksten Warengruppen darstellen. Bei der Schätzung des täglichen Brötchen-Umsatzes liegen wir mit unseren Modellen im Durchschnitt gut 10% daneben. Das ist unter Berücksichtigung der verwendeten Daten ein sehr gutes Ergebnis. Für die übrigen Warengruppen gibt es noch Verbesserungsbedarf. Möglicherweise kann man insbesondere die komplexen Modelle (Support Vector Machines und Multilayer Perceptrons) noch weiter verfeinern. Dafür fehlt uns jedoch die Erfahrung und hier ging es in erster Linie um die Anwendung dieser Modelle.

@@ -15,7 +15,7 @@ library(e1071) # Wird für Support Vector Machines benötigt
 
 # Management Summary
 
-In dieser Projektarbeit wird ein Prognosemodell entwickelt. Wir wollen damit für eine Bäckereifiliale den **täglichen Umsatz pro Warengruppe** schätzen.
+In dieser Projektarbeit werden Prognosemodelle entwickelt. Wir wollen damit für eine Bäckereifiliale den **täglichen Umsatz pro Warengruppe** schätzen.
 
 Als **Datenbasis** stehen uns die historischen Umsätze für diese Filiale zur Verfügung. Den Zeitraum 2015 bis 2017 nutzen wir als Trainingsdaten für unsere Modelle. Die Prognosegüte bewerten wir dann anhand der 2018er Daten. Wir kennen die täglichen Umsätze für fünf Warengruppen: (1) Brot, (2) Brötchen, (3) Croissants, (4) Konditorei und (5) Kuchen.
 
@@ -35,18 +35,28 @@ Die **besten Ergebnisse** erzielen wir für die Warengruppen 2 (Brötchen) und 5
 Die Bestellung von Bäckereien ist häufig noch ein manueller und zeitaufwändiger Prozess, der auf adjustierten Vorwochenwerten basiert. Eine systematische Planung unter Einbeziehung von Mustern findet nur eingeschränkt statt.
 
 ## 1.2 Zielsetzung 
-Wir testen verschiedene einfache und komplexe Modelle und bedienen uns dabei an Techniken aus dem Bereich Machine Learning und Deep Learning. Möglicherweise finden wir ein Verfahren, dass den anderen überlegen ist und die beste Prognosegüte für alle Warengruppen aufweist. 
+Wir testen verschiedene einfache und komplexe Modelle und bedienen uns dabei an Techniken aus den Bereichen Statistik, Machine Learning und Deep Learning. Möglicherweise finden wir ein Verfahren, dass den anderen überlegen ist und die beste Prognosegüte für alle Warengruppen aufweist. 
 
-Oder es stellt sich heraus, dass das Verhalten der Warengruppen zu unterschiedlich ist und wir verschiedene Techniken für verschiedene Warengruppen benötigen.
+Andererseits kann es sich herausstellen, dass das Verhalten der Warengruppen zu unterschiedlich ist und wir verschiedene Techniken für verschiedene Warengruppen benötigen.
 
-In jedem Fall wird ein Prognosemodell entworfen, das Bäckereien eine bessere Planungsgrundlage auf Warengruppenebene bietet.
+In jedem Fall werden Prognosemodelle entworfen, die Bäckereien eine bessere Planungsgrundlage auf Warengruppenebene bieteen sollen.
 
 **Lösungsansatz**
 
 Mit Hilfe von verschiedenen Daten und Einflussfaktoren sollen die Umsätze je Warengruppe prognostiziert werden. 
 
-*	Umsatzdaten, Wetterdaten, Veranstaltungsdaten
-*	Weitere Einflussfaktoren (Wochentage, Feiertage, Ferien,…)
+*Abhängige / zu prognostizierende Variable:*
+
+*	Umsatzdaten
+
+*Unabhängige / beeinflussende Variablen:*
+
+* Wetterdaten, 
+* Veranstaltungsdaten,
+*	Wochentage, 
+* Feiertage (sowie Feiertage inkl. Brückentage), 
+* Ferienzeiten
+* Jahreszeiten
 
 ## 1.3 Datenbasis
 
@@ -1265,17 +1275,17 @@ Im zweiten Teil betrachten wir die Schätzung mittels eines gleitenden Durchschn
 
 Und schließlich betrachten wir einen gewichteten Mittelwert der Vorwochen (Umsatz_gewMW_4W) als Schätzer. Hierbei gewichten wir den Wert der Vorwoche mit 50%, den Wert zwei Wochen zurück mit 25% und den Wert drei Wochen zurück mit 15% und den Wert vier Wochen zurück mit 10%.
 
-Und dann werfen wir einen Blick auf die Prognose-Güte:
+Dann werfen wir einen Blick auf die Prognose-Güte:
 
 - Anteil an zu hoch / zu niedrig geschätzten Umsätze, ggf. je Warengruppe und/oder Wochentag
 - mittlere Abweichung, mittlere absolute Abweichung, mittlere quadratische Abweichung
 - Standardabweichung, Verteilung der Abweichungen
 
-Wir wollen die naiven Modelle in ihrer Prognose-Güte vergleichen. Und wir prüfen die Top10 stärksten Abweichungen nach oben und nach unten für die verschiedenen Modelle, um rauszufinden, ob es Tage gibt, für die mehrere oder sogar alle naiven Modelle versagen.
+Wir wollen die naiven Modelle in ihrer Prognose-Güte vergleichen. Weiterhin prüfen wir die Top10 stärksten Abweichungen nach oben und nach unten für die verschiedenen Modelle, um rauszufinden, ob es Tage gibt, für die mehrere oder sogar alle naiven Modelle versagen.
 
 ## 5.2 Datenaufbereitung
 
-Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable Umsatz_NA (= TRUE).
+Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeitraum 01.07.2013 bis 31.07.2019 eine Zeile für jedes Datum und jede Warengruppe. In den Rohdaten fehlende Umsätze sind auf Basis der Vorwochenwerte ergänzt worden. Die Zeilen mit ergänzten Umsätzen sind selektierbar über die Variable `Umsatz_NA` (= TRUE).
 
 Zunächst benötigen wir Werte für folgende Attribute, die teilweise schon vorhanden sind und teilweise neu erstellt werden:
 
@@ -2135,11 +2145,11 @@ Nach Warengruppe liefert der gleitende Durchschnitt der letzten 3 Tage die beste
 
 Guckt man sich die Verteilungen nach Warengruppe OHNE Sommerferien und OHNE Feiertage an, erhält man fast identische Ergebnisse.
 
-### Vergleich der Güte-Kennzahlen
+### Vergleich der Gütekennzahlen
 
-Wir wollen nun die ermittelten Güte-Kennzahlen für die verschiedenen naiven Modelle verfeinern und zusammen bringen. Dafür erstellen wir eine Vergleichstabelle (prog_naiv_vgl_kennz), die die Kennzahlen je Modell für 2018 enthält. Im ersten Schritt betrachten wir nur die Gesamtgüte für die 5 Modelle und trennen erst später nach Warengruppen und Wochentagen.
+Wir wollen nun die ermittelten Gütekennzahlen für die verschiedenen naiven Modelle verfeinern und zusammen bringen. Dafür erstellen wir eine Vergleichstabelle (prog_naiv_vgl_kennz), die die Kennzahlen je Modell für 2018 enthält. Im ersten Schritt betrachten wir nur die Gesamtgüte für die 5 Modelle und trennen erst später nach Warengruppen und Wochentagen.
 
-Wir möchten nun folgende Güte-Kennzahlen für die Umsatzschätzung vergleichen:
+Wir möchten nun folgende Gütekennzahlen für die Umsatzschätzung vergleichen:
 
 - mittlere absolute Abweichung (MAE)
 - mittlere relative Abweichung (MPE)
@@ -2275,7 +2285,7 @@ temp <- prog_naiv_glDS_4T_erw %>%
 temp
 ```
 
-Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Und das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt mit 11 den niedrigsten Wert. Auch der Wert für rRMSE ist deutlich niedriger als für die übrigen Warengruppen, es liegen also weniger starke Abweichungen der Schätzwerte vom tatsächlichen Umsatz vor.
+Wenn wir uns das Modell (glDS_4T_erw) genauer angucken, sehen wir, dass die Schätzung für die Warengruppe 2 (Brötchen) am besten funktioniert. Der Mittelwert der relativen Abweichung (MPE) liegt nahe Null. Das gewichtete Mittel des Absolutwerts der relativen Abweichung (WAPE) zeigt mit 11 den niedrigsten Wert. Auch der Wert für rRMSE ist deutlich niedriger als für die übrigen Warengruppen, es liegen also weniger starke Abweichungen der Schätzwerte vom tatsächlichen Umsatz vor.
 
 Auch für Warengruppe 5 (Kuchen) liefert das Modell offenbar gute Schätzungen. Auffällig ist jedoch, dass die mittlere quadratische Abweichung (MSE) deutlich höher ist, als für die anderen Warengruppen. Das liegt am Schätzfehler für Silvester: Wie wir bereits gesehen hatten, haben wir in der Warengruppe auffällig hohen Umsatz durch den Berlinerverkauf.
 
@@ -2491,7 +2501,7 @@ Und auch hier ist die Erklärung für den zu niedrig geschätzten Umsatz ein Fei
 
 ### Fazit naive Modelle
 
-Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Basis der jüngeren Vergangenheit schätzen. Stärkere Umsätze an oder vor Feiertagen werden nicht vorhergesagt. Und die Umsätze nach Feiertagen werden entsprechend zu hoch geschätzt.
+Wir stellen also insgesamt fest, dass unsere naiven Modelle die Umsätze auf Basis der jüngeren Vergangenheit schätzen. Stärkere Umsätze an oder vor Feiertagen werden nicht vorhergesagt und die Umsätze nach Feiertagen werden entsprechend zu hoch geschätzt.
 
 Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsätze für Feiertage auf Basis der Vorjahreswerte schätzen. Das funktioniert naiv aber nur für Feiertage, die an festen Daten liegen, wie bspw. Silvester. Für Ostern funktioniert dieses naive Vorgehen nicht. Wir verzichten auf diese Modellerweiterung und widmen uns stattdessen im Folgenden statistischen Modellen und betrachten Machine Learning und Deep Learning Modelle.
 
@@ -2500,9 +2510,9 @@ Eine Verbesserung der naiven Modelle könnten wir erzielen, indem wir die Umsät
 ## 6.1 Vorhaben
 In einem nächsten Schritt wird mit der linearen Regression ein traditionelles statistisches Modell zur Prognose der Bäckereiumsätze eingesetzt. Die lineare Regression ist ein sehr einfacher Ansatz für das sog. "überwachte Lernen" (supervised learning). Lineare Regressionsmodelle sind insbesondere ein nützliches Werkzeug zur Vorhersage einer quantitativen Output-Variable, die in diesem Fall dem Umsatz pro Tag entspricht. Auch wenn die lineare Regression im Vergleich modernen statistischen Lernmethoden ein vergleichsweise einfaches Modell ist, ist sie immer noch weit verbreitet. Überdies dient sie als guter Ausgangspunkt für neuere Ansätze: viele neuere statistische Lernansätze können als Generalisierung oder Erweiterung der linearen Regression betrachtet werden.
 
-Im Allgemeinen ist bei der linearen Regression zwischen der einfachen und der multiplen Regression zu unterscheiden. Während im ersten Fall nur eine einzelne Variable als Vorhersageparameter für die abhängige Variable betrachtet wird, werden bei der multiplen linearen Regression mehrere Input-Variablen in das Modell einbezogen. Da hinsichtlich der beeinflussenden Variablen Unterschiede bei den einzelnen Warengruppen zu erwarten sind, werden die Warengruppen isoliert betrachtet. Das heißt, für jede Warengruppe werden unterschiedliche Modelle angwendet und verglichen.  
+Im Allgemeinen ist bei der linearen Regression zwischen der einfachen und der multiplen Regression zu unterscheiden. Während im ersten Fall nur eine einzelne Variable als Vorhersageparameter für die abhängige Variable betrachtet wird, werden bei der multiplen linearen Regression mehrere Input-Variablen in das Modell einbezogen. Da hinsichtlich der beeinflussenden Variablen Unterschiede bei den einzelnen Warengruppen zu erwarten sind, werden die Warengruppen isoliert betrachtet. Das heißt, für jede Warengruppe werden unterschiedliche Modelle angewendet und verglichen.  
 
-Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt werden mittels sog. *best subset selection* und *stepwise selection* die in das Modell aufzunehmenden Variablen bestimmt und auf dieser Grundlage dann ein Regressionsmodell erstellt.
+Insgesamt wird Vorgehen wird in mehreren Stufen untergliedert: Zunächst wird auf Basis des allumfassenden Datensatzes `df_voll` ein Datensatz für die Anwendung der linearen Modelle (`df_lm`) erstellt und dieser sodann in einen Trainings- und einen Testdatensatz aufgeteilt. In einem nächsten Schritt werden mittels sog. *best subset selection* und *stepwise selection* die in das Modell aufzunehmenden Variablen bestimmt und auf dieser Grundlage dann Regressionsmodelle erstellt.
 
 ## 6.2 Datenaufbereitung
 
@@ -2510,7 +2520,7 @@ Wir arbeiten mit dem vollständigen Datensatz `df_voll`. Dieser enthält im Zeit
 
 Für unser Vorhaben beschränken wir uns auf die in den Rohdaten vorhandenen Umsätze (Umsatz_NA = FALSE). Und wir schränken die Trainingsdaten später auf den Zeitraum 2015 bis 2017 ein, weil wir oben gesehen hatten, dass die Umsätze in 2014 systematisch höher liegen als in den folgenden Jahren. Die Umsätze des Jahres 2018 dienen uns dann als Testdaten.
 
-Wir erstellen für diesen Abschnitt einen Arbeitsdatensatz `df_lm` auf Basis von `df_voll`. Die nicht benötigten Umsatz-Spalten (Umsatz_NA sowie die Umsatz_lag Variablen) werden etfernt. Weiterhin werden Redundanzen entfernt: der Datensatz enthält sowohl für die Monate als auch für die Wochentage jeweils eine numerische und eine character-Variable. Die numerischen sind für die linearen Modelle unbrauchbar, da dann den eigentlich nominalen Variablen Zahlenwerte zugeordnet würden, die im Rahmen der linearen Modelle auch interpretiert würden. Das würde dazu führen, dass bspw. der Dezember 12x so hoch wie der Januar ist. Insofern werden die numerischen Variablen für Monnat und Wochentag entfernt.
+Wir erstellen für diesen Abschnitt einen Arbeitsdatensatz `df_lm` auf Basis von `df_voll`. Die nicht benötigten Umsatz-Spalten (Umsatz_NA sowie die Umsatz_lag Variablen) werden entfernt. Weiterhin werden Redundanzen eliminiert: der Datensatz enthält sowohl für die Monate als auch für die Wochentage jeweils eine numerische und eine character-Variable. Die numerischen sind für die linearen Modelle unbrauchbar, da dann den eigentlich nominalen Variablen Zahlenwerte zugeordnet würden, die im Rahmen der linearen Modelle auch interpretiert würden. Das würde dazu führen, dass bspw. der Dezember 12x so hoch / stark wie der Januar bewertet wird. Insofern werden die numerischen Variablen für Monat und Wochentag entfernt.
 
 ```{r}
 df_lm <- df_voll %>%
@@ -2577,7 +2587,7 @@ data.frame(
 )
 ```
 
-Der R^2-Wert ist mit 0.152 noch vglw. niedrig; der RMSE beträgt über alle Warengruppen 125.9.
+Der $R^2$-Wert ist mit 0.152 noch vglw. niedrig; der $RMSE$ beträgt über alle Warengruppen 125.9.
 
 **Überprüfung auf Multikollinearität**
 
@@ -2664,7 +2674,7 @@ df_lm_test_WG1 <- df_lm_test_WG1 %>% dplyr::select(-Warengruppe)
 
 **Beste Teilmengenauswahl ("Best subset selection")**
 
-Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Kombination der p-Prädiktoren eine separate Regression der kleinsten Quadrate an. Das heißt, wir passen alle p-Modelle an, die genau einen Prädiktor enthalten, alle $(p_2) = p (p - 1) / 2$-Modelle, die genau zwei Prädiktoren enthalten, und so weiter. Wir betrachten dann alle resultierenden Modelle mit dem Ziel, das beste zu identifizieren.
+Um die beste Teilmengenauswahl durchzuführen, passen wir für jede mögliche Kombination der $p$ Prädiktoren eine separate Regression der kleinsten Quadrate an. Das heißt, wir passen alle $p$-Modelle an, die genau einen Prädiktor enthalten, alle $\binom{p}{2} = p (p - 1) / 2$-Modelle, die genau zwei Prädiktoren enthalten, und so weiter. Wir betrachten dann alle resultierenden Modelle mit dem Ziel, das beste zu identifizieren.
 
 Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfasst:
 
@@ -2672,18 +2682,18 @@ Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfas
 
 **Schritt 2**: Für $k = 1,2,… p$:
 
-* Passe alle ($p_k$) Modelle an, die genau $k$ Prädiktoren enthalten.
-* Wähle die besten unter diesen ($p_k$) Modelle, und nenne es $M_k$. Hier wird "beste Modelle" in der Form definiert, dass diese die kleinsten RSS oder äquivalent die größten $R^2$ haben.
+* Passe alle $\binom{p}{k}$ Modelle an, die genau $k$ Prädiktoren enthalten.
+* Wähle die besten unter diesen $\binom{p}{k}$ Modelle, und nenne es $M_{k}$. Hier wird "beste Modelle" in der Form definiert, dass diese die kleinsten RSS (residual sum of squares, Quadratssumme der Residuen) oder äquivalent die größten $R^2$-Werte haben.
 
 **Schritt 3**: Wähle aus $M_0, .. , M_p$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers (cross validated prediction error), $Cp$, $AIC$, $BIC$ oder adjustiertem $R^2$.
 
-Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 36 Variablen.
+Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 37 Variablen.
 
 ```{r}
 best_subset_WG1 <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 37)
 ```
 
-Die `regsubsets`-Funktion gibt ein Listenobjekt mit vielen Informationen zurück. Zunächst kann der Befehl `summary` verwendet, um den besten Satz von Variablen für jede Modellgröße zu ermitteln.
+Die `regsubsets`-Funktion gibt ein Listenobjekt mit vielen Informationen zurück. Zunächst kann der Befehl `summary` verwendet werden, um den besten Satz von Variablen für jede Modellgröße zu ermitteln.
 
 ```{r}
 summary(best_subset_WG1)
@@ -2691,12 +2701,12 @@ summary(best_subset_WG1)
 
 Für ein Modell mit einer Variablen kann beobachtet werden, dass die erzeugte Dummy-Variable `Wochentag_cSonntag` ein Sternchen hat, was signalisiert, dass ein Regressionsmodell mit `Umsatz` ~ `Wochentag_cSonntag` das beste Einzelvariablenmodell ist.  Das beste 2-Variablen-Modell ist `Umsatz` ~ `Wochentag_cSonntag` + `SommerferienSH`. Das beste 3-Variablen-Modell ist `Umsatz` ~ `Wochentag_cSonntag` + `Ostern` + `Ostern_ext`. Und so weiter.
 
-Man kann auch $RSS$, $R^2$, adjustiertes $R^2$, $C_p$ und $BIC$ aus den Ergebnissen abrufen, um das beste Gesamtmodell zu bewerten.
+Man kann auch $RSS$, $R^2$, adjustiertes $R^2$, $C_{p}$ und $BIC$ aus den Ergebnissen abrufen, um das beste Gesamtmodell zu bewerten.
 Dies wird jedoch im Abschnitt zum Vergleichen von Modellen veranschaulicht. Schauen wir uns zunächst an, wie die schrittweise Auswahl durchgeführt wird.
 
 **Schrittweise Auswahl ("Stepwise selection")**
 
-Aus rechnerischen Gründen kann die beste Teilmengenauswahl nicht angewendet werden, wenn die Anzahl der $p$ Prädiktorvariablen groß ist. Die Auswahl der besten Teilmenge kann auch unter statistischen Problemen leiden, wenn $p$ groß ist. Je größer der Suchraum ist, desto höher ist die Wahrscheinlichkeit, Modelle zu finden, die in den Trainingsdaten gut aussehen, auch wenn sie möglicherweise keine Vorhersagekraft für zukünftige Daten haben. Ein enormer Suchraum kann daher zu einer Überanpassung und einer hohen Varianz der Koeffizientenschätzungen führen. Aus diesen beiden Gründen sind schrittweise Methoden, die einen weitaus eingeschränkteren Satz von Modellen untersuchen, attraktive Alternativen zur Auswahl der besten Teilmenge.
+Aus rechnerischen Gründen kann die beste Teilmengenauswahl nicht angewendet werden, wenn die Anzahl der $p$ Prädiktorvariablen groß ist. Die Auswahl der besten Teilmenge kann auch unter statistischen Problemen leiden, wenn $p$ groß ist. Je größer der Suchraum ist, desto höher ist die Wahrscheinlichkeit, Modelle zu finden, die auf den Trainingsdaten gut performen, auch wenn sie möglicherweise keine Vorhersagekraft für zukünftige Daten haben. Ein enormer Suchraum kann daher zu einer Überanpassung und einer hohen Varianz der Koeffizientenschätzungen führen. Aus diesen beiden Gründen sind schrittweise Methoden, die einen weitaus eingeschränkteren Satz von Modellen untersuchen, attraktive Alternativen zur Auswahl der besten Teilmenge.
 
 *Vorwärtsauswahl*
 
@@ -2704,14 +2714,14 @@ Die *schrittweise Vorwärtsauswahl* beginnt mit einem Modell, das keine Prädikt
 
 Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
 
-**Schritt 1**: Bezeichne $M_0$ das Nullmodell, das keine Prädiktoren enthält. Dieses Modell sagt einfach den Stichprobenmittelwert für jede Beobachtung voraus.
+**Schritt 1**: Bezeichne $M_{0}$ das Nullmodell, das keine Prädiktoren enthält. Dieses Modell sagt einfach den Stichprobenmittelwert für jede Beobachtung voraus.
 
 **Schritt 2**: Für $k = 0,…, p - 1$:
 
-* Betrachte alle $p - k$- Modelle, die die Prädiktoren in $M_k$ mit einem zusätzlichen Prädiktor erweitern. 
-* Wähle das beste unter diesen $p - k$-Modellen aus und nenne es $M_\(k_+_1)$. Hier wird das beste Modell als das mit dem kleinsten $RSS$ oder dem höchstes $R^2$ definiert.
+* Betrachte alle $p - k$- Modelle, die die Prädiktoren in $M_{k}$ mit einem zusätzlichen Prädiktor erweitern. 
+* Wähle das beste unter diesen $p - k$-Modellen aus und nenne es $M_{k+1}$. Hier wird das beste Modell als das mit dem kleinsten $RSS$ oder dem höchstes $R^2$ definiert.
 
-**Schritt 3**: Wähle aus $M_0,..., M_p$ unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_p$, $AIC$, $BIC$ oder dem adjustierten $R^2$ ein einzelnes bestes Modell aus.
+**Schritt 3**: Wähle aus $M_{0},..., M_{p}$ unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_{p}$, $AIC$, $BIC$ oder dem adjustierten $R^2$ ein einzelnes bestes Modell aus.
 
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
@@ -2722,19 +2732,19 @@ forward <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 37, method = "forward
 
 *Schrittweise rückwärts (Backward stepwise)*
 
-Die *schrittweise Rückwärtsauswahl* bietet eine effiziente Alternative zur Auswahl der besten Teilmenge. Im Gegensatz zur schrittweisen Vorwärtsauswahl beginnt sie jedoch mit dem vollständigen Modell der kleinsten Quadrate, das alle $p$ Prädiktoren enthält und entfernt dann iterativ den am wenigsten nützlichen Prädiktor nacheinander.
+Die *schrittweise Rückwärtsauswahl* bietet eine effiziente Alternative zur Auswahl der besten Teilmenge. Im Gegensatz zur schrittweisen Vorwärtsauswahl beginnt sie jedoch mit dem vollständigen Modell der kleinsten Quadrate, das alle $p$ Prädiktoren enthält, und entfernt dann nacheinander iterativ den am wenigsten nützlichen Prädiktor. 
 
 Der dreistufige Prozess der schrittweisen Vorauswahl umfasst:
 
-*Schritt 1**: Bezeichne $M_p$ das vollständige Modell, das alle p Prädiktoren enthält.
+**Schritt 1**: Bezeichne $M_p$ das vollständige Modell, das alle p Prädiktoren enthält.
 
-*Schritt 2:** Für $k = p, p - 1,..., 1$
+**Schritt 2:** Für $k = p, p - 1,..., 1$
 
-* Betrachte alle $k$ Modelle, die alle bis auf einen der Prädiktoren in $M_k$ enthalten für insgesamt $k - 1$ Prädiktoren.
+* Betrachte alle $k$ Modelle, die alle bis auf einen der Prädiktoren in $M_{k}$ enthalten für insgesamt $k - 1$ Prädiktoren.
 
-* Wähle das beste unter den $k$ Modellen aus und nenne es $M_k_1$. Hier wird das beste Modell als das mit den kleinsten $RSS$ oder den höchsten $R^2$ definiert.
+* Wähle das beste unter den $k$ Modellen aus und nenne es $M_{k-1}$. Hier wird das beste Modell als das mit den kleinsten $RSS$ oder den höchsten $R^2$ definiert.
 
-*Schritt 3**: Wähle aus $M_0,…, Mp$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_p$, $AIC$, $BIC$ oder adjustiertem $R^2$.
+**Schritt 3**: Wähle aus $M_{0},…, M_{p}$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers, $C_{p}$, $AIC$, $BIC$ oder adjustiertem $R^2$.
 
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "backward"` gesetzt wird:
 
@@ -2754,16 +2764,15 @@ Um das beste Modell in Bezug auf den Testfehler auszuwählen, müssen wir diesen
 
 Wir betrachten im Folgenden beide Ansätze.
 
+### Indirekte Schätzung des Testfehlers mit $C_{p}$, $AIC$, $BIC$ und adjustiertem $R^2$
 
-### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
-
-Bei der Durchführung der Ansätze "beste Teilmenge" oder schrittweisen Annäherung werden die ausgewählten Modelle $M_0,…, M_p$ basierend auf der Tatsache ausgewählt, dass sie den mittleren quadratischen Fehler (MSE) des Trainingssatzes minimieren. Aus diesem Grund und aufgrund der Tatsache, dass die Verwendung der Trainings-$MSE$ und $R^2$ unsere Ergebnisse beeinflusst, sollten wir diese Statistiken nicht verwenden, um zu bestimmen, welche der $M0,…, Mp$ Modelle "das Beste" ist.
+Bei der Durchführung der Ansätze "beste Teilmenge" oder schrittweisen Annäherung werden die ausgewählten Modelle $M_0,…, M_p$ basierend auf der Tatsache ausgewählt, dass sie den mittleren quadratischen Fehler (MSE) des Trainingssatzes minimieren. Aus diesem Grund und aufgrund der Tatsache, dass die Verwendung der Trainings-$MSE$ und $R^2$ unsere Ergebnisse beeinflusst, sollten wir diese Statistiken nicht verwenden, um zu bestimmen, welche der $M_0,…, M_p$ Modelle "das Beste" ist.
 
 Es stehen jedoch eine Reihe von Techniken zum Anpassen des Trainingsfehlers an die Modellgröße zur Verfügung. Diese Ansätze können verwendet werden, um aus einer Reihe von Modellen mit unterschiedlicher Anzahl von Variablen auszuwählen. Diese beinhalten:
 
 ![](Guetekriterien_lm.png)
 
-Dabei ist $d$ die Anzahl der Prädiktoren und $s2$ eine Schätzung der Varianz des Fehlers ($?$)) mit jeder Antwortmessung in einem Regressionsmodell verbunden. Jede dieser Statistiken fügt dem Trainings-$RSS$ eine Strafe hinzu, um die Tatsache auszugleichen, dass der Trainingsfehler dazu neigt, den Testfehler zu unterschätzen. Die Strafe steigt eindeutig mit zunehmender Anzahl von Prädiktoren im Modell.
+Dabei ist $d$ die Anzahl der Prädiktoren und $\sigma^2$ eine Schätzung der Varianz des Fehlers ($\epsilon$)) mit jeder Antwortmessung in einem Regressionsmodell verbunden. Jede dieser Statistiken fügt dem Trainings-$RSS$ eine Strafe hinzu, um die Tatsache auszugleichen, dass der Trainingsfehler dazu neigt, den Testfehler zu unterschätzen. Die Strafe steigt eindeutig mit zunehmender Anzahl von Prädiktoren im Modell.
 
 Daher liefern diese Statistiken eine unvoreingenommene Schätzung der Test-MSE. Wenn wir unser Modell unter Verwendung eines Trainings- / Testvalidierungsansatzes durchführen, können wir diese Statistiken verwenden, um das bevorzugte Modell zu bestimmen. Diese Statistiken sind in der Ausgabe der Funktion `regsubsets` enthalten. 
 
@@ -2790,7 +2799,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 30-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 21-Variablenmodell vor und der $C_p$ das 27-Variablen-Modell vor.
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 30-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 21-Variablenmodell vor und der $C_{p}$ das 27-Variablen-Modell vor.
 
 Die Variablen und Koeffizienten, die diese Modelle enthalten, können mittels der `coef`-Funktion verglichen werden:
 ```{r}
@@ -2906,9 +2915,9 @@ which.min(summary(forward)$cp)
 which.min(summary(backward)$cp)
 ```
 
-Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 31-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 27-Variablen-Modell vor, ähnlich dem oben beschriebenen besten Teilmengenansatz.
+Wenn man das optimale $C_{p}$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 31-Variablen-Modell die $C_{p}$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 27-Variablen-Modell vor, ähnlich dem oben beschriebenen besten Teilmengenansatz.
 
-Vergleicht man, das 27-Variablen-backward-Modell mit dem 27-Variablen-Modell der "best subset selection", wird erkennbar, dass die Modelle zwar viele gemeinsame Prädiktoren (23) aufnehmen, dass es jedoch auch Abweichungen bzw. Unterschiede gibt:
+Ein Vergleich des 27-Variablen-backward-Modell mit dem 27-Variablen-Modell der "best subset selection" ergibt Folgendes:
 
 
 ```{r}
@@ -2943,7 +2952,7 @@ coef(backward, 27)
 * JahreszeitHerbst
 * JahreszeitSommer
 
-Beide Verfahren schlagen dieselben Variablen für die Aufnahme in ein Rgeressionsmodell vor.
+Beide Verfahren schlagen dieselben Variablen für die Aufnahme in ein Regressionsmodell vor.
 
 
 Betrachtet man das 31-Variablen-Modell der forward stepwise-Methode, ergibt sich folgendes Bild:
@@ -2985,8 +2994,6 @@ coef(forward, 31)
 
 Vergleicht man die Koeffizienten wiederum mit 30-Variablen-Modell der best subset selection, stimmen all Variablen überein; beim 31-Variablen-Modell wird weiterhin die Variable `Silvester_ext` einbezogen.
 
-> Auffällig ist, dass sowohl beim Vergleich der 27-Modelle als auch beim Vergleich der 30-/31-Variablen-Modelle in der best subset selection jeweils die beiden Variablen `Datum` und `Jahr` aufgenommen werden und sowohl die backward- als auch die forward-Methode dazu tendieren weitere Monate (ins. November und Dezember) aufzunehmen sowie der SommerferienHE-Variable und Silvester_ext mehr Relevanz beizumessen. 
-
 ### Direkte Schätzung des Testfehlers
 
 Nun wird der Fehler der Testdaten für das beste Modell jeder Modellgröße berechnet. Zuerst wird eine Modellmatrix aus den Testdaten erstellt. Die Funktion `model.matrix` wird in vielen Regressionspaketen zum Erstellen einer X-Matrix aus Daten verwendet.
@@ -3013,7 +3020,7 @@ as.matrix(validation_errors)
 plot(validation_errors, type = "b")
 
 #############################
-# Alternative: http://www.science.smith.edu/~jcrouser/SDS293/labs/lab9-r.html
+# Alternative nach http://www.science.smith.edu/~jcrouser/SDS293/labs/lab9-r.html
 val_errors = rep(NA,37)
 
 # Iterationen über jede Größe i
@@ -3074,7 +3081,7 @@ Die 27 Variablen gemäß best subset selection sind die folgenden:
 * JahreszeitHerbst
 * JahreszeitSommer
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -3223,7 +3230,7 @@ Die 31 Variablen gemäß best subset selection sind die folgenden:
 * JahreszeitHerbst
 * JahreszeitSommer
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -3360,7 +3367,7 @@ Die 21 Variablen gemäß best subset selection sind die folgenden:
 * Pfingsten_ext 
 * JahreszeitHerbst
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -3579,7 +3586,6 @@ df_lm_test_WG2 <- df_lm_test_WG2 %>% dplyr::select(-Warengruppe)
 Was die Vorgehensweise und die enstsprechenden Erläuterungen anbelangt, siehe 6.3.1.
 
 **Beste Teilmengenauswahl ("Best subset selection")**
-vgl. Abschnitt
 
 ```{r}
 best_subset_WG2 <- regsubsets(Umsatz ~ ., df_lm_train_WG2, nvmax = 37)
@@ -3594,6 +3600,8 @@ summary(best_subset_WG2)
 Für ein Modell mit einer Variablen kann beobachtet werden, dass die erzeugte Dummy-Variable `Sommer` ein Sternchen hat, was signalisiert, dass ein Regressionsmodell mit `Umsatz` ~ `Sommer` das beste Einzelvariablenmodell ist.  Das beste 2-Variablen-Modell ist `Umsatz` ~ `Sommer + Wochentag_cSonntag`. Das beste 3-Variablen-Modell ist `Umsatz` ~ `Sommer + Wochentag_cSonntag + Wochentag_cSamstag`. Das beste 4-Variablen-Modell ist interessant: `Umsatz` ~ `Wochentag_cSonntag` + `Wochentag_cSamstag` + `SommerferienNRW` + `Temperatur`. Die Variable `Sommer` taucht in diesem Modell nicht mehr auf; allerdings wird diese indirekt einbezogen, da sowohl die Tempertaur als auch die Sommerferien NRW mit dem Sommer verknüpft sind.
 
 **Schrittweise Auswahl ("Stepwise selection")**
+
+*Schrittweise vorwärts (Forward stepwise)*
 
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
@@ -3613,7 +3621,7 @@ backward <- regsubsets(Umsatz ~ ., df_lm_train_WG2, nvmax = 37, method = "backwa
 
 **Modellauswahl**
 
-### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
+### Indirekte Schätzung des Testfehlers mit $C_{p}$, $AIC$, $BIC$ und adjustiertem $R^2$
 
 ```{r}
 results <- summary(best_subset_WG2)
@@ -3636,7 +3644,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 32-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 23-Variablenmodell vor und der $C_p$ das 29-Variablen-Modell vor.
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 32-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 23-Variablenmodell vor und der $C_{p}$ das 29-Variablen-Modell vor.
 
 Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
@@ -3648,7 +3656,7 @@ which.min(summary(forward)$cp)
 which.min(summary(backward)$cp)
 ```
 
-Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 31-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 29-Variablen-Modell vor.
+Wenn man das optimale $C_{p}$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 31-Variablen-Modell die $C_{p}$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 29-Variablen-Modell vor.
 
 Wenn wir die Koeffizienten dieser Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren folgendes Bild: 
 ```{r}
@@ -3745,15 +3753,24 @@ coef(forward, 31)
 coef(backward, 29)
 ```
 
-Ein Vergleich des best subset 29-Variablen-Modell mit dem backward selection 29-Variablen-Modell ergibt folgendes:
+Vergleicht man, das 29-Variablen-Modell der best subset selection mit dem 27-Variablen-Modell der backward selection wird erkennbar, dass die Modelle zwar viele gemeinsame Prädiktoren (24) aufnehmen, dass es jedoch auch deutliche Abweichungen bzw. Unterschiede gibt:
 
 ![](LM_ModellVergleichWG2_29VariablenModelle.png)
+
+Während in der best subset selection ein Wochentag (Mittwoch), ein Monat (Februar), Ostern und zwei Jahreszeiten (Sommer, Winter) einbezogen werden, sollten nach der backward selection die Temperatur, zwei Wochentage (Donnerstag und Montag) sowie zwei Monate (Januar, März) in das Modell aufgenommen werden.
 
 Ein Vergleich des best subset 32-Variablen-Modell mit dem backward selection 31-Variablen-Modell nach forward selection ergibt folgendes:
 
 ![](LM_ModellVergleichWG2_31_32VariablenModell.png)
 
-Die beiden Modelle unterscheiden sich nur marginal.
+Die beiden Modelle unterscheiden sich zwar nur marginal, aber auch hier gibt es Unterschiede zwischen der best subset selection und der stepwise selection.
+
+Diese Ergebnisse unterstreicht zwei wichtige Erkenntnisse:
+
+* Unterschiedliche Teilmengenverfahren (beste Teilmenge vs. schrittweise vorwärts oder rückwärts schrittweise) identifizieren durchaus nicht selten unterschiedliche „beste“ Modelle.
+* Unterschiedliche Statistiken zur indirekten Fehlertestschätzung ($C_p$, $AIC$, $BIC$ und $Adjusted$ $R^2$) indentifizieren verschiedene „beste“ Modelle.
+
+Aus diesem Grund ist es wichtig, immer eine Validierung durchzuführen. Dies bedeutet, dass der Testfehler immer direkt geschätzt werden sollte, entweder mithilfe eines Validierungssatzes oder mithilfe einer Kreuzvalidierung.
 
 ### Direkte Schätzung des Testfehlers
 
@@ -3767,22 +3784,8 @@ Jetzt kann jede Modellgröße (d.h. 1 Variable, 2 Variablen,..., 20 Variablen) d
 
 ```{r}
 # Erstellen eines leeren Vektors, um diesen nachfolgend mit den Fehlerwerten zu füllen
-validation_errors <- vector("double", length = 37)
 
-for(i in 1:37) {
-  coef_x <- coef(best_subset_WG2, id = i)                     # extract coefficients for model size i
-  pred_x <- test_m[ , names(coef_x)] %*% coef_x           # predict salary using matrix algebra
-  validation_errors[i] <- mean((df_lm_test_WG2$Umsatz - pred_x)^2)  # compute test error btwn actual & predicted salary
-}
-
-as.matrix(validation_errors)
-
-# Plotten der validation errors
-plot(validation_errors, type = "b")
-
-#############################
-# Alternative: http://www.science.smith.edu/~jcrouser/SDS293/labs/lab9-r.html
-val_errors = rep(NA,37)
+val_errors = rep(NA, 37)
 
 # Iterationen über jede Größe i
 for(i in 1:37){
@@ -3845,7 +3848,7 @@ Die 24 Variablen sind die folgenden:
 * Silvester_ext
 * JahreszeitHerbst
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -3991,7 +3994,7 @@ Die 32 Variablen sind die folgenden:
 * JahreszeitSommer
 * JahreszeitWinter
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -4134,7 +4137,7 @@ Die 29 Variablen nach **best subset selection** sind die folgenden:
 *	JahreszeitSommer
 *	JahreszeitWinter
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -4342,7 +4345,6 @@ df_lm_test_WG3 <- df_lm_test_WG3 %>% dplyr::select(-Warengruppe)
 Was die Vorgehensweise und die enstsprechenden Erläuterungen anbelangt, siehe 6.3.1.
 
 **Beste Teilmengenauswahl ("Best subset selection")**
-vgl. Abschnitt
 
 ```{r}
 best_subset_WG3 <- regsubsets(Umsatz ~ ., df_lm_train_WG3, nvmax = 37)
@@ -4358,7 +4360,7 @@ Für ein Modell mit einer Variablen kann beobachtet werden, dass die erzeugte Du
 
 **Modellauswahl**
 
-### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
+### Indirekte Schätzung des Testfehlers mit $C_{p}$, $AIC$, $BIC$ und adjustiertem $R^2$
 
 ```{r}
 results <- summary(best_subset_WG3)
@@ -4381,7 +4383,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 30-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 20-Variablenmodell vor und der $C_p$ das 28-Variablen-Modell vor.
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass das 30-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt das 20-Variablenmodell vor und der $C_{p}$ das 28-Variablen-Modell vor.
 
 Der gleiche Prozess kann durch schrittweise Vorwärts- und Rückwärtsauswahl durchgeführt werden, um noch mehr Optionen für optimale Modelle zu erhalten:
 ```{r}
@@ -4393,7 +4395,7 @@ which.min(summary(forward)$cp)
 which.min(summary(backward)$cp)
 ```
 
-Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 29-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 28-Variablen-Modell vor.
+Wenn man das optimale $C_{p}$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 29-Variablen-Modell die $C_{p}$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 28-Variablen-Modell vor.
 
 Wenn wir die Koeffizienten dieser Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren folgendes Bild: 
 ```{r}
@@ -4556,7 +4558,7 @@ Die 20 Variablen sind die folgenden:
 * Pfingsten_ext
 * JahreszeitHerbst
 
-Die Variablen Wochentag_c, Monat und Jahreszeit müssen noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat` und `Jahreszeit` müssen noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -4701,7 +4703,7 @@ Die 30 Variablen sind die folgenden:
 * JahreszeitWinter
 
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -4865,7 +4867,6 @@ df_lm_test_WG4 <- df_lm_test_WG4 %>% dplyr::select(-Warengruppe)
 Was die Vorgehensweise und die enstsprechenden Erläuterungen anbelangt, siehe 6.3.1.
 
 **Beste Teilmengenauswahl ("Best subset selection")**
-vgl. Abschnitt
 
 ```{r}
 best_subset_WG4 <- regsubsets(Umsatz ~ ., df_lm_train_WG4, nvmax = 37)
@@ -4880,6 +4881,8 @@ summary(best_subset_WG4)
 Für ein Modell mit einer Variablen kann beobachtet werden, dass die Variable `Wochentag_cSonntag` ein Sternchen hat, was signalisiert, dass ein Regressionsmodell mit `Umsatz ~ Wochentag_cSonntag` das beste Einzelvariablenmodell ist. Das beste 2-Variablen-Modell ist `Umsatz` ~ `Wochentag_cSonntag + Monat_cFebruar`. Das beste 3-Variablen-Modell ist `Umsatz` ~ `Wochentag_cSonntag + Monat_cFebruar + Feiertag`. Und so weiter.
 
 **Schrittweise Auswahl ("Stepwise selection")**
+
+*Schrittweise vorwärts (Forward stepwise)*
 
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
@@ -4899,7 +4902,7 @@ backward <- regsubsets(Umsatz ~ ., df_lm_train_WG4, nvmax = 37, method = "backwa
 
 **Modellauswahl**
 
-### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
+### Indirekte Schätzung des Testfehlers mit $C_{p}$, $AIC$, $BIC$ und adjustiertem $R^2$
 
 ```{r}
 results <- summary(best_subset_WG4)
@@ -4922,7 +4925,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 20-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 11-Variablenmodell vor und der $C_p$ ein 14-Variablen-Modell vor.
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 20-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 11-Variablenmodell vor und der $C_{p}$ ein 14-Variablen-Modell vor.
 
 Das Ergebnis wird verglichen mit der Auswahl nach forward und backward selection:
 ```{r}
@@ -4931,7 +4934,7 @@ which.min(summary(forward)$cp)
 which.min(summary(backward)$cp)
 ```
 
-Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 18-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 15-Variablen-Modell vor.
+Wenn man das optimale $C_{p}$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 18-Variablen-Modell die $C_{p}$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 15-Variablen-Modell vor.
 
 Wenn wir diese Modelle bewerten, ergibt sich bzgl. der Zusammensetzung der Prädikatoren  folgendes Bild:.
 ```{r}
@@ -5023,7 +5026,7 @@ coef(final_best_WG4_1, 1)
 
 Die Variable ist der `Wochentag_cSonntag`
 
-Die Variable Wochentag_c muss noch dummyfiziert werden.
+Die Variable `Wochentag_c` muss noch dummyfiziert werden.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -5150,7 +5153,7 @@ Die 11 Variablen sind die folgenden:
 *	TDE
 *	JahreszeitSommer
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -5284,7 +5287,7 @@ Die 20 Variablen sind die folgenden:
 *	JahreszeitHerbst
 *	JahreszeitSommer
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -5414,8 +5417,8 @@ Die 18 Variablen sind die folgenden:
 *	ChristiHimmelfahrt_ext          
 *	Pfingsten_ext          
 *	Silvester_ext
-
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+`
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -5543,7 +5546,7 @@ Die 15 Variablen sind die folgenden:
 *	JahreszeitHerbst   
 *	JahreszeitSommer
 
-Die Variablen Wochentag_c, Monat und Jahreszeit nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -5669,7 +5672,6 @@ df_lm_test_WG5 <- df_lm_test_WG5 %>% dplyr::select(-Warengruppe)
 Was die Vorgehensweise und die enstsprechenden Erläuterungen anbelangt, siehe 6.3.1.
 
 **Beste Teilmengenauswahl ("Best subset selection")**
-vgl. Abschnitt
 
 ```{r}
 best_subset_WG5 <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 37)
@@ -5684,6 +5686,8 @@ summary(best_subset_WG5)
 Für ein Modell mit einer Variablen kann beobachtet werden, dass die Variable `Silvester_ext` ein Sternchen hat, was signalisiert, dass ein Regressionsmodell mit `Umsatz ~ Silvester_ext` das beste Einzelvariablenmodell ist. Das beste 2-Variablen-Modell ist `Umsatz` ~ `Silvester_ext + JahreszeitSommer`. Das beste 3-Variablen-Modell ist `Umsatz` ~ `Silvester_ext  + JahreszeitSommer + Feiertag`. Und so weiter.
 
 **Schrittweise Auswahl ("Stepwise selection")**
+
+*Schrittweise vorwärts (Forward stepwise)*
 
 Die schrittweise Vorwärtsauswahl kann mit `regsubsets` durchgeführt werden, indem die `method = "forward"` gesetzt wird:
 
@@ -5703,7 +5707,7 @@ backward <- regsubsets(Umsatz ~ ., df_lm_train_WG5, nvmax = 37, method = "backwa
 
 **Modellauswahl**
 
-### Indirekte Schätzung des Testfehlers mit $C_p$, $AIC$, $BIC$ und adjustiertem $R^2$
+### Indirekte Schätzung des Testfehlers mit $C_{p}$, $AIC$, $BIC$ und adjustiertem $R^2$
 
 ```{r}
 results <- summary(best_subset_WG5)
@@ -5726,7 +5730,7 @@ which.min(results$bic)
 which.min(results$cp)
 ```
 
-Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 31-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 22-Variablenmodell vor und der $C_p$ ein 27-Variablen-Modell vor.
+Es ist erkennbar, dass die Ergebnisse leicht unterschiedliche Modelle identifizieren, die als die besten angesehen werden. Die ajustierte $R^2$-Statistik legt nahe, dass ein 31-Variablen-Modell bevorzugt wird, die $BIC$-Statistik schlägt ein 22-Variablenmodell vor und der $C_{p}$ ein 27-Variablen-Modell vor.
 
 Wir vergleichen das Ergebnis mit denen der stepwise selection:
 ```{r}
@@ -5735,7 +5739,7 @@ which.min(summary(forward)$cp)
 which.min(summary(backward)$cp)
 ```
 
-Wenn man das optimale $C_p$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 27-Variablen-Modell die $C_p$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 29-Variablen-Modell vor.
+Wenn man das optimale $C_{p}$ für vorwärts und rückwärts schrittweise bewertet, ist erkennbar, dass gemäß der Vorwärts-Methode ein 27-Variablen-Modell die $C_{p}$-Statistik minimiert. Die Rückwärtsmethode schlägt ein 29-Variablen-Modell vor.
 
 Wenn wir die Modelle der subset selection vergleichen, ergibt sich bzgl. der Zusammensetzung der Prädikatoren folgendes Bild:.
 ```{r}
@@ -5836,7 +5840,7 @@ Die 8 Variablen sind die folgenden:
 * TDE
 * JahreszeitSommer
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -5972,7 +5976,7 @@ Die 22 Variablen sind die folgenden:
 *	JahreszeitHerbst   
 *	JahreszeitWinter
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -6113,7 +6117,7 @@ Die 27 Variablen sind die folgenden:
 *	JahreszeitHerbst   
 *	JahreszeitWinter
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -6310,7 +6314,7 @@ Die 29 Variablen sind die folgenden:
 *	JahreszeitHerbst   
 *	JahreszeitWinter
 
-Die Variablen Wochentag_c, Monat_c und Jahreszeit müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable Wochentag_c entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
+Die Variablen `Wochentag_c`, `Monat_c` und `Jahreszeit` müssen nun noch dummyfiziert werden (bei Einbeziehung aller Variablen erfolgt die Dummyfizierung automatisch im Rahmen der Regressionsanalyse): Für jeden Wochentag wird eine Variable mit Ausprägung 0/1 gebildet und danach die alte Variable `Wochentag_c` entfernt. Analog wird bei den beiden anderen Variablen vorgegangen.
 
 ```{r}
 # Dummyfizierung der Variablen im Trainigsdatensatz:
@@ -6447,11 +6451,11 @@ Wir widmen uns nun den Verfahren aus dem Bereich Machine Learning und Deep Learn
 
 In einem weiteren Schritt wird mit den Entscheidungsbäumen ein erstes Machine Learning-Verfahren angewendet. 
 
-Entscheidungsbäume stellen, allgemein gesprochen, Entscheidungen und deren Konsequenzen in einer baumähnlichen Struktur dar. Dabei stellen die Prüfungen die "Astgabeln" oder "Knoten" (nodes) dar, die "Äste" die Entscheidungen der Prüfungen und die "Blätter" des Baumes repräsentieren die Entscheidung des Modells. Entscheidungsbäume können sowohl für Klassifikations- als auch für numerische Vorhersagemodelle verwendet werden. (Sauer, 378).
+Entscheidungsbäume stellen, allgemein gesprochen, Entscheidungen und deren Konsequenzen in einer baumähnlichen Struktur dar. Dabei stellen die Prüfungen die "Astgabeln" oder "Knoten" (nodes) dar, die "Äste" die Entscheidungen der Prüfungen und die "Blätter" des Baumes repräsentieren die Entscheidung des Modells. Entscheidungsbäume können sowohl für Klassifikations- als auch für numerische Vorhersagemodelle verwendet werden.
 
 Grundlegende Entscheidungsbäume unterteilen einen Datensatz in kleinere Gruppen und passen dann für jede Untergruppe ein einfaches Modell (Konstante) an. Leider ist ein einzelnes Baummodell in der Regel sehr instabil und ein schlechter Prädiktor. Durch Bootstrap-Aggregation (Bagging) von Entscheidungsbäumen kann diese Technik jedoch sehr leistungsfähig und effektiv werden. Darüber hinaus bildet dies die grundlegende Grundlage für komplexere baumbasierte Modelle wie Random Forests ("zufällige Wälder") und sog. gradient boosting machines ("Maschinen zur Erhöhung des Gradienten").
 
-In diesem Abschnitt werden zunächst Entscheidungsbäume und bagging behandelt. 
+In diesem Projekt werden nur Entscheidungsbäume und Tuning behandelt.
 
 **Die Idee**
 
@@ -6465,7 +6469,7 @@ Erstens ist es wichtig zu erkennen, dass die Partitionierung von Variablen von o
 
 Aber wie werden diese Partitionen hergestellt? Das Modell beginnt mit dem gesamten Datensatz $S$ und durchsucht jeden einzelnen Wert jeder Eingabevariablen, um den Prädiktor und den Teilungswert zu finden, der die Daten in zwei Regionen unterteilt ($R_1$ und $R_2$) derart, dass die Gesamtsummen der Fehlerquadrate minimiert werden:
 
-$minimiere(SSE = \sum_{i \epsilon R_1}(y_i-c_1)^2+\sum_{i \epsilon R_2}(y_i-c_2)^2$
+$$minimiere(SSE = \sum_{i \epsilon R_1}(y_i-c_1)^2+\sum_{i \epsilon R_2}(y_i-c_2)^2 \tag{1}$$
 
 Nachdem wir die beste Aufteilung gefunden haben, teilen wir die Daten in die beiden resultierenden Regionen auf und wiederholen den Aufteilungsprozess für jede der beiden Regionen. Dieser Vorgang wird fortgesetzt, bis ein Stoppkriterium erreicht ist. Das Ergebnis ist in der Regel ein sehr tiefer, komplexer Baum, der zwar gute Vorhersagen für den Trainingssatz liefert, die Daten jedoch wahrscheinlich überpasst, was zu einer schlechten Leistung bei unsichtbaren Daten führt.
 
@@ -6473,9 +6477,11 @@ Durch Beschneiden dieser Entscheidungsknoten auf niedrigerer Ebene können wir e
 
 **Kostenkomplexitätskriterium**
 
-In der Tiefe und Komplexität des Baums muss häufig ein Gleichgewicht erreicht werden, um die Vorhersageleistung für einige unsichtbare Daten zu optimieren. Um dieses Gleichgewicht zu finden, bilden wir normalerweise einen sehr großen Baum, wie im vorherigen Abschnitt definiert, und beschneiden ihn dann, um einen optimalen Teilbaum zu finden. Wir finden den optimalen Teilbaum unter Verwendung eines Kostenkomplexitätsparameters ($\alpha$), der unsere Zielfunktion (s. o.) für die Anzahl der Endknoten des Baumes (T) "bestraft":
+In der Tiefe und Komplexität des Baums muss häufig ein Gleichgewicht erreicht werden, um die Vorhersageleistung für einige unsichtbare Daten zu optimieren. Um dieses Gleichgewicht zu finden, bilden wir normalerweise einen sehr großen Baum, wie im vorherigen Abschnitt definiert, und beschneiden ihn dann, um einen optimalen Teilbaum zu finden. Wir finden den optimalen Teilbaum unter Verwendung eines Kostenkomplexitätsparameters ($\alpha$), der unsere Zielfunktion (s. (1)) für die Anzahl der Endknoten des Baumes ($T$) "bestraft":
 
-$minimiere(SSE + \alpha|T|)}$
+$$minimiere(SSE+\alpha{|T|}) \tag{2}$$
+
+Für einen gegebenen Wert von $\alpha$ finden wir den kleinsten beschnittenen Baum mit dem niedrigsten bestraften Fehler. Dabei führen kleinere Strafen tendenziell zu komplexeren Modellen, was zu größeren Bäumen führt, während größere Strafen zu viel kleineren Bäumen führen. Wenn ein Baum größer wird, muss folglich die Verringerung der $SSE$ größer sein als die Kostenkomplexitätsstrafe. Typischerweise bewerten wir mehrere Modelle über ein Spektrum von $\alpha$ und verwenden die Kreuzvalidierung, um das optimale $\alpha$ und damit den optimalen Teilbaum zu identifizieren
 
 **Laden notwendiger packages**
 
@@ -6483,10 +6489,9 @@ Für das Vorhaben werden die nachfolgenden packages benötigt und somit geladen.
 
 ```{r}
 # already loaded: library(dplyr)       # data wrangling
-library(rpart)       # performing regression trees
-library(rpart.plot)  # plotting regression trees
-library(ipred)       # bagging
-# already loaded: library(caret)       # bagging
+library(rpart)       # Performing von Regression Trees
+library(rpart.plot)  # Plotten von Regression Trees
+#library(ipred)       # Ggf. für bagging
 ```
 
 ## 7.2 Datenaufbereitung
@@ -6506,7 +6511,7 @@ df_dt <- df_dt %>%
   filter(Umsatz_NA == FALSE) %>%
   filter(Jahr >= 2015 & Jahr <= 2018)
 
-# behalte nur die Spalten, die wir für unsere SVM verwenden wollen
+# behalte nur die Spalten, die wir für den DT verwenden wollen
 df_dt <- df_dt %>%
   dplyr::select(-Wochentag, -Monat, -Jahreszeit, -Umsatz_NA, -Umsatz_lag_1W, -Umsatz_lag_2W, -Umsatz_lag_3W, -Umsatz_lag_4W, -Umsatz_lag)
 ```
@@ -6540,7 +6545,7 @@ df_dt_test_WG5 <- df_dt_test %>% filter(Warengruppe==5)
 ## 7.3 Grundlegende Implementierung und Tuning
 
 
-Wir können einen Regressionsbaum mit `rpart` anpassen und ihn dann mit `rpart.plot` visualisieren. Der Anpassungsprozess und die visuelle Ausgabe von Regressionsbäumen und Klassifizierungsbäumen sind sehr ähnlich. Beide verwenden die Formelmethode zum Ausdrücken des Modells (ähnlich wie `lm`). Wenn wir jedoch einen Regressionsbaum anpassen, müssen wir `method = "anova"` setzen. Standardmäßig errät `rpart` auf intelligente Weise, welcher Methodenwert auf dem Datentyp Ihrer Antwortspalte basieren soll. Es wird jedoch empfohlen, die Methode aus Gründen der Reproduzierbarkeit explizit festzulegen.
+Wir können einen Regressionsbaum mit `rpart` anpassen und ihn dann mit `rpart.plot` visualisieren. Der Anpassungsprozess und die visuelle Ausgabe von Regressionsbäumen und Klassifizierungsbäumen sind sehr ähnlich. Beide verwenden die Formelmethode zum Ausdrücken des Modells (ähnlich wie `lm`). Wenn wir jedoch einen Regressionsbaum anpassen, müssen wir `method = "anova"` setzen. Standardmäßig errät `rpart` auf intelligente Weise, welche Methode anzuwenden ist. Es wird jedoch empfohlen, die Methode aus Gründen der Reproduzierbarkeit explizit festzulegen, was wir hier auch tun.
 
 **Grundlegende Implementierung - Warengruppe 1**
 
@@ -6588,7 +6593,7 @@ dt1_WG1$cptable
 
 **Tuning - Warengruppe 1**
 
-Neben dem Kostenkomplexität (α)-Parameter ist es auch üblich folgende Parameter anzupassen:
+Neben dem Kostenkomplexität ($\alpha$)-Parameter ist es auch üblich folgende Parameter anzupassen:
 
 * `minsplit`: Die Mindestanzahl von Datenpunkten, die erforderlich sind, um eine Teilung zu versuchen, bevor ein Endknoten erstellt werden muss. Der Standardwert ist 20. Wenn man diesen Wert verkleinert, können Endknoten, die möglicherweise nur eine Handvoll Beobachtungen enthalten, erstellt werden um den vorhergesagten Wert zu prognostizieren. 
 * `maxdepth`: Die maximale Anzahl interner Knoten zwischen dem Wurzelknoten und den Endknoten. Der Standardwert ist 30, was ziemlich liberal ist und das Bauen ziemlich großer Bäume ermöglicht.
@@ -6625,7 +6630,7 @@ head(hyper_grid)
 ## 5        9        8
 ## 6       10        8
 
-# total number of combinations
+# Gesamtanzahl aller Kombinationen
 nrow(hyper_grid)
 ## [1] 1168
 ```
@@ -6637,11 +6642,11 @@ models <- list()
 
 for (i in 1:nrow(hyper_grid)) {
   
-  # get minsplit, maxdepth values at row i
+  # minsplit, maxdepth values in Zeile i
   minsplit <- hyper_grid$minsplit[i]
   maxdepth <- hyper_grid$maxdepth[i]
 
-  # train a model and store in the list
+  # Trainiere ein modell und speichere es in der Liste
   models[[i]] <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG1,
@@ -6654,13 +6659,13 @@ for (i in 1:nrow(hyper_grid)) {
 Wir können jetzt eine Funktion erstellen, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
 
 ```{r}
-# function to get optimal cp
+# Funktion um den optimalen cp zu erreichen
 get_cp <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   cp <- x$cptable[min, "CP"] 
 }
 
-# function to get minimum error
+# Funktion um den minimalen Fehler zu erhalten
 get_min_error <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   xerror <- x$cptable[min, "xerror"] 
@@ -6804,7 +6809,7 @@ hyper_grid <- expand.grid(
 
 head(hyper_grid)
 
-# total number of combinations
+# Gesamtanzahl aller Kombinationen
 nrow(hyper_grid)
 ```
 
@@ -6815,11 +6820,11 @@ models <- list()
 
 for (i in 1:nrow(hyper_grid)) {
   
-  # get minsplit, maxdepth values at row i
+  # minsplit, maxdepth values in Zeile i
   minsplit <- hyper_grid$minsplit[i]
   maxdepth <- hyper_grid$maxdepth[i]
 
-  # train a model and store in the list
+  # Trainiere ein Model und speichere es in der Liste
   models[[i]] <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG2,
@@ -6832,13 +6837,13 @@ for (i in 1:nrow(hyper_grid)) {
 Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
 
 ```{r}
-# function to get optimal cp
+# Funktion um den optimalen cp zu erreichen
 get_cp <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   cp <- x$cptable[min, "CP"] 
 }
 
-# function to get minimum error
+# Funktion um den minimalen Fehler zu erhalten
 get_min_error <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   xerror <- x$cptable[min, "xerror"] 
@@ -6986,11 +6991,11 @@ models <- list()
 
 for (i in 1:nrow(hyper_grid)) {
   
-  # get minsplit, maxdepth values at row i
+  # minsplit, maxdepth values in Zeile i
   minsplit <- hyper_grid$minsplit[i]
   maxdepth <- hyper_grid$maxdepth[i]
 
-  # train a model and store in the list
+  # Trainiere ein Modell und speichere es in der Liste
   models[[i]] <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG3,
@@ -7003,13 +7008,13 @@ for (i in 1:nrow(hyper_grid)) {
 Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
 
 ```{r}
-# function to get optimal cp
+# Funktion um den optimalen cp zu erreichen
 get_cp <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   cp <- x$cptable[min, "CP"] 
 }
 
-# function to get minimum error
+# Funktion um den minimalen Fehler zu erhalten
 get_min_error <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   xerror <- x$cptable[min, "xerror"] 
@@ -7146,7 +7151,7 @@ hyper_grid <- expand.grid(
 
 head(hyper_grid)
 
-# total number of combinations
+# Gesamtanzahl aller Kombinationen
 nrow(hyper_grid)
 ```
 
@@ -7157,11 +7162,11 @@ models <- list()
 
 for (i in 1:nrow(hyper_grid)) {
   
-  # get minsplit, maxdepth values at row i
+  # minsplit, maxdepth values in Zeile i
   minsplit <- hyper_grid$minsplit[i]
   maxdepth <- hyper_grid$maxdepth[i]
 
-  # train a model and store in the list
+  # Trainiere ein Modell und speichere es in der Liste
   models[[i]] <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG4,
@@ -7174,13 +7179,13 @@ for (i in 1:nrow(hyper_grid)) {
 Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
 
 ```{r}
-# function to get optimal cp
+# Funktion um den optimalen cp zu erreichen
 get_cp <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   cp <- x$cptable[min, "CP"] 
 }
 
-# function to get minimum error
+# Funktion um den minimalen Fehler zu erhalten
 get_min_error <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   xerror <- x$cptable[min, "xerror"] 
@@ -7328,11 +7333,11 @@ models <- list()
 
 for (i in 1:nrow(hyper_grid)) {
   
-  # get minsplit, maxdepth values at row i
+  # minsplit, maxdepth values in Zeile i
   minsplit <- hyper_grid$minsplit[i]
   maxdepth <- hyper_grid$maxdepth[i]
 
-  # train a model and store in the list
+  # Trainiere ein Modell und speichere es in der Liste
   models[[i]] <- rpart(
     formula = Umsatz ~ .,
     data    = df_dt_train_WG5,
@@ -7345,13 +7350,13 @@ for (i in 1:nrow(hyper_grid)) {
 Wir erstellen erneut eine Funktion, um den minimalen Fehler zu extrahieren, der mit dem α-Wert der optimalen Kostenkomplexität für jedes Modell verbunden ist. 
 
 ```{r}
-# function to get optimal cp
+# Funktion um den optimalen cp zu erreichen
 get_cp <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   cp <- x$cptable[min, "CP"] 
 }
 
-# function to get minimum error
+# Funktion um den minimalen Fehler zu erhalten
 get_min_error <- function(x) {
   min    <- which.min(x$cptable[, "xerror"])
   xerror <- x$cptable[min, "xerror"] 
@@ -8030,7 +8035,7 @@ df_MLP <- df_MLP %>% filter(!is.na(Temperatur))
 
 Im ersten Schritt verzichten wir auf die Variablen Windgeschwindigkeit und Bewölkung: Wir hatten nämlich in unserer Korrelationsanalyse gesehen, dass die Windgeschwindigkeit allenfalls einen sehr geringen Einfluss hat. Und die Bewölkung würde weitere 8 Dummyvariablen erfordern als Eingabe für unser MLP, daher verzichten wir darauf, um unser Modell nicht zu sehr aufzublähen.
 
-Die Variablen Wochentag_c und Monat_c müssen nun noch dummyfiziert werden: Wir bilden für jeden Wochentag eine Variable mit Ausprägung 0/1. Und entfernen danach die alten Variablen Wochentag_c und Monat_c.
+Die Variablen `Wochentag_c` und `Monat_c` müssen nun noch dummyfiziert werden: Wir bilden für jeden Wochentag eine Variable mit Ausprägung 0/1. Und entfernen danach die alten `Variablen Wochentag_c` und `Monat_c`.
 
 ```{r}
 df_MLP <- df_MLP %>%
@@ -8703,7 +8708,7 @@ modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
 # bestes lineares Modell: WG2
 temp <- df_lm_test_WG2_24 %>%
   mutate(Verfahren="lm") %>%
-  mutate(Modell="best30") %>%
+  mutate(Modell="best24") %>%
   mutate(Warengruppe=2) %>%
   group_by(Verfahren, Modell, Warengruppe) %>%
   summarise(Anzahl=n(), Umsatz_ges = round(sum(Umsatz)), Umsatz_mittel = round(sum(Umsatz)/n()), MAE = round(mean(Abweichung_abs)), MPE = round(mean(Abweichung_rel)*100), MAPE = round(mean(Abweichung_rel_abs)*100), WAPE = round(sum(Abweichung_rel_abs_mult_umsatz)/sum(Umsatz)*100), MSE = round(mean(Abweichung_quad)), RMSE = round(sqrt(mean(Abweichung_quad))), rRMSE = round(RMSE/Umsatz_mittel*100))
@@ -8911,9 +8916,9 @@ modell_vergleich_WG <- rbind(modell_vergleich_WG, temp)
 
 ```
 
-Jetzt wollen wir für jede Warengruppe prüfen, welches Verfahren mit welchem Modell die besten Prognosen liefert. Und zwar bewerten wir das anhand der folgenden drei Güte-Kennzahlen:
+Jetzt wollen wir für jede Warengruppe prüfen, welches Verfahren mit welchem Modell die besten Prognosen liefert. Und zwar bewerten wir das anhand der folgenden drei Gütekennzahlen:
 
-- MPE (Mean Percentage Error): Die mittlere relative Abweichung gibt uns ein Indiz dafür, ob unser Modell die Umsätze systematisch zu hoch oder zu niedrig schätzt. Wir wollen natürlich möglichst einen Mittelwert nahe Null erzielen. Falls ein Modell jedoch den Umsatz systematisch zu hoch oder zu niedrig schätzt und ansonsten hervoragende Güte-Kennzahlen aufweist, kann man die Schätzwerte mit einem Offset korrigieren um eben diese mittlere relative Abweichung.
+- MPE (Mean Percentage Error): Die mittlere relative Abweichung gibt uns ein Indiz dafür, ob unser Modell die Umsätze systematisch zu hoch oder zu niedrig schätzt. Wir wollen natürlich möglichst einen Mittelwert nahe Null erzielen. Falls ein Modell jedoch den Umsatz systematisch zu hoch oder zu niedrig schätzt und ansonsten hervoragende Gütekennzahlen aufweist, kann man die Schätzwerte mit einem Offset korrigieren um eben diese mittlere relative Abweichung.
 - WAPE (Weighted Absolute Percent Error): Der gewichtete Mittelwert des Absolutwertes der relativen Abweichung ist für das wichtigste Bewertungskriterium, weil es die Prognosegüte insgesamt am besten misst. Dabei gilt: Je kleiner, desto besser.
 - rRMSE (relative Root Mean Square Error): Der Mittelwert der Wurzel der quadratischen Abweichung - ins Verhältnis gesetzt zum mittleren Umsatz - liefert uns Anhaltspunkte, ob vermehrt größere Abweichungen zwischen geschätztem und tatsächlichem Umsatz vorliegen. Wir wollen also hier möglichst niedrige Werte finden.
 
@@ -9201,7 +9206,7 @@ temp <- df_MLP_test_mod2_WG5 %>%
 ensemble_WG5 <- cbind(ensemble_WG5, temp)
 ```
 
-Wir bilden nun den Ensemble-Schätzer als Mittelwert der besten Einzelschätzer. Und anschließend ermittelns wir die Gütekennzahlen. Die Ergebnisse für die Warengruppen sammeln wir in einer gemeinsamen Tabelle `ensemble_WG_vgl`.
+Wir bilden nun den Ensemble-Schätzer als Mittelwert der besten Einzelschätzer. Anschließend ermitteln wir die Gütekennzahlen. Die Ergebnisse für die Warengruppen sammeln wir in einer gemeinsamen Tabelle `ensemble_WG_vgl`.
 
 ```{r}
 # Warengruppe 1
@@ -9376,7 +9381,7 @@ temp <- ensemble_WG5 %>%
 ensemble_WG_vgl <- rbind(ensemble_WG_vgl, temp)
 ```
 
-Die Güte-Kennzahlen für die Ensemble-Modelle fügen wir nun an die oben ermittelte Vergleichstabelle `modell_vergleich_WG` an.
+Die Gütekennzahlen für die Ensemble-Modelle fügen wir nun an die oben ermittelte Vergleichstabelle `modell_vergleich_WG` an.
 
 ```{r}
 modell_vergleich_WG <- rbind(modell_vergleich_WG, ensemble_WG_vgl)
@@ -9398,6 +9403,13 @@ Für Warengruppe 1 konnten wir durch die Ensemble-Bildung den Schätzer also noc
 ```{r}
 modell_vergleich_WG %>%
   filter(Warengruppe == 2) %>%
+  arrange(WAPE)
+```
+
+```{r}
+modell_vergleich_WG %>%
+  select(Warengruppe, Verfahren, Modell, MPE, WAPE, rRMSE) %>%
+  filter(Warengruppe == 5) %>%
   arrange(WAPE)
 ```
 
