@@ -2621,7 +2621,7 @@ Einige der unabhängigen Variablen weisen starke bis mittelstarke Korrelationen 
 * Ostern und Ostern_ext: 0.743653940
 * Pfingsten und Pfingsten_ext: 0.711105992
 
-Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise fast ankratzen und teilweise überschreiten, muss in Erwägung gezogen werden, auch einge der stark miteinander korrelierten Variablen zu eliminieren, da bspw. die schrittweise Regression bei Multikollinearität versagt. Zunächst werden die Tatsache, dass einzelne Variablen stark untereinander korrelieren, jedoch ignoriert. Eine sich doch als notwendig abzeichnende Eliminierung weiterer Variablen erfolgt ggf. zu einem späteren Zeitpunkt.
+Da die Einflussvariablen mitunter stark korrelieren und die Grenze von .7 teilweise fast ankratzen und teilweise überschreiten, muss in Erwägung gezogen werden, auch einige der stark miteinander korrelierten Variablen zu eliminieren, da bspw. die schrittweise Regression bei Multikollinearität versagt. Zunächst werden die Tatsache, dass einzelne Variablen stark untereinander korrelieren, jedoch ignoriert. Eine sich doch als notwendig abzeichnende Eliminierung weiterer Variablen erfolgt ggf. zu einem späteren Zeitpunkt.
 
 **Umgang mit Multikollinearität**
 
@@ -2687,7 +2687,7 @@ Der dreistufige Prozess zur Durchführung der Auswahl der besten Teilmenge umfas
 
 **Schritt 3**: Wähle aus $M_0, .. , M_p$ ein einzelnes bestes Modell aus unter Verwendung eines kreuzvalidierten Vorhersagefehlers (cross validated prediction error), $Cp$, $AIC$, $BIC$ oder adjustiertem $R^2$.
 
-Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe von RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 37 Variablen.
+Die Suche nach den besten Teilmengen an Prädikatorvariablen kann mithilfe von `regsubsets` (Teil der `leaps`-Bibliothek) durchgeführt werden. `regsubsets` identifiziert das beste Modell für eine bestimmte/festgelegte Anzahl von `k` Prädiktoren, wobei "das Beste" mithilfe der RSS quantifiziert wird. Die Syntax entspricht der `lm`-Funktion. Standardmäßig meldet `regsubsets` nur Ergebnisse bis zum besten Modell mit acht Variablen. Die Option `nvmax` kann jedoch verwendet werden, um so viele Variablen wie gewünscht zurückzugeben. Hier passen wir zu einem Modell mit 37 Variablen.
 
 ```{r}
 best_subset_WG1 <- regsubsets(Umsatz ~ ., df_lm_train_WG1, nvmax = 37)
@@ -6566,7 +6566,7 @@ Sobald wir unser Modell angepasst haben, können wir einen Blick auf den dt1_WG1
 
 Wenn man nach dem 3. Zweig sucht, sieht man, dass 909 Beobachtungen mit Wochentag_c = Dienstag, Donnerstag, Freitag, Mittwoch, Montag, Samstag diesem Zweig folgen und ihre durchschnittlichen Umsätze 123.49€ betragen und der SSE hier 1109737.00 beträgt.
 
-Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SEE aufweist, der Wochentag ist, wobei die Umsätze sonntags in der Warengruppe Brot um > 40% geringer sind als an den anderen Tagen der Woche.
+Grundsätzlich sagt uns dies, dass die wichtigste Variable, die anfangs den größten Rückgang der SSE aufweist, der Wochentag ist, wobei die Umsätze sonntags in der Warengruppe Brot um > 40% geringer sind als an den anderen Tagen der Woche.
 
 Wir können unser Modell mit `rpart.plot` visualisieren. `rpart.plot` bietet viele Plotoptionen, auf die wir an dieser Stelle nicht weiter eingehen werden. Im Standard-Plot werden jedoch der Prozentsatz der Daten angezeigt, die auf diesen Knoten fallen, und der durchschnittliche Umsatz für diesen Zweig. 
 
@@ -6579,13 +6579,13 @@ plot(as.party(dt1_WG1))
 
 Man kann feststellen, dass dieser Baum 11 interne Knoten enthält, was zu 12 Endknoten führt. Grundsätzlich partitioniert dieser Baum in 11 Variablen, um sein Modell zu erstellen. Es gibt jedoch 28 Variablen in `df_dt_train_WG1`. Also was ist passiert?
 
-Hinter den Kulissen wendet `rpart` automatisch einen Bereich von Kostenkomplexität an (α-Werte zum Beschneiden des Baums). Um den Fehler für jeden α-Wert zu vergleichen, führt `rpart` eine 10-fache Kreuzvalidierung durch, sodass der mit einem bestimmten α-Wert verbundene Fehler berechnet wird. 
+Hinter den Kulissen wendet `rpart` automatisch einen Bereich von Kostenkomplexität an ($\alpha$-Werte zum Beschneiden des Baums). Um den Fehler für jeden $\alpha$-Wert zu vergleichen, führt `rpart` eine 10-fache Kreuzvalidierung durch, sodass der mit einem bestimmten $\alpha$-Wert verbundene Fehler berechnet wird. 
 
 ```{r}
 plotcp(dt1_WG1)
 ```
 
-In diesem Beispiel finden wir abnehmende Renditen nach 12 Endknoten, wie in der Grafik dargestellt (y-Achse ist Kreuzvalidierungsfehler, untere x-Achse ist Kostenkomplexitätswert (α), obere x-Achse ist die Anzahl von Endknoten (Baumgröße = | T |)). Die gestrichelte Linie, die zwischen den Punkten | T | = 3 und 4 verläuft, deutet darauf hin, dass auch ein kleiner Baum gewählt werden kann. Breiman et al. (1984) schlugen vor, dass es in der Praxis üblich ist, den kleinsten Baum innerhalb von 1 Standardabweichung des minimalen Kreuzvalidierungsfehlers zu verwenden (auch bekannt als 1-SE-Regel). Daher könnten wir auch einen Baum mit 3 oder 4 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
+In diesem Beispiel finden wir abnehmende Renditen nach 12 Endknoten, wie in der Grafik dargestellt (y-Achse ist Kreuzvalidierungsfehler, untere x-Achse ist Kostenkomplexitätswert ($\alpha$), obere x-Achse ist die Anzahl von Endknoten (Baumgröße = | T |)). Die gestrichelte Linie, die zwischen den Punkten | T | = 3 und 4 verläuft, deutet darauf hin, dass auch ein kleiner Baum gewählt werden kann. Breiman et al. (1984) schlugen vor, dass es in der Praxis üblich ist, den kleinsten Baum innerhalb von 1 Standardabweichung des minimalen Kreuzvalidierungsfehlers zu verwenden (auch bekannt als 1-SE-Regel). Daher könnten wir auch einen Baum mit 3 oder 4 Endknoten verwenden und vernünftigerweise erwarten, dass innerhalb einer kleinen Fehlergrenze ähnliche Ergebnisse erzielt werden.
 
 ```{r}
 dt1_WG1$cptable
